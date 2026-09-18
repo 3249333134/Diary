@@ -1,0 +1,685 @@
+/* ═══════════════════════════════════════════════════════════
+ * 独立日记 · 每日小票
+ * 主题系统 + 吐纸动画 + 分类盖章
+ *
+ * 皮肤切换：[data-skin="classic" | "kraft" | "clean" | "pink"]
+ * 吐纸动画：wrapper height 从 0 → JS 测量高度，paper 从 translateY(-40%) 推出来
+ * ═══════════════════════════════════════════════════════════ */
+
+/* ── ① 默认主题（经典米白） ── */
+:root,
+[data-skin="classic"] {
+  --paper-bg: #faf6ee;
+  --paper-bg-deep: #f0ead9;        /* 撕齿下边的颜色 */
+  --paper-text: #252329;
+  --paper-muted: #8e897c;
+  --paper-dash: #c9c2b2;           /* 虚线段颜色 */
+  --paper-line: #252329;           /* 实线（标题栏） */
+  --paper-shadow: 0 2px 0 rgba(0, 0, 0, 0.04);
+  --paper-texture-1: rgba(0,0,0,0.018);
+  --paper-texture-2: rgba(0,0,0,0.012);
+  --paper-tile-a: transparent;
+  --paper-tile-b: transparent;
+
+  --stamp-fact: #b8453b;
+  --stamp-new: #3d7ea6;
+  --stamp-in: #4a8c5c;
+  --stamp-inspire: #7256d8;
+
+  --printer-top: #3a3840;
+  --printer-mid: #262430;
+  --printer-bottom: #131217;
+  --printer-text: #f5f4f9;
+}
+
+/* ── ② 复古牛皮 ── */
+[data-skin="kraft"] {
+  --paper-bg: #e6dcc4;
+  --paper-bg-deep: #d4c9ab;
+  --paper-text: #3a3120;
+  --paper-muted: #8f8165;
+  --paper-dash: #b8a98a;
+  --paper-line: #3a3120;
+  --paper-shadow: 0 2px 0 rgba(58, 49, 32, 0.08);
+  --paper-texture-1: rgba(80, 50, 20, 0.05);
+  --paper-texture-2: rgba(80, 50, 20, 0.03);
+  --paper-tile-a: rgba(120, 80, 40, 0.06);
+  --paper-tile-b: transparent;
+
+  --stamp-fact: #9a3b1f;
+  --stamp-new: #2a5278;
+  --stamp-in: #3e6b3a;
+  --stamp-inspire: #6b3f8f;
+}
+
+/* ── ③ 现代纯白 ── */
+[data-skin="clean"] {
+  --paper-bg: #ffffff;
+  --paper-bg-deep: #f2f2f4;
+  --paper-text: #1a1a1f;
+  --paper-muted: #7a7a82;
+  --paper-dash: #d4d4d8;
+  --paper-line: #1a1a1f;
+  --paper-shadow: 0 2px 0 rgba(0, 0, 0, 0.03);
+  --paper-texture-1: transparent;
+  --paper-texture-2: transparent;
+  --paper-tile-a: transparent;
+  --paper-tile-b: transparent;
+
+  --stamp-fact: #e5484d;
+  --stamp-new: #2e77d0;
+  --stamp-in: #30a46c;
+  --stamp-inspire: #7c3aed;
+}
+
+/* ── ④ 粉色少女 ── */
+[data-skin="pink"] {
+  --paper-bg: #fff5f7;
+  --paper-bg-deep: #ffe4ea;
+  --paper-text: #4a2c38;
+  --paper-muted: #a07e8c;
+  --paper-dash: #f0c8d3;
+  --paper-line: #4a2c38;
+  --paper-shadow: 0 2px 0 rgba(180, 80, 110, 0.05);
+  --paper-texture-1: rgba(200, 100, 140, 0.04);
+  --paper-texture-2: rgba(200, 100, 140, 0.02);
+  --paper-tile-a: rgba(255, 200, 220, 0.15);
+  --paper-tile-b: transparent;
+
+  --stamp-fact: #d4386a;
+  --stamp-new: #c45b8f;
+  --stamp-in: #4a9a88;
+  --stamp-inspire: #8b4eb8;
+}
+
+/* ── ⑤ 暗色主题（叠加在上面皮肤之上） ── */
+[data-theme="dark"][data-skin="classic"],
+[data-theme="dark"][data-skin="kraft"],
+[data-theme="dark"][data-skin="clean"],
+[data-theme="dark"][data-skin="pink"] {
+  --paper-bg: #23222a;
+  --paper-bg-deep: #1b1a22;
+  --paper-text: #e8e6ed;
+  --paper-muted: #8a8598;
+  --paper-dash: rgba(255, 255, 255, 0.15);
+  --paper-line: #e8e6ed;
+  --paper-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+  --paper-texture-1: rgba(255, 255, 255, 0.025);
+  --paper-texture-2: rgba(255, 255, 255, 0.015);
+  --paper-tile-a: transparent;
+  --paper-tile-b: transparent;
+}
+
+/* ═══════════════════════════════════════════════════════════
+ * 外层容器
+ * ═══════════════════════════════════════════════════════════ */
+.receipt-entry { margin-bottom: 16px; }
+.receipt-collection { margin: 20px 0 40px; }
+.receipt-collection-heading,
+.receipt-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.receipt-collection-heading h2 { margin: 0; font-size: 25px; }
+.receipt-collection-heading p,
+.receipt-explanation { color: var(--muted, #8e897c); font-size: 14px; }
+.receipt-controls { justify-content: flex-start; margin: 18px 0 28px; }
+
+/* ── 皮肤选择器 — 常显色块组 ── */
+.receipt-skin-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: var(--surface-2, #f5f4f8);
+  border: 1px solid var(--line, #e2e1e8);
+}
+.receipt-skin-switch .skin-label {
+  font-size: 12px;
+  color: var(--muted, #7a7a82);
+  font-weight: 600;
+  padding-right: 4px;
+}
+.receipt-skin-switch .skin-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+  transition: transform .15s, border-color .15s, box-shadow .15s;
+}
+.receipt-skin-switch .skin-swatch:hover {
+  transform: scale(1.12);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+.receipt-skin-switch .skin-swatch.active {
+  border-color: #5d42c4;
+  transform: scale(1.15);
+  box-shadow: 0 0 0 3px rgba(93, 66, 196, 0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════
+ * 打印机机身
+ * ═══════════════════════════════════════════════════════════ */
+.receipt-printer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(180deg, var(--printer-top, #3a3840) 0%, var(--printer-mid, #262430) 40%, var(--printer-bottom, #131217) 100%);
+  color: var(--printer-text, #f5f4f9);
+  padding: 22px 26px 32px;
+  border-radius: 20px 20px 6px 6px;
+  box-shadow:
+    0 10px 22px #0004,
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+  z-index: 1;
+  max-width: 620px;
+  margin: auto;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+.receipt-printer::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 46px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
+}
+.receipt-printer > span {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.receipt-printer i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #88d9b2;
+  box-shadow: 0 0 6px #88d9b280;
+  animation: led-blink 2.4s ease-in-out infinite;
+}
+.receipt-slot {
+  position: absolute;
+  bottom: 7px;
+  left: 16px;
+  right: 16px;
+  height: 8px;
+  background: linear-gradient(180deg, #0a090d 0%, #060609 50%, #0a090d 100%);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.8),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+}
+.receipt-printer.is-printing { animation: printer-shake 0.14s steps(2) 10; }
+.receipt-printer.is-printing .receipt-slot { animation: slot-pulse 0.6s ease-in-out infinite; }
+
+@keyframes led-blink {
+  0%, 92%, 100% { opacity: 1; }
+  96% { opacity: 0.3; }
+}
+@keyframes printer-shake {
+  0%   { transform: translateX(0); }
+  25%  { transform: translateX(-1px); }
+  50%  { transform: translateX(1px); }
+  75%  { transform: translateX(-1px); }
+  100% { transform: translateX(0); }
+}
+@keyframes slot-pulse {
+  0%, 100% { box-shadow: inset 0 2px 4px rgba(0,0,0,.8), inset 0 -1px 0 rgba(255,255,255,.03), 0 0 0 rgba(200,200,255,0); }
+  50%      { box-shadow: inset 0 2px 4px rgba(0,0,0,.8), inset 0 -1px 0 rgba(255,255,255,.03), 0 0 10px rgba(200,200,255,0.35); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+ * 纸带容器
+ * ═══════════════════════════════════════════════════════════ */
+.receipt-roll {
+  max-width: 548px;
+  margin: -3px auto 0;
+  overflow: hidden;
+  padding: 0 10px 20px;
+}
+.receipt-feed {
+  position: relative;
+  background: var(--paper-bg);
+  color: var(--paper-text);
+  box-shadow:
+    0 12px 22px #0002,
+    0 2px 0 var(--paper-bg-deep) inset;
+  padding-bottom: 18px;
+  background-image:
+    radial-gradient(var(--paper-texture-1) 1px, transparent 1px),
+    radial-gradient(var(--paper-texture-2) 1px, transparent 1px);
+  background-size: 4px 4px, 7px 7px;
+  background-position: 0 0, 2px 3px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+ * 日期标题栏
+ * ═══════════════════════════════════════════════════════════ */
+.receipt-day-heading {
+  position: relative;
+  padding: 32px 28px 26px;
+  border-bottom: 2px solid var(--paper-line);
+  margin: 0 22px;
+  display: grid;
+  gap: 8px;
+}
+.receipt-day-heading::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 28px;
+  right: 28px;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, var(--paper-line) 0 8px, transparent 8px 16px);
+  opacity: 0.15;
+}
+.receipt-day-heading::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--paper-bg) 0 6px,
+    transparent 6px 12px
+  );
+}
+.receipt-day-heading strong {
+  font-family: "PingFang SC", "Microsoft YaHei UI", serif;
+  font-size: clamp(26px, 4.5vw, 40px);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--paper-text);
+}
+.receipt-day-heading span {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--paper-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════
+ * 【关键】吐纸动画的 wrapper
+ * ───────────────────────────────────────────────────────────
+ * 每张纸外面包 .receipt-wrapper
+ *  - 初始 height: 0, overflow: hidden
+ *  - JS 测量真实高度后，把高度写入 inline style (--paper-height)
+ *  - 入场动画让 height: 0 → var(--paper-height)
+ *  - 同时 paper 内部 translateY 从 -40% → 0，产生"被推出来"的张力
+ * ═══════════════════════════════════════════════════════════ */
+.receipt-wrapper {
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+}
+.receipt-wrapper.is-exiting {
+  animation: wrapper-feed var(--feed-duration, 1400ms) cubic-bezier(0.22, 1, 0.36, 1) var(--feed-delay, 0ms) both;
+}
+@keyframes wrapper-feed {
+  0% {
+    height: 0;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    height: var(--paper-height, 200px);
+    opacity: 1;
+  }
+}
+
+/* wrapper 内部的 paper：从上方被慢慢挤下来 */
+.receipt-wrapper.is-exiting .receipt-paper-inner {
+  animation: paper-push var(--feed-duration, 1400ms) cubic-bezier(0.22, 1, 0.36, 1) var(--feed-delay, 0ms) both;
+}
+@keyframes paper-push {
+  0% {
+    transform: translateY(-45%) scale(0.96) rotate(-1.2deg);
+  }
+  55% {
+    transform: translateY(3%) scale(1.005) rotate(calc(var(--paper-tilt, 0deg) * 0.4));
+  }
+  78% {
+    transform: translateY(-0.5%) scale(0.995) rotate(calc(var(--paper-tilt, 0deg) * 0.9));
+  }
+  100% {
+    transform: translateY(0) scale(1) rotate(var(--paper-tilt, 0deg));
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+ * 单张纸（内两层：receipt-item 负责撕齿外层，receipt-paper-inner 负责纸内容）
+ * ═══════════════════════════════════════════════════════════ */
+.receipt-item {
+  position: relative;
+  padding-bottom: 22px;
+}
+.receipt-item:last-child { padding-bottom: 18px; }
+
+.receipt-paper {
+  position: relative;
+  padding: 22px 28px 16px;
+  overflow-wrap: anywhere;
+  box-shadow: var(--paper-shadow);
+  background: var(--paper-bg);
+  color: var(--paper-text);
+}
+
+/* 撕齿 — 上边 */
+.receipt-paper::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background:
+    radial-gradient(circle at 3px 10px, transparent 4px, var(--paper-bg) 4.5px);
+  background-size: 12px 10px;
+  background-repeat: repeat-x;
+  pointer-events: none;
+}
+/* 撕齿 — 下边（外层） */
+.receipt-item::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 12px;
+  background:
+    radial-gradient(circle at 6px 0, transparent 4px, var(--paper-bg-deep) 4.5px);
+  background-size: 12px 12px;
+  background-repeat: repeat-x;
+  pointer-events: none;
+}
+
+/* 纸张内部排版 */
+.receipt-paper header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--paper-muted);
+  text-transform: uppercase;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--paper-dash);
+  margin-bottom: 10px;
+}
+.receipt-paper footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--paper-muted);
+  text-transform: uppercase;
+  margin-top: 18px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--paper-dash);
+}
+.receipt-date {
+  margin-top: 12px;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--paper-muted);
+}
+.receipt-content {
+  font-family: "PingFang SC", "Microsoft YaHei UI", sans-serif;
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.85;
+  white-space: pre-wrap;
+  margin: 8px 0 4px;
+  color: var(--paper-text);
+}
+.receipt-details {
+  border-top: 1px dashed var(--paper-dash);
+  padding-top: 10px;
+}
+.receipt-details p {
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  margin: 3px 0;
+  color: var(--paper-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════
+ * 分类盖章
+ * ═══════════════════════════════════════════════════════════ */
+.receipt-paper[data-kind="事实"] .receipt-kind-stamp {
+  color: var(--stamp-fact);
+  border-color: var(--stamp-fact);
+  background: color-mix(in srgb, var(--stamp-fact) 8%, transparent);
+}
+.receipt-paper[data-kind="新知"] .receipt-kind-stamp {
+  color: var(--stamp-new);
+  border-color: var(--stamp-new);
+  background: color-mix(in srgb, var(--stamp-new) 8%, transparent);
+}
+.receipt-paper[data-kind="输入"] .receipt-kind-stamp {
+  color: var(--stamp-in);
+  border-color: var(--stamp-in);
+  background: color-mix(in srgb, var(--stamp-in) 8%, transparent);
+}
+.receipt-paper[data-kind="灵感"] .receipt-kind-stamp {
+  color: var(--stamp-inspire);
+  border-color: var(--stamp-inspire);
+  background: color-mix(in srgb, var(--stamp-inspire) 8%, transparent);
+}
+
+.receipt-kind-stamp {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  padding: 4px 10px;
+  border: 2px dashed;
+  border-radius: 4px;
+  transform: rotate(-3deg);
+  line-height: 1;
+}
+.receipt-number {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--paper-muted);
+}
+
+/* 下载按钮 */
+.receipt-download {
+  margin: 0 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  color: #5d42c4;
+  min-height: 44px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  opacity: 0.75;
+  transition: opacity .15s;
+}
+.receipt-download:hover { opacity: 1; }
+.receipt-download:disabled { opacity: 0.25; cursor: not-allowed; }
+
+/* 纸尾 */
+.receipt-day-end {
+  text-align: center;
+  font-size: 14px;
+  padding: 28px 24px 12px;
+  color: var(--paper-muted);
+  letter-spacing: 0.08em;
+}
+.receipt-day-end small {
+  display: block;
+  margin-top: 10px;
+  color: var(--paper-muted);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+
+/* 空状态 */
+.receipt-empty {
+  max-width: 520px;
+  margin: auto;
+  padding: 48px 24px;
+  text-align: center;
+}
+.receipt-explanation {
+  max-width: 548px;
+  margin: 20px auto;
+  line-height: 1.7;
+}
+
+/* ═══════════════════════════════════════════════════════════
+ * 通知（右下角）
+ * ═══════════════════════════════════════════════════════════ */
+.receipt-notice {
+  position: fixed;
+  bottom: 20px;
+  right: 24px;
+  width: min(360px, calc(100vw - 32px));
+  z-index: 80;
+  filter: drop-shadow(0 14px 28px #0003);
+}
+.receipt-notice .receipt-printer {
+  padding: 14px 14px 22px;
+  border-radius: 12px 12px 4px 4px;
+  font-size: 13px;
+}
+.receipt-printer button {
+  margin-left: auto;
+  background: transparent;
+  color: inherit;
+  border: 0;
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.receipt-notice-clip { overflow: hidden; padding: 0 12px 10px; }
+.receipt-notice-paper {
+  width: 100%;
+  border: 0;
+  padding: 20px 22px 16px;
+  background: var(--paper-bg);
+  color: var(--paper-text);
+  text-align: left;
+  display: grid;
+  gap: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  position: relative;
+  animation: notice-feed 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes notice-feed {
+  0% {
+    opacity: 0;
+    transform: translateY(-120%) scale(0.9) rotate(-2deg);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(6px) scale(1.01) rotate(0.5deg);
+  }
+  78% {
+    transform: translateY(-1px) scale(0.995) rotate(-0.2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0);
+  }
+}
+.receipt-notice-paper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: radial-gradient(circle at 3px 8px, transparent 4px, var(--paper-bg) 4.5px);
+  background-size: 12px 8px;
+  background-repeat: repeat-x;
+}
+.receipt-notice-paper span {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-muted);
+}
+.receipt-notice-paper strong {
+  font-size: 16px;
+  line-height: 1.6;
+  font-weight: 600;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+  color: var(--paper-text);
+}
+
+/* ═══════════════════════════════════════════════════════════
+ * 响应式
+ * ═══════════════════════════════════════════════════════════ */
+@media (max-width: 599px) {
+  .receipt-notice { right: 16px; bottom: 16px; }
+  .receipt-paper { padding: 18px 18px 14px; }
+  .receipt-day-heading { margin: 0 16px; padding: 26px 0 20px; }
+  .receipt-collection-heading h2 { font-size: 22px; }
+  .receipt-content { font-size: 16px; }
+  .receipt-printer { padding: 18px 18px 26px; }
+  .receipt-kind-stamp { font-size: 10px; padding: 3px 8px; }
+  .receipt-skin-switch { margin-left: 0; width: 100%; justify-content: center; }
+  .receipt-skin-switch .skin-swatch { width: 20px; height: 20px; border-radius: 5px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+ * 减少动态效果
+ * ═══════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .receipt-wrapper,
+  .receipt-wrapper.is-exiting,
+  .receipt-wrapper.is-exiting .receipt-paper-inner,
+  .receipt-notice-paper,
+  .receipt-printer.is-printing {
+    animation: none !important;
+  }
+  .receipt-wrapper {
+    height: auto !important;
+    opacity: 1 !important;
+  }
+  .receipt-wrapper .receipt-paper-inner {
+    transform: none !important;
+  }
+  .receipt-printer i { animation: none; }
+  .receipt-printer.is-printing .receipt-slot { animation: none; }
+}

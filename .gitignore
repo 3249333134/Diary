@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.local
+data/
+qa/*.png
+qa/paint-videos/
+*.log
+*.tsbuildinfo
+*.zip
+*.tar.gz
+.trae/
+test.txt
+testatt.txt

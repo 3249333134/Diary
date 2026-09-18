@@ -1,0 +1,28 @@
+{
+  "name": "independent-diary",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build:contracts": "npm run build -w @diary/contracts",
+    "dev": "npm run build:contracts && concurrently -n api,web -c magenta,cyan \"npm run dev -w @diary/api\" \"npm run dev -w @diary/web\"",
+    "build": "npm run build:contracts && npm run build -w @diary/api && npm run build -w @diary/web",
+    "start": "concurrently -n api,web -c magenta,cyan \"npm run start -w @diary/api\" \"npm run start -w @diary/web\"",
+    "test": "vitest run",
+    "qa:screenshots": "node scripts/capture-screenshots.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "playwright-core": "^1.55.0",
+    "ssh2": "^1.17.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

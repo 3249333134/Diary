@@ -1,0 +1,24 @@
+import { Client } from "ssh2";
+const c = new Client();
+c.on("ready", async () => {
+  const run = (cmd) => new Promise((res) => c.exec(cmd, (e, s) => { let o = ""; s.on("data", d => o += d); s.stderr.on("data", d => o += d); s.on("close", () => { console.log(">>> " + cmd.substring(0, 100) + "\n" + o); res(); }); }));
+  await run("docker rm -f diary-app 2>/dev/null; docker rm -f diary-app-good 2>/dev/null; docker run -d --name diary-app ddc314d538c6 tail -f /dev/null");
+  await new Promise(r => setTimeout(r, 2000));
+  await run("docker cp /opt/diary/package.json diary-app:/app/package.json");
+  await run("docker cp /opt/diary/apps/api/package.json diary-app:/app/apps/api/package.json");
+  await run("docker cp /opt/diary/apps/web/package.json diary-app:/app/apps/web/package.json");
+  await run("docker cp /opt/diary/packages/contracts/package.json diary-app:/app/packages/contracts/package.json");
+  console.log("=== RUNNING NPM INSTALL (this may take a few minutes) ===");
+  await run("docker exec diary-app sh -c 'cd /app && npm install --omit=dev --registry https://registry.npmmirror.com 2>&1 | tail -25'");
+  console.log("=== COPY DIST FILES ===");
+  await run("docker cp /opt/diary/apps/api/dist/. diary-app:/app/apps/api/dist/");
+  await run("docker cp /opt/diary/apps/web/dist/. diary-app:/app/apps/web/dist/");
+  console.log("=== COMMIT & RESTART ===");
+  await run("docker commit diary-app diary-app:latest");
+  await run("docker rm -f diary-app");
+  await run("docker run -d --name diary-app --restart=unless-stopped --network host --env-file /opt/diary/.env -e OBSIDIAN_DIR=/app/vault -e HOST=127.0.0.1 -v /opt/diary/vault:/app/vault diary-app");
+  await new Promise(r => setTimeout(r, 5000));
+  await run("docker logs diary-app --tail 10");
+  c.end();
+});
+c.connect({ host: "47.115.220.98", port: 22, username: "root", password: "MdHJCDMyYDtK4P", readyTimeout: 15000 });

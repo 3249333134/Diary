@@ -1,0 +1,52 @@
+import assert from 'node:assert/strict';
+import { chromium } from 'playwright-core';
+
+const browser = await chromium.launch({ executablePath: process.env.EDGE_PATH || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless: true });
+try {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  // Read-only check: never save a diary or send content to AI.
+  await page.route('**/api/**', (route) => route.request().method() === 'GET' ? route.continue() : route.abort());
+  await page.goto(process.env.QA_URL || 'http://127.0.0.1:5173/', { waitUntil: 'networkidle' });
+  await page.getByRole('tab', { name: '关联', exact: true }).click();
+  await page.getByRole('button', { name: '筛选图谱' }).click();
+  await page.getByRole('button', { name: '显示事件节点', exact: true }).click();
+  await page.getByRole('button', { name: '筛选图谱' }).click();
+  const canvas = page.locator('.graph-canvas');
+  await canvas.scrollIntoViewIfNeeded();
+  const event = page.locator('.graph-node.node-event').first();
+  await event.waitFor();
+  await event.hover();
+  assert.ok(await page.locator('.graph-edge.active').count() > 0, 'hover highlights direct edges');
+  assert.ok(await page.locator('.graph-edge.dimmed').count() > 0, 'other edges dim');
+  const transform = () => canvas.locator(':scope > g').getAttribute('transform');
+  const beforeZoom = await transform();
+  await canvas.focus();
+  await page.keyboard.press('+');
+  assert.notEqual(await transform(), beforeZoom, 'keyboard zoom');
+  const beforeWheel = await transform();
+  const box = await canvas.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  const scroll = await page.evaluate(() => window.scrollY);
+  await page.mouse.wheel(0, -100);
+  await page.waitForTimeout(150);
+  assert.notEqual(await transform(), beforeWheel, 'wheel zoom');
+  assert.equal(await page.evaluate(() => window.scrollY), scroll, 'wheel does not also scroll page');
+  await event.click({ button: 'right' });
+  assert.equal(await page.getByRole('complementary', { name: '节点详情' }).count(), 1, 'right-click details');
+  await page.getByRole('button', { name: '关闭节点详情' }).click();
+  const circle = event.locator('circle').last();
+  const nodeBox = await circle.boundingBox();
+  const nodeBefore = await event.getAttribute('transform');
+  await page.mouse.move(nodeBox.x + nodeBox.width / 2, nodeBox.y + nodeBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(nodeBox.x + nodeBox.width / 2 + 35, nodeBox.y + nodeBox.height / 2 + 20, { steps: 8 });
+  await page.mouse.up();
+  assert.notEqual(await event.getAttribute('transform'), nodeBefore, 'node moves');
+  assert.equal(await page.getByRole('tab', { name: '关联', exact: true }).getAttribute('aria-selected'), 'true', 'drag does not open diary');
+  await circle.click();
+  assert.equal(await page.getByRole('tab', { name: '关联', exact: true }).getAttribute('aria-selected'), 'true', 'first click stays on graph');
+  assert.equal(await event.getAttribute('aria-pressed'), 'true', 'first click selects node');
+  await circle.click();
+  assert.equal(await page.getByRole('tab', { name: '事实', exact: true }).getAttribute('aria-selected'), 'true', 'second click opens diary');
+  console.log('PASS: hover, zoom, right-click, drag, first click selects and second click opens diary.');
+} finally { await browser.close(); }

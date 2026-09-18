@@ -1,0 +1,377 @@
+/* ═══════════════════════════════════════════════════════════
+ * 待办面板 — 与事实事件卡片统一风格
+ * ═══════════════════════════════════════════════════════════ */
+
+.todo-panel { margin: 20px 0; }
+.node-todo { --node-color: var(--amber); }
+.node-record { --node-color: var(--green); }
+.graph-edge-action { stroke: var(--amber); stroke-dasharray: 6 3; }
+
+/* ── 进度统计条 ── */
+.todo-stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.todo-stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all .15s;
+}
+.todo-stat-chip:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+.todo-stat-chip strong { font-size: 16px; color: var(--purple-ink); }
+.todo-stat-chip.overdue { border-color: var(--red-soft); background: var(--red-soft); color: var(--red); }
+.todo-stat-chip.overdue strong { color: var(--red); }
+.todo-stat-chip.done { border-color: var(--green-soft); background: var(--green-soft); color: #2d7a3f; }
+.todo-stat-chip.done strong { color: #2d7a3f; }
+/* 选中态：紫色边框 + 背景 */
+.todo-stat-chip.active { border-color: var(--purple); background: var(--purple-soft); box-shadow: 0 0 0 3px rgba(93, 66, 196, 0.15); }
+.todo-stat-chip.overdue.active { border-color: var(--red); box-shadow: 0 0 0 3px rgba(189, 61, 76, 0.15); }
+.todo-stat-chip.done.active { border-color: var(--green); box-shadow: 0 0 0 3px rgba(35, 126, 91, 0.15); }
+
+/* ── 极速创建输入框 ── */
+.todo-quick-add {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  margin: 12px 0;
+  transition: border-color .15s;
+}
+.todo-quick-add:focus-within { border-color: var(--purple); }
+.todo-quick-add input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  outline: none;
+  color: var(--text);
+}
+.todo-quick-add input::placeholder { color: var(--muted); }
+
+/* ── 创建表单 ── */
+.todo-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px 120px auto;
+  gap: 12px;
+  align-items: end;
+  padding: 16px;
+  background: var(--surface-2);
+  border-radius: 14px;
+  border: 1px solid var(--line);
+}
+.todo-add .field { margin: 0; }
+.todo-add > label:first-child { grid-column: 1 / -1; }
+
+/* ── 过滤器 ── */
+.todo-filters {
+  display: flex;
+  gap: 8px;
+  margin: 20px 0 12px;
+  flex-wrap: wrap;
+}
+.todo-filters .quiet-button {
+  border-radius: 999px;
+  padding: 6px 16px;
+}
+.todo-filters [aria-pressed=true] {
+  background: var(--purple-soft);
+  color: var(--purple-ink);
+  font-weight: 600;
+}
+
+/* ── 待办卡片列表 ── */
+.todo-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+  padding-left: 28px;
+}
+.todo-list::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 8px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--line);
+}
+.todo-list > li {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: 14px;
+  transition: border-color .2s, background-color .2s, box-shadow .2s;
+}
+/* 时间轴节点 */
+.todo-list > li::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  left: -24px;
+  width: 12px;
+  height: 12px;
+  border: 3px solid var(--surface);
+  border-radius: 50%;
+  background: var(--purple);
+  box-shadow: 0 0 0 2px var(--purple-soft);
+  transition: background-color .2s;
+}
+/* 逾期待办：节点变红 + 卡片淡红底 */
+.todo-list > li.todo-overdue { background: color-mix(in srgb, var(--red) 8%, var(--surface-2)); border-color: color-mix(in srgb, var(--red) 25%, transparent); }
+.todo-list > li.todo-overdue::before { background: var(--red); box-shadow: 0 0 0 3px var(--red-soft); }
+
+/* 已完成待办 */
+.todo-list > li.todo-done { opacity: 0.7; }
+.todo-list > li.todo-done::before { background: var(--muted); box-shadow: 0 0 0 2px var(--line); }
+.todo-list > li.todo-done .todo-title { text-decoration: line-through; color: var(--muted); }
+
+/* hover 效果 */
+.todo-list > li:not(.todo-done):hover { border-color: var(--line); box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+
+/* ── 左侧 checkbox ── */
+.todo-check {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.todo-check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--purple-ink);
+  cursor: pointer;
+}
+
+/* ── 中间内容 ── */
+.todo-copy { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.todo-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  color: var(--text);
+}
+.todo-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--muted);
+}
+.todo-meta .todo-planned { display: inline-flex; align-items: center; gap: 4px; }
+.todo-meta .todo-overdue-tag {
+  color: var(--red);
+  font-weight: 700;
+  background: var(--red-soft);
+  padding: 1px 8px;
+  border-radius: 999px;
+}
+
+/* 来源 / 完成事实链接 */
+.todo-source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--purple-ink);
+  background: var(--purple-soft);
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 0;
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.todo-source-link:hover { opacity: 0.8; }
+.todo-source-link.deleted { color: var(--muted); background: var(--surface); }
+
+/* 操作按钮行 */
+.todo-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.todo-actions .quiet-button { padding: 4px 10px; font-size: 12px; min-height: 32px; }
+
+/* ── 右侧删除按钮 ── */
+.square-button {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity .15s, color .15s, background-color .15s;
+}
+.todo-list > li:hover .square-button { opacity: 1; }
+.square-button:hover { color: var(--red); background: var(--red-soft); }
+
+/* ── 空状态 ── */
+.todo-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+/* ── 完成确认模态框 ── */
+.todo-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: todo-fade-in .2s ease;
+}
+@keyframes todo-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.todo-modal {
+  background: var(--surface);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: todo-pop-in .25s cubic-bezier(.2,.9,.3,1.2);
+}
+@keyframes todo-pop-in { from { transform: scale(0.95) translateY(10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+.todo-modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.todo-modal-header h3 { margin: 0 0 4px; font-size: 18px; }
+.todo-modal-header p { margin: 0; font-size: 13px; color: var(--muted); }
+.todo-modal-body { padding: 20px 24px; display: grid; gap: 16px; }
+.todo-modal-body .field { margin: 0; }
+.todo-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.todo-modal-large { max-width: 640px; }
+
+/* ── 待办卡片新元素 ── */
+.todo-title-row { display: flex; align-items: center; gap: 10px; }
+.todo-priority {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--surface-2);
+}
+.todo-desc { margin: 4px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.todo-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.todo-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  background: var(--purple-soft);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--purple-ink);
+}
+.todo-list-chip {
+  padding: 2px 8px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.todo-subtasks {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--surface-2);
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+/* ── 状态下拉 ── */
+.todo-status-wrap { position: relative; display: inline-block; }
+.todo-status-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 10;
+  min-width: 100px;
+  overflow: hidden;
+}
+.todo-status-item {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+.todo-status-item:hover { background: var(--surface-2); }
+
+/* ── 子任务编辑 ── */
+.todo-subtasks-edit { display: grid; gap: 8px; margin-top: 8px; }
+.todo-subtask-row { display: flex; align-items: center; gap: 8px; }
+.todo-subtask-row input[type="text"] { flex: 1; }
+
+/* ── 响应式 ── */
+@media (max-width: 599px) {
+  .todo-add { grid-template-columns: 1fr 1fr; }
+  .todo-add > label:first-child { grid-column: 1 / -1; }
+  .todo-add > button { grid-column: 1 / -1; }
+  .todo-list { padding-left: 20px; }
+  .todo-list::before { left: 5px; }
+  .todo-list > li::before { left: -18px; top: 16px; }
+  .todo-list > li { padding: 12px; }
+  .todo-stat-chip { font-size: 12px; padding: 5px 10px; }
+}

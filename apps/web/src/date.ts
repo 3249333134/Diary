@@ -1,0 +1,4 @@
+export function today(): string { return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); }
+export function addDays(date: string, amount: number): string { const value = new Date(`${date}T00:00:00Z`); value.setUTCDate(value.getUTCDate() + amount); return value.toISOString().slice(0, 10); }
+export function weekDates(date: string): string[] { const value = new Date(`${date}T00:00:00Z`); const day = value.getUTCDay(); const monday = addDays(date, day === 0 ? -6 : 1 - day); return Array.from({ length: 7 }, (_, index) => addDays(monday, index)); }
+export function shortDate(date: string): string { return new Intl.DateTimeFormat("zh-CN", { month: "short", day: "numeric", weekday: "short", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`)); }
