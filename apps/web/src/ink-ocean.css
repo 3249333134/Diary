@@ -1,0 +1,30 @@
+/* Colored deposits on uniform paper. SVG retains node and label interaction. */
+.graph-canvas-wrap.ink-ocean-scene { background:var(--sea-color,var(--surface-2)); isolation:isolate; }
+.ink-ocean { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; opacity:0; }
+.ink-ocean-ready .ink-ocean { opacity:1; }
+.ink-ocean-scene .graph-canvas { position:relative; z-index:1; background:transparent; }
+.ink-ocean-scene .graph-region,:root[data-theme="dark"] .ink-ocean-scene .graph-region { --ink-fill:var(--pigment-color); --ink-border:color-mix(in srgb,var(--pigment-color) 75%,white); }
+.ink-ocean-scene .graph-region.neutral .graph-ink { fill:var(--pigment-color); stroke:var(--pigment-color); }
+.ink-ocean-scene .graph-region .graph-ink,.ink-ocean-scene .graph-region.neutral .graph-ink { fill:transparent; stroke:none; pointer-events:none; }
+.ink-ocean-scene .graph-regions { pointer-events:none; }
+.ink-ocean-scene .graph-ink-sheen,.ink-ocean-scene .graph-ink-drops { display:none; }
+.ink-bloom-fallback { pointer-events:none; }
+.ink-ocean-ready .ink-bloom-fallback { display:none; }
+.ink-ocean-scene .graph-node text { fill:#201d31; stroke:rgba(255,255,255,.92); stroke-width:3px; }
+.ink-ocean-scene .graph-node.node-place text { stroke:none; }
+.ink-ocean-scene .graph-node .graph-place-anchor { fill:#fff; fill-opacity:.88; }
+.ink-ocean-scene .graph-node.node-place .graph-place-count { fill:#575263; }
+.ink-ocean-scene .graph-region-neutral-label { fill:#302940; paint-order:stroke; stroke:rgba(255,255,255,.7); stroke-width:2px; }
+.ink-ocean-scene .graph-node.dimmed { opacity:.7; }
+.ink-ocean-scene .graph-edge-event { stroke:color-mix(in srgb,#452477 var(--edge-strength,50%),#c5b2ed); }
+.ink-ocean-scene .graph-empty { background:rgba(255,255,255,.86); color:#302940; border-radius:14px; padding:20px; inset:auto; left:50%; top:55%; transform:translate(-50%,-50%); width:min(320px,85%); height:auto; }
+.ink-color-panel { position:absolute; z-index:22; right:14px; top:72px; width:min(300px,calc(100% - 28px)); max-height:calc(100% - 100px); overflow:auto; padding:16px; background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:14px; box-shadow:0 12px 32px rgba(20,16,40,.2); }
+.ink-color-panel header { display:flex; align-items:center; justify-content:space-between; }
+.ink-color-panel header button { border:0; background:transparent; color:inherit; width:44px; height:44px; cursor:pointer; }
+.ink-color-panel p { margin:4px 0 14px; color:var(--muted); font-size:12px; line-height:1.6; }
+.ink-color-panel label { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:48px; font-size:13px; }
+.ink-color-panel label span { overflow-wrap:anywhere; }
+.ink-color-panel input[type="color"] { flex-shrink:0; width:52px; height:44px; padding:4px; border:1px solid var(--line); background:var(--surface-2); border-radius:8px; cursor:pointer; }
+.ink-place-colors { margin:8px 0 12px; padding-top:8px; border-top:1px solid var(--line); }
+.main-content[data-workspace="lookup"]:has(.ink-ocean-scene) :is(.graph-search,.graph-actions,.graph-legend) { background:color-mix(in srgb,var(--surface) 90%,transparent); }
+@media(max-width:899px) { .ink-color-panel { top:118px; max-height:calc(100% - 138px); } }

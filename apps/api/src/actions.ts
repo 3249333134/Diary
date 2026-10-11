@@ -1,15 +1,18 @@
 import { z } from 'zod';
-import { recordRefSchema, resolveRecord, todoSchema, type RecordRef, type Todo } from '@diary/contracts';
+import { appendCapture, captureDraftSchema, completionRecordSchema, recordRefSchema, resolveRecord, todoSchema, type RecordRef, type Todo } from '@diary/contracts';
 import { listDiaryDates, loadDiary, readJson, saveDiaryUnlocked, withVaultLock, writeJson } from './vault.js';
 import { assertDate } from './date.js';
 import { vaultPaths } from './config.js';
+import { autoJournalPath, completeAutomatically } from './autoCompletion.js';
+import { readRestoreJournal, restoreCompletion } from './restoreCompletion.js';
 
 const id = z.string().uuid();
 export const actionRequestSchema = z.object({
   mode: z.enum(['create', 'update', 'delete', 'complete', 'restore', 'purge', 'status']), date: z.string(), version: z.string(),
-  task: todoSchema, operationId: id, sourceVersion: z.string().optional(),
+  task: todoSchema, operationId: id, sourceVersion: z.string().optional(), completionRecord: completionRecordSchema.optional(),
   fact: z.object({ date: z.string(), version: z.string(), time: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$|^$/), note: z.string().trim().min(1).max(10000), remark: z.string().max(10000) }).optional(),
   nextStatus: z.enum(['todo', 'doing', 'done', 'cancelled']).optional(),
+  automaticRecord: z.boolean().optional(),
 });
 type ActionInput = z.infer<typeof actionRequestSchema>;
 const conflict = (message: string) => Object.assign(new Error(message), { statusCode: 409 });
@@ -17,18 +20,27 @@ const conflict = (message: string) => Object.assign(new Error(message), { status
 /** 可被 update 模式覆盖的字段白名单 */
 const updatableFields: (keyof Todo)[] = [
   'title', 'time', 'plannedDate', 'description', 'subtasks', 'priority',
-  'dueDate', 'dueTime', 'list', 'tags', 'repeat', 'attachments',
+  'dueDate', 'dueTime', 'list', 'tags', 'repeat', 'attachments', 'entities',
+  'category', 'important', 'urgent', 'startDate', 'startTime',
 ];
 
 export async function listActions() {
   const diaries = await Promise.all((await listDiaryDates()).map(loadDiary));
   const documents = new Map(diaries.map(d => [d.document.date, d.document]));
   const exists = (ref: RecordRef | undefined) => ref ? !!documents.get(ref.date) && resolveRecord(documents.get(ref.date)!, ref) !== undefined : false;
-  const tasks = diaries.flatMap(d => d.document.todos.map(task => {
+  const completionEntries = diaries.flatMap(d => [
+    ...d.document.facts.events.map(e => ({ date: d.document.date, kind: 'facts' as const, id: e.id, time: e.time, content: e.note, description: e.remark, entities: { people: e.people, places: e.places, activities: e.activities, foods: e.foods }, task: e.task })),
+    ...(['learn', 'input', 'idea'] as const).flatMap(kind => (d.document.entries?.[kind] || []).map(e => ({ date: d.document.date, kind, id: e.id, time: e.time, content: e.content, task: e.task, tags: e.tags }))),
+  ]);
+  const tasks = await Promise.all(diaries.flatMap(d => d.document.todos.map(async task => {
+    const journal = await readJson<{ phase: string } | null>(autoJournalPath(d.document.date, task.id), null);
+    const restorePending = (await readRestoreJournal(d.document.date,task.id))?.phase === 'prepared';
     const owner = diaries.find(other => other.document.facts.events.some(e => e.task?.date === d.document.date && e.task.id === task.id));
     const event = owner?.document.facts.events.find(e => e.task?.date === d.document.date && e.task.id === task.id);
-    return { date: d.document.date, version: d.version, task, sourceExists: exists(task.source), completionExists: exists(task.completion), pendingFact: !task.completion && event && owner ? { date: owner.document.date, id: event.id, time: event.time, note: event.note, remark: event.remark } : undefined };
-  }));
+    const unfinished = completionEntries.find(e => e.task?.date === d.document.date && e.task.id === task.id);
+    const pending = unfinished && 'description' in unfinished ? { ...unfinished, description: unfinished.description.slice(0, 10000) } : unfinished;
+    return { restorePending, completionPending: journal?.phase === 'prepared' && !task.completion, pendingRecord: !task.completion && pending ? captureDraftSchema.parse(pending) : undefined, date: d.document.date, version: d.version, task, sourceExists: exists(task.source), completionExists: exists(task.completion), pendingFact: !task.completion && event && owner ? { date: owner.document.date, id: event.id, time: event.time, note: event.note, remark: event.remark } : undefined };
+  })));
   const records = diaries.flatMap(d => [
     ...d.document.facts.events.map(e => ({ date: d.document.date, kind: 'facts' as const, id: e.id, summary: e.note.slice(0, 2000) })),
     ...(['learn', 'input', 'idea'] as const).flatMap(kind => (d.document.entries?.[kind] || []).map(e => ({ date: d.document.date, kind, id: e.id, summary: e.content.slice(0, 2000) }))),
@@ -38,15 +50,29 @@ export async function listActions() {
 export async function changeAction(input: ActionInput) {
   return withVaultLock(async () => {
     assertDate(input.date);
+    const completion = input.completionRecord || (input.fact ? completionRecordSchema.parse({ id: input.operationId, kind: 'facts', date: input.fact.date, version: input.fact.version, time: input.fact.time, content: input.fact.note, description: input.fact.remark }) : undefined);
     if (input.task.plannedDate) assertDate(input.task.plannedDate);
     if (input.task.dueDate) assertDate(input.task.dueDate);
+    if (input.task.startDate) assertDate(input.task.startDate);
     const current = await loadDiary(input.date);
     const tasks = current.document.todos;
     const existing = tasks.find(t => t.id === input.task.id);
+    const restoring = input.mode === 'restore' || (input.mode === 'status' && (input.nextStatus === 'todo' || input.nextStatus === 'doing'));
+    const restoreJournal = existing ? await readRestoreJournal(input.date,existing.id) : null;
+    if (restoring && restoreJournal?.phase === 'complete' && restoreJournal.operationId === input.operationId) return { diary: current };
+    if (restoreJournal?.phase === 'prepared' && !restoring) throw conflict('恢复计划尚未完成，请先刷新并重试恢复。');
     if (input.mode === 'create' && existing) return { diary: current };
     if (input.mode === 'complete' && existing?.done && existing.operationId === input.operationId) return { diary: current };
+    if (existing?.done && existing.completion && (input.automaticRecord || (input.mode === 'status' && input.nextStatus === 'done'))) return { diary: current };
     if (input.version !== current.version) throw conflict('待办所在日记已修改，请重新加载后重试；输入仍保留。');
     if (input.mode !== 'create' && !existing) throw conflict('待办已被删除，不能继续修改。');
+    if (existing && restoring && (existing.completion?.kind === 'facts' || restoreJournal?.phase === 'prepared')) {
+      return restoreCompletion(current,existing,input.operationId,input.mode === 'status' && input.nextStatus === 'doing' ? 'doing' : 'todo');
+    }
+    if (existing && ((input.mode === 'complete' && input.automaticRecord) || (input.mode === 'status' && input.nextStatus === 'done'))) {
+      if (existing.deletedAt || existing.status === 'cancelled') throw conflict('请先恢复此计划，再完成。');
+      return completeAutomatically(current, existing);
+    }
     if (input.mode === 'create') {
       if (input.task.source) {
         assertDate(input.task.source.date);
@@ -78,43 +104,41 @@ export async function changeAction(input: ActionInput) {
       existing!.status = next;
       existing!.done = next === 'done';
       if (next === 'done' && !existing!.completedAt) existing!.completedAt = new Date().toISOString();
-      if (next !== 'done') { existing!.completedAt = undefined; existing!.completion = undefined; }
+      if (next !== 'done') { existing!.completedAt = undefined; }
     } else if (input.mode === 'restore') {
       existing!.deletedAt = undefined;
       existing!.done = false;
       existing!.status = 'todo';
       existing!.completedAt = undefined;
     } else {
-      if (!existing!.completion) {
-        const pending = (await listActions()).tasks.find(row => row.date === input.date && row.task.id === existing!.id)?.pendingFact;
-        if (pending && (!input.fact || pending.id !== input.operationId || pending.date !== input.fact.date)) throw conflict('已有写入中的完成事实，请使用恢复未完成保存，不要重新生成。');
-      }
-      if (input.fact && existing!.completion) throw conflict('这项待办已有完成事实，请查看原事实；可选择仅完成，不会重复生成。');
-      if (input.fact) {
-        assertDate(input.fact.date);
-        const target = input.fact.date === input.date ? current : await loadDiary(input.fact.date);
-        const factId = input.operationId;
-        const prior = target.document.facts.events.find(e => e.id === factId);
+      const pending = (await listActions()).tasks.find(r => r.date === input.date && r.task.id === existing!.id)?.pendingRecord;
+      if (pending && (!completion || pending.id !== input.operationId || pending.date !== completion.date || pending.kind !== completion.kind)) throw conflict('已有写入中的完成记录，请恢复上次保存。');
+      if (completion && existing!.completion) throw conflict('已有完成记录，请查看原日记；可选择仅完成。');
+      if (completion) {
+        assertDate(completion.date);
+        const target = completion.date === input.date ? current : await loadDiary(completion.date);
+        const entries = [...target.document.facts.events, ...(target.document.entries?.learn || []), ...(target.document.entries?.input || []), ...(target.document.entries?.idea || [])];
+        const prior = entries.find(e => e.id === input.operationId);
         const reference = { date: input.date, kind: 'todo' as const, id: existing!.id, summary: existing!.title };
         const journal = `${vaultPaths.system}/actions/${input.operationId}.json`;
-        const recorded = await readJson<{ date: string; taskId: string; target: string } | null>(journal, null);
-        if (recorded && (recorded.date !== input.date || recorded.taskId !== existing!.id || recorded.target !== input.fact.date)) throw conflict('这次提交已有未完成的保存，请保持原目标日期重试。');
+        const recorded = await readJson<{ date: string; taskId: string; target: string; kind?: string } | null>(journal, null);
+        if (recorded && (recorded.date !== input.date || recorded.taskId !== existing!.id || recorded.target !== completion.date || (recorded.kind || 'facts') !== completion.kind)) throw conflict('请保持上次提交的日期及栏目，恢复未完成保存。');
         if (!prior) {
-          if (target.version !== input.fact.version) throw conflict('目标日期的日记已变化，请刷新版本后重试。');
-          await writeJson(journal, { date: input.date, taskId: existing!.id, target: input.fact.date, phase: 'prepared' });
-          target.document.facts.events.push({ id: factId, time: input.fact.time, note: input.fact.note, remark: input.fact.remark, people: [], places: [], activities: [], foods: [], attachments: [], task: reference });
-          if (input.fact.date !== input.date) await saveDiaryUnlocked(input.fact.date, target.document, target.version);
-        } else if (prior.task?.id !== existing!.id || prior.task?.date !== input.date) throw conflict('操作编号已被其他记录使用。');
-        existing!.completion = { date: input.fact.date, kind: 'facts', id: factId, summary: (prior?.note || input.fact.note).slice(0, 2000) };
+          if (target.version !== completion.version) throw conflict('目标日期日记已变化，请刷新版本后重试。');
+          await writeJson(journal, { date: input.date, taskId: existing!.id, target: completion.date, kind: completion.kind, phase: 'prepared' });
+          target.document = appendCapture(target.document, { ...completion, id: input.operationId }, reference);
+          if (completion.date !== input.date) await saveDiaryUnlocked(completion.date, target.document, target.version);
+        } else if (prior.task?.id !== existing!.id || prior.task.date !== input.date || resolveRecord(target.document, { date: completion.date, kind: completion.kind, id: input.operationId, summary: '' }) === undefined) throw conflict('操作编号已被其他记录使用。');
+        existing!.completion = { date: completion.date, kind: completion.kind, id: input.operationId, summary: completion.content.slice(0, 2000) };
       }
       Object.assign(existing!, { done: true, status: 'done', completedAt: new Date().toISOString(), operationId: input.operationId });
     }
     try {
       const diary = await saveDiaryUnlocked(input.date, current.document, current.version);
-      if (input.mode === 'complete' && input.fact) await writeJson(`${vaultPaths.system}/actions/${input.operationId}.json`, { date: input.date, taskId: input.task.id, target: input.fact.date, phase: 'complete' });
+      if (input.mode === 'complete' && completion) await writeJson(`${vaultPaths.system}/actions/${input.operationId}.json`, { date: input.date, taskId: input.task.id, target: completion!.date, kind: completion!.kind, phase: 'complete' });
       return { diary };
     } catch (error) {
-      if (input.mode === 'complete' && input.fact && input.fact.date !== input.date) throw conflict('事实可能已写入，但待办尚未更新。请刷新版本并重试本次提交，不要重新创建；系统会检查编号避免重复。');
+      if (input.mode === 'complete' && completion && completion!.date !== input.date) throw conflict('事实可能已写入，但待办尚未更新。请刷新版本并重试本次提交，不要重新创建；系统会检查编号避免重复。');
       throw error;
     }
   });

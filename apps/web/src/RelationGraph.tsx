@@ -1,12 +1,18 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
-import { CalendarDays, Check, Filter, Focus, Link2, Maximize2, Minus, Move, Plus, Search, X } from "lucide-react";
+import { CalendarDays, Check, Filter, Focus, Link2, Maximize2, Minus, Move, Palette, Plus, Search, X } from "lucide-react";
 import { entityTypes, type EntityRecord, type EntityType, type RecordRef } from "@diary/contracts";
 import { shortDate } from "./date";
 import { api, type ActionRow } from "./api";
 
 import { buildGraph, defaultView, type GraphNode, type GraphEdge } from "./graphModel";
 import { edgeAppearance } from "./graphData";
+import { placeGraphLabels } from "./graphLabels";
 import { useMemberInk } from "./useMemberInk";
+import { InkOcean } from "./InkOcean";
+import { memberInkScene } from "./memberInkScene";
+import { inkBlooms } from "./inkBlooms";
+import { defaultInkColors, INK_COLOR_KEY, readInkColors, regionInkColor } from "./inkColors";
+import "./ink-ocean.css";
 export { buildGraph } from "./graphModel";
 const TYPE_LABEL: Record<EntityType, string> = { person: "人物", place: "地点", activity: "活动", food: "食物", thing: "事物" };
 const nodeTypeLabel = (kind: GraphNode["kind"]) => kind === 'todo' ? '待办行动' : kind === 'record' ? '来源记录' : kind === "event" ? "事实事件" : kind === "date" ? "日记" : kind === "self" ? "日记主人" : TYPE_LABEL[kind];
@@ -37,9 +43,17 @@ export function RelationGraph({ entities: sourceEntities, selected, onSelect, on
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [showColors, setShowColors] = useState(false);
+  const [inkColors, setInkColors] = useState(readInkColors);
+  const [colorError, setColorError] = useState("");
+  useEffect(() => {
+    try { localStorage.setItem(INK_COLOR_KEY, JSON.stringify(inkColors)); setColorError(""); }
+    catch { setColorError("当前浏览器无法保存配色；本次修改仍可预览。"); }
+  }, [inkColors]);
   const [selectedId, setSelectedId] = useState<string | null>(selected?.key || null);
   const [view, setView] = useState(defaultView);
   const model = useMemo(() => buildGraph(entities, enabledTypes, showDates, showActions ? actions : undefined, showEvents, graphMode, viewport), [entities, enabledTypes, showDates, showActions, actions, showEvents, graphMode, viewport]);
+  const bloomMembers = useMemo(() => memberInkScene(entities,model),[entities,model]);
   const [nodes, setNodes] = useState(model.nodes);
   const liveNodes = useRef(nodes);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -61,6 +75,7 @@ export function RelationGraph({ entities: sourceEntities, selected, onSelect, on
   useEffect(() => { if (selected) setSelectedId(selected.key); }, [selected]);
 
   const nodeById = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes]);
+  const blooms = useMemo(() => inkBlooms(bloomMembers,nodeById,WIDTH),[bloomMembers,nodeById,WIDTH]);
   const selectedNode = selectedId ? nodeById.get(selectedId) : undefined;
   const selectedEntity = selectedNode?.entity;
   const selectedDate = selectedNode?.date;
@@ -68,6 +83,8 @@ export function RelationGraph({ entities: sourceEntities, selected, onSelect, on
   const matches = new Set(nodes.filter((node) => normalizedQuery && node.label.toLocaleLowerCase("zh-CN").includes(normalizedQuery)).map((node) => node.id));
   const neighbors = new Set<string>();
   const highlightedId = draggedId || hoveredId || focusedId || (selectedNode ? selectedId : null);
+  const visibleLabels = new Set(nodes.filter(node => node.kind === "self" || node.kind === "place" || !node.entity || (node.eventCount || 0) >= 2 || draggedId === node.id || hoveredId === node.id || focusedId === node.id || selectedId === node.id || matches.has(node.id)).map(node => node.id));
+  const labelPositions = placeGraphLabels(nodes, visibleLabels, highlightedId);
   const descendants = new Set(model.regions.filter(region => highlightedId && region.ancestorIds?.includes(highlightedId)).map(region => region.id));
   descendants.forEach(id => neighbors.add(id));
   if (highlightedId) for (const edge of model.edges) {
@@ -149,7 +166,17 @@ export function RelationGraph({ entities: sourceEntities, selected, onSelect, on
     if (event.type !== "pointercancel" && current?.pointerId === event.pointerId && !current.moved) {
       const node = current.nodeId ? nodeById.get(current.nodeId) : undefined;
       if (node) activateNode(node);
-      else setSelectedId(null);
+      else {
+        const point=svgPoint(event.clientX,event.clientY);
+        const x=(point.x-view.x)/view.scale,y=(point.y-view.y)/view.scale;
+        const hit=inkBlooms(bloomMembers,nodeById,WIDTH).map(bloom=>{
+          const dx=x-bloom.x,dy=y-bloom.y,c=Math.cos(bloom.angle),s=Math.sin(bloom.angle);
+          const distance=((dx*c+dy*s)/bloom.rx)**2+((-dx*s+dy*c)/bloom.ry)**2;
+          return {id:bloom.id,strength:distance<.8?(1-distance)*bloom.opacity:0};
+        }).sort((a,b)=>b.strength-a.strength)[0];
+        const anchor=hit && hit.strength>.08 ? nodeById.get(hit.id) : undefined;
+        if(anchor) selectNode(anchor); else setSelectedId(null);
+      }
     }
     if (gesture.current?.pointerId === event.pointerId) gesture.current = null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
@@ -199,18 +226,34 @@ export function RelationGraph({ entities: sourceEntities, selected, onSelect, on
           <button type="button" onClick={() => zoomAt(view.scale * 1.2)} aria-label="放大图谱"><Plus /></button>
           <button type="button" onClick={() => zoomAt(view.scale / 1.2)} aria-label="缩小图谱"><Minus /></button>
           <button type="button" onClick={fitCanvas} aria-label="适应画布"><Maximize2 /></button>
-          <button type="button" className={showFilters ? "active" : ""} onClick={() => setShowFilters((value) => !value)} aria-expanded={showFilters} aria-label="筛选图谱"><Filter /></button>
+          <button type="button" className={showColors ? "active" : ""} onClick={() => { setShowColors(value => !value); setShowFilters(false); }} aria-expanded={showColors} aria-label="地图配色"><Palette /></button>
+          <button type="button" className={showFilters ? "active" : ""} onClick={() => { setShowFilters((value) => !value); setShowColors(false); }} aria-expanded={showFilters} aria-label="筛选图谱"><Filter /></button>
         </div>
       </div>
+      {showColors && <section className="ink-color-panel" aria-label="地图配色" onKeyDown={event => { if (event.key === "Escape") { setShowColors(false); event.stopPropagation(); } }}>
+        <header><strong>墨滴配色</strong><button type="button" aria-label="关闭配色" onClick={() => setShowColors(false)}><X size={18} /></button></header>
+        <p>选择主色，墨色浓淡会随水流变化。配色保存在此浏览器。</p>
+        <label><span>纯色背景</span><input type="color" aria-label="背景颜色" value={inkColors.sea} onChange={event => setInkColors(value => ({ ...value, sea: event.target.value }))} /></label>
+        <div className="ink-place-colors">{model.regions.map(region => <label key={region.id}><span>{region.parentId ? "↳ " : ""}{region.label}</span><input type="color" aria-label={`${region.label}颜色`} value={regionInkColor(region, model.regions, inkColors)} onChange={event => setInkColors(value => ({ ...value, places: { ...value.places, [region.id]: event.target.value } }))} /></label>)}</div>
+        {colorError && <p role="status">{colorError}</p>}
+        <button type="button" className="quiet-button" onClick={() => setInkColors(defaultInkColors())}>恢复默认配色</button>
+      </section>}
       {showFilters && <div className="graph-filter-panel"><div className="graph-mode-switch" role="tablist" aria-label="图谱模式"><button type="button" role="tab" aria-selected={graphMode === "relation"} className={graphMode === "relation" ? "active" : ""} onClick={() => { setGraphMode("relation"); setSelectedId(null); }}>实体关系</button><button type="button" role="tab" aria-selected={graphMode === "event"} className={graphMode === "event" ? "active" : ""} onClick={() => { setGraphMode("event"); setSelectedId(null); }}>事件图谱</button></div><strong>显示节点</strong><div>{entityTypes.map((type) => <button type="button" key={type} className={enabledTypes.includes(type) ? "active" : ""} aria-pressed={enabledTypes.includes(type)} onClick={() => toggleType(type)}><span className={`legend-dot node-${type}`} />{TYPE_LABEL[type]}{enabledTypes.includes(type) && <Check />}</button>)}<button type="button" className={showDates ? "active" : ""} aria-pressed={showDates} onClick={() => setShowDates((value) => !value)}><span className="legend-dot node-date" />日记{showDates && <Check />}</button><button type="button" className={showEvents ? "active" : ""} aria-pressed={showEvents} onClick={() => setShowEvents((value) => !value)}><span className="legend-dot node-event" />显示事件节点{showEvents && <Check />}</button><button type="button" className={showActions ? "active" : ""} aria-pressed={showActions} onClick={() => setShowActions(value => !value)}>行动关联{showActions && <Check />}</button></div></div>}
-      <div className="graph-canvas-wrap">
+      <div className={`graph-canvas-wrap${graphMode === "relation" ? " ink-ocean-scene" : ""}`} style={{ "--sea-color": inkColors.sea === defaultInkColors().sea ? "var(--surface-2)" : inkColors.sea } as CSSProperties}>
+        {graphMode === "relation" && <InkOcean svg={svgRef} regions={model.regions} members={bloomMembers} colors={inkColors} width={WIDTH} height={HEIGHT} view={view} />}
         <svg ref={svgRef} className="graph-canvas" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="group" tabIndex={0} aria-label="日记关系图谱，可拖动节点和画布，滚轮缩放" onPointerDown={startPan} onPointerMove={movePointer} onPointerUp={endPointer} onPointerCancel={endPointer} onKeyDown={(event) => { const delta = event.shiftKey ? 100 : 30; if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "+", "=", "-", "Escape"].includes(event.key)) { event.preventDefault(); if (event.key === "Escape") setSelectedId(null); else if (event.key === "+" || event.key === "=") zoomAt(view.scale * 1.2); else if (event.key === "-") zoomAt(view.scale / 1.2); else setView((v) => ({ ...v, x: v.x + (event.key === "ArrowLeft" ? delta : event.key === "ArrowRight" ? -delta : 0), y: v.y + (event.key === "ArrowUp" ? delta : event.key === "ArrowDown" ? -delta : 0) })); } }}>
           <g transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>
+            {graphMode === "relation" && <g className="ink-bloom-fallback" aria-hidden="true">{blooms.map(bloom => {
+              const region=model.regions.find(region=>region.id===bloom.id)!;
+              const id=`bloom-${encodeURIComponent(bloom.id).replace(/%/g,"_")}`;
+              const color=regionInkColor(region,model.regions,inkColors);
+              return <g key={bloom.id}><defs><radialGradient id={id}><stop offset="0" stopColor={color} stopOpacity={Math.min(.85,bloom.opacity*1.4)} /><stop offset=".45" stopColor={color} stopOpacity={bloom.opacity} /><stop offset="1" stopColor={color} stopOpacity="0" /></radialGradient></defs><ellipse cx={bloom.x} cy={bloom.y} rx={bloom.rx} ry={bloom.ry} transform={`rotate(${bloom.angle*180/Math.PI} ${bloom.x} ${bloom.y})`} fill={`url(#${id})`} /></g>;
+            })}</g>}
             <defs>{model.regions.map(region => <clipPath key={region.id} id={clipId(region.id)} clipPathUnits="userSpaceOnUse"><path data-ink-region={region.id} d="" clipRule="evenodd" /></clipPath>)}</defs>
             <g className="graph-regions">{model.regions.map(region => {
               const anchor = nodeById.get(region.id);
               const dimmed = Boolean(highlightedId && highlightedId !== region.id && !neighbors.has(region.id));
-              let painted = <g key={region.id} className={`graph-region${region.neutral ? " neutral" : ""}${region.childIds?.length ? " parent-region" : ""}${region.parentId ? " child-region" : ""}${highlightedId === region.id ? " active" : ""}${dimmed ? " dimmed" : ""}`} style={{ "--ink-hue": region.hue } as CSSProperties}>
+              let painted = <g key={region.id} className={`graph-region${region.neutral ? " neutral" : ""}${region.childIds?.length ? " parent-region" : ""}${region.parentId ? " child-region" : ""}${highlightedId === region.id ? " active" : ""}${dimmed ? " dimmed" : ""}`} style={{ "--ink-hue": region.hue, "--ink-tone": region.tone ?? 0, "--pigment-color": regionInkColor(region, model.regions, inkColors) } as CSSProperties}>
                 <path className="graph-ink" data-ink-region={region.id} d="" onPointerDown={anchor ? event => startDrag(event, anchor) : undefined} onPointerEnter={anchor ? () => setHoveredId(region.id) : undefined} onPointerLeave={() => setHoveredId(null)} />
                 <path className="graph-ink-sheen" data-ink-region={region.id} d="" aria-hidden="true" />
                 <g className="graph-ink-drops" data-ink-drops={region.id} aria-hidden="true" />
@@ -224,16 +267,17 @@ export function RelationGraph({ entities: sourceEntities, selected, onSelect, on
               if (!source || !target) return null;
               const dimmed = Boolean(highlightedId && !activeEdge(edge));
               const appearance = edgeAppearance(edge.count, edge.kind !== "event");
-              const label = graphMode === "event" ? `共享 ${edge.count} 个实体` : edge.kind === "event" ? `共同出现 ${edge.count} 次` : edge.kind === "self" ? `记录 ${edge.count} 个事件` : "来源记录关联";
-              return <g key={edge.id} className="graph-link" data-edge-id={edge.id}><line aria-hidden="true" className={`graph-edge graph-edge-${edge.kind}${activeEdge(edge) ? " active" : ""}${dimmed ? " dimmed" : ""}`} style={{ "--edge-opacity": appearance.opacity, "--edge-width": appearance.width } as CSSProperties} x1={source.x} y1={source.y} x2={target.x} y2={target.y} /><line className="graph-edge-hit" x1={source.x} y1={source.y} x2={target.x} y2={target.y}><title>{source.label} — {target.label}：{label}</title></line></g>;
+              const label = graphMode === "event" ? `共享 ${edge.count} 个实体` : edge.kind === "event" ? `共同出现于 ${edge.count} 个事件` : edge.kind === "self" ? `记录 ${edge.count} 个事件` : "来源记录关联";
+              return <g key={edge.id} className="graph-link" data-edge-id={edge.id}><line aria-hidden="true" className={`graph-edge graph-edge-${edge.kind}${activeEdge(edge) ? " active" : ""}${dimmed ? " dimmed" : ""}`} style={{ "--edge-opacity": appearance.opacity, "--edge-width": appearance.width, "--edge-strength": `${Math.round(appearance.strength * 100)}%` } as CSSProperties} x1={source.x} y1={source.y} x2={target.x} y2={target.y} /><line className="graph-edge-hit" x1={source.x} y1={source.y} x2={target.x} y2={target.y}><title>{source.label} — {target.label}：{label}</title></line></g>;
             })}</g>
             {nodes.map((node) => {
               const isSelected = selectedId === node.id; const isMatch = matches.has(node.id); const isNeighbor = neighbors.has(node.id);
               const dimmed = Boolean((highlightedId && highlightedId !== node.id && !isNeighbor) || (normalizedQuery && !isMatch));
-              const showLabel = node.kind === "self" || node.kind === "place" || !node.entity || (node.eventCount || 0) >= 2 || hoveredId === node.id || focusedId === node.id || isSelected || isMatch;
+              const showLabel = visibleLabels.has(node.id);
+              const labelPosition = labelPositions.get(node.id);
               return <g key={node.id} data-node-id={node.id} role="button" tabIndex={0} aria-label={`${node.label}，${nodeTypeLabel(node.kind)}${node.entity ? `，出现 ${node.eventCount || 0} 次，跨 ${node.entity.mentions.length} 天` : ""}`} aria-pressed={isSelected} className={`graph-node node-${node.kind}${isSelected ? " selected" : ""}${isMatch ? " match" : ""}${dimmed ? " dimmed" : ""}`} transform={`translate(${node.x} ${node.y})`} onFocus={() => setFocusedId(node.id)} onBlur={() => setFocusedId(null)} onPointerEnter={() => setHoveredId(node.id)} onPointerLeave={() => setHoveredId(null)} onPointerDown={(event) => startDrag(event, node)} onContextMenu={(event) => { event.preventDefault(); selectNode(node); }} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); if (!event.repeat) activateNode(node); } }}>
-                {node.kind === "place" ? <rect className="graph-place-anchor" x={-Math.max(46, node.label.length * 7 + 12)} y={-23} width={Math.max(92, node.label.length * 14 + 24)} height={46} rx={8} /> : <><circle className="graph-hit-area" r={26} /><circle r={node.radius + (isSelected ? 3 : 0)} /></>}
-                {showLabel && <text textAnchor={node.kind === "place" ? "middle" : undefined} x={node.kind === "place" ? 0 : node.radius + 7} y={node.kind === "place" ? -3 : 4}>{node.kind === "event" && node.label.length > 25 ? `${node.label.slice(0, 25)}…` : node.label}</text>}{node.kind === "place" && <text className="graph-place-count" textAnchor="middle" y={14}>{node.eventCount || 0} 个事件</text>}<title>{node.label}</title>
+                {node.kind === "place" ? <><rect className="graph-hit-area" x={-Math.max(38, node.label.length * 7 + 8)} y={-22} width={Math.max(76, node.label.length * 14 + 16)} height={44} rx={7} /><rect className="graph-place-anchor" x={-Math.max(38, node.label.length * 7 + 8)} y={-18} width={Math.max(76, node.label.length * 14 + 16)} height={36} rx={7} /></> : <><circle className="graph-hit-area" r={26} /><circle r={node.radius + (isSelected ? 3 : 0)} /></>}
+                {showLabel && <text textAnchor={node.kind === "place" ? "middle" : labelPosition?.textAnchor} x={node.kind === "place" ? 0 : labelPosition?.x} y={node.kind === "place" ? -3 : labelPosition?.y}>{node.kind === "event" && node.label.length > 25 ? `${node.label.slice(0, 25)}…` : node.label}</text>}{node.kind === "place" && <text className="graph-place-count" textAnchor="middle" y={14}>{node.eventCount || 0} 个事件</text>}<title>{node.label}</title>
               </g>;
             })}
           </g>

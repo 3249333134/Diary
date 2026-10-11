@@ -40,8 +40,11 @@ describe("vault storage", () => {
     expect(completed.diary.document.todos[0].completion?.date).toBe('2026-09-11');
     const restored = await changeAction({ ...input, mode: 'restore', fact: undefined, version: completed.diary.version });
     expect(restored.diary.document.todos[0].done).toBe(false);
-    expect((await loadDiary('2026-09-11')).document.facts.events).toHaveLength(1);
+    expect((await loadDiary('2026-09-11')).document.facts.events).toHaveLength(0);
     await expect(changeAction({ ...input, operationId: crypto.randomUUID(), version: restored.diary.version })).rejects.toMatchObject({ statusCode: 409 });
+    // Recreate only the target write to simulate a later interrupted completion.
+    const missingTarget=await loadDiary('2026-09-11');
+    await saveDiary('2026-09-11',target.document,missingTarget.version);
     // Simulate a crash after target write but before source update.
     const orphan = structuredClone(restored.diary.document); orphan.todos[0].completion = undefined; orphan.todos[0].operationId = undefined;
     const pending = await saveDiary(source.date, orphan, restored.diary.version);

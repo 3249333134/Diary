@@ -4,7 +4,7 @@ coverage/
 .env
 .env.local
 data/
-qa/*.png
+qa/**/*.png
 qa/paint-videos/
 *.log
 *.tsbuildinfo

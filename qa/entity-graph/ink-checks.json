@@ -1,0 +1,80 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "dataset": "fixture",
+    "entities": 5,
+    "nodes": 5,
+    "passed": true,
+    "inkTiming": {
+      "samples": 31,
+      "medianMs": 49.799999952316284,
+      "p95Ms": 50.199999928474426
+    }
+  },
+  {
+    "width": 375,
+    "theme": "light",
+    "dataset": "actual",
+    "entities": 49,
+    "nodes": 44,
+    "passed": true,
+    "inkTiming": {
+      "samples": 36,
+      "medianMs": 49.10000002384186,
+      "p95Ms": 50.09999990463257
+    }
+  },
+  {
+    "width": 375,
+    "theme": "light",
+    "dataset": "dense",
+    "entities": 500,
+    "nodes": 500,
+    "passed": true,
+    "inkTiming": {
+      "samples": 37,
+      "medianMs": 43.199999928474426,
+      "p95Ms": 50.10000002384186
+    }
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "dataset": "fixture",
+    "entities": 5,
+    "nodes": 5,
+    "passed": true,
+    "inkTiming": {
+      "samples": 41,
+      "medianMs": 33.300000071525574,
+      "p95Ms": 34.200000047683716
+    }
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "dataset": "actual",
+    "entities": 49,
+    "nodes": 44,
+    "passed": true,
+    "inkTiming": {
+      "samples": 45,
+      "medianMs": 33.39999997615814,
+      "p95Ms": 34.5
+    }
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "dataset": "dense",
+    "entities": 500,
+    "nodes": 500,
+    "passed": true,
+    "inkTiming": {
+      "samples": 45,
+      "medianMs": 33.299999952316284,
+      "p95Ms": 34
+    }
+  }
+]

@@ -52,9 +52,8 @@ function parseField(content: string, labels: string[]): string {
   if (!match) return "";
   const rest = content.slice((match.index || 0) + match[0].length);
   const continuation: string[] = [];
-  for (const line of rest.split(/\r?\n/)) {
+  for (const line of rest.replace(/^\r?\n/, '').split(/\r?\n/)) {
     if (/^(?:-|#{2,3}\s)/.test(line)) break;
-    if (!line.trim() && continuation.length === 0) continue;
     continuation.push(line.replace(/^\s{2}/, ""));
   }
   return [match[1], ...continuation].join("\n").trim();
@@ -77,6 +76,9 @@ function parseEvent(block: string, legacy = false): DiaryEvent {
   return {
     id: block.match(/<!-- diary-event:([a-zA-Z0-9-]+) -->/)?.[1] || stableId(block),
     task: recordRefSchema.safeParse(meta.task).success ? recordRefSchema.parse(meta.task) : undefined,
+    plannedStart: meta.plannedStart as DiaryEvent['plannedStart'],
+    planEntities: meta.planEntities as DiaryEvent['planEntities'],
+    tags: Array.isArray(meta.tags) ? meta.tags.filter((tag): tag is string => typeof tag === 'string') : undefined,
     time: parseField(block, ["时间"]),
     note: parseField(block, ["描述", "一句话"]),
     remark: parseField(block, ["事件备注"]),
@@ -147,7 +149,7 @@ export function parseDiaryMarkdown(content: string, date: string): DiaryDocument
       const time = clean.match(/^\[((?:[01]\d|2[0-3]):[0-5]\d)\]\s*/);
       const meta = metadata(block);
       const attachments = Array.isArray(meta.attachments) ? meta.attachments.filter((a: any) => a && typeof a.path === 'string').map((a: any) => ({ path: a.path, name: a.name || '' })) : [];
-      return textEntrySchema.parse({ id, content: time ? clean.slice(time[0].length) : clean, time: time?.[1] || '', sources: meta.sources || (kind === 'learn' ? document.learn.sources : kind === 'input' ? document.input.names : []), tags: meta.tags || (kind === 'idea' ? document.idea.tags : []), attachments });
+      return textEntrySchema.parse({ task: meta.task, id, content: time ? clean.slice(time[0].length) : clean, time: time?.[1] || '', sources: meta.sources || (kind === 'learn' ? document.learn.sources : kind === 'input' ? document.input.names : []), tags: meta.tags || (kind === 'idea' ? document.idea.tags : []), attachments });
     });
   }
   // Strip metadata from fact text; markers are not user remarks.
@@ -168,7 +170,7 @@ export function serializeDiaryMarkdown(document: DiaryDocument): string {
   document = structuredClone(projectEntries(document));
   for (const kind of textKinds) if (document.entries) {
     const text = document.entries[kind].map(e => {
-      const meta: Record<string, unknown> = { sources: e.sources, tags: e.tags };
+      const meta: Record<string, unknown> = { sources: e.sources, tags: e.tags, task: e.task };
       if (e.attachments.length) meta.attachments = e.attachments;
       const obsidianAttach = attachmentMarkdown(e.attachments).join('\n');
       const body = `${e.time ? `[${e.time}] ` : ''}${e.content}${obsidianAttach ? '\n' + obsidianAttach : ''}`;
@@ -194,6 +196,9 @@ export function serializeDiaryMarkdown(document: DiaryDocument): string {
     lines.push(`<!-- diary-event:${event.id} -->`);
     const meta: Record<string, unknown> = {};
     if (event.task) meta.task = event.task;
+    if (event.plannedStart) meta.plannedStart = event.plannedStart;
+    if (event.planEntities?.length) meta.planEntities = event.planEntities;
+    if (event.tags?.length) meta.tags = event.tags;
     if (event.location?.lat != null && event.location?.lng != null) meta.location = { lat: event.location.lat, lng: event.location.lng };
     if (event.attachments.length) meta.attachments = event.attachments;
     if (Object.keys(meta).length) lines.push(links(meta));
@@ -221,7 +226,7 @@ export function serializeDiaryMarkdown(document: DiaryDocument): string {
   if (document.idea.content.trim()) lines.push(field("内容", document.idea.content));
   if (document.todos?.length || document.todosExtra) {
     lines.push('', '## 待办清单', '');
-    for (const task of document.todos || []) lines.push(`- [${task.done ? 'x' : ' '}] ${task.time ? `[${task.time}] ` : ''}${task.title} <!-- diary-task:${task.id} --> ${links({ plannedDate: task.plannedDate, source: task.source, completion: task.completion, completedAt: task.completedAt, operationId: task.operationId })}`);
+    for (const task of document.todos || []) lines.push(`- [${task.done ? 'x' : ' '}] ${task.time ? `[${task.time}] ` : ''}${task.title} <!-- diary-task:${task.id} --> ${links({ ...task, id: undefined, title: undefined, done: undefined, time: undefined })}`);
     if (document.todosExtra) lines.push('', document.todosExtra);
   }
   for (const section of document.unknownSections) lines.push("", `## ${section.heading}`, section.content);

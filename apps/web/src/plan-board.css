@@ -1,0 +1,80 @@
+.plan-category-tabs { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0; }
+.plan-category-tabs button { min-height:44px; padding:8px 14px; border:1px solid var(--line); border-radius:10px; background:var(--surface); color:var(--text); cursor:pointer; }
+.plan-category-tabs [aria-pressed=true] { box-shadow:inset 0 0 0 2px var(--purple); }
+.plan-category-tabs .category-work { background:#e6f1fb; color:#234e73; }
+.plan-category-tabs .category-personal { background:#f3e8db; color:#684a30; }
+.plan-board-scroll { min-height:0; overflow:auto; overscroll-behavior:contain; max-height:75dvh; margin-top:12px; }
+.plan-board { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; padding:2px 3px 16px; }
+.plan-quadrant { --quadrant:#9296a3; min-width:0; padding:12px; border:1px solid var(--line); border-radius:14px; background:color-mix(in srgb,var(--surface) 80%,transparent); }
+.plan-quadrant.q1 { --quadrant:#c05d56; }.plan-quadrant.q2 { --quadrant:#7856bd; }.plan-quadrant.q3 { --quadrant:#258378; }
+.plan-quadrant.unclassified { grid-column:1/-1; }
+.plan-quadrant h3 { display:flex; align-items:center; gap:8px; color:var(--text); margin:0 0 12px; font-size:15px; }
+.plan-quadrant h3 small { margin-left:auto; font-weight:500; color:var(--muted); }
+.quadrant-dot { height:10px; width:10px; border-radius:50%; background:var(--quadrant); }
+.drop-active { outline:3px solid var(--purple); outline-offset:-3px; }
+.todo-list.quadrant-list { margin:0; padding:0; border:0; display:grid; gap:10px; overflow:visible; }
+.todo-list li.plan-card { position:relative; padding:16px 12px; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:none; }
+.todo-list li.plan-card.category-work { background:#e9f2fb; color:#24475f; }
+.todo-list li.plan-card.category-personal { background:#f4eade; color:#664c35; }
+.plan-card .todo-desc,.plan-card .todo-meta,.plan-card .plan-start { color:inherit; opacity:.85; }
+.plan-card .todo-actions { flex-wrap:wrap; }
+.plan-card-labels { display:flex; flex-wrap:wrap; gap:6px; font-size:11px; margin:6px 0; }
+.plan-card-labels span,.plan-card-labels strong { padding:2px 6px; border-radius:5px; background:color-mix(in srgb,var(--surface) 60%,transparent); }
+.plan-card .plan-start { margin:6px 0; font-size:12px; }
+.todo-list li.plan-card.state-done { border-color:#29805d; }.state-done .plan-card-labels strong { color:#176c48; background:#def3e7; }
+.todo-list li.plan-card.state-overdue { border-color:#c84b59; }.state-overdue .plan-card-labels strong { color:#a12d3d; background:#fce3e6; }
+.todo-list li.plan-card.state-soon { border-color:#b78918; }.state-soon .plan-card-labels strong { color:#77570d; background:#fff1bb; }
+.plan-drag-handle { position:static; flex-shrink:0; height:44px; width:44px; background:transparent; border:0; border-radius:8px; color:inherit; touch-action:none; cursor:grab; }
+
+.todo-list li.plan-card { display:block; padding:12px; border-color:color-mix(in srgb,currentColor 12%,transparent); }
+.plan-card-tools { position:absolute; right:6px; top:12px; display:flex; }
+.plan-card .todo-check { position:absolute; left:6px; top:12px; width:44px; min-width:44px; height:44px; }
+.plan-card-summary { display:grid; gap:8px; min-height:76px; width:calc(100% - 38px); margin-left:38px; padding:8px 0; text-align:left; background:transparent; border:0; color:inherit; cursor:pointer; }
+.plan-card:has(.plan-drag-handle) .plan-card-summary { width:calc(100% - 82px); }
+.plan-summary-heading { display:flex; align-items:center; gap:8px; min-height:24px; }
+.plan-card .todo-title { font-size:16px; line-height:1.5; flex:1; }
+.plan-expand-icon { flex-shrink:0; color:inherit; opacity:.65; transition:transform .18s; }
+[data-expanded=true] .plan-expand-icon { transform:rotate(180deg); }
+.plan-summary-meta { display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; font-size:12px; line-height:1.6; }
+.plan-summary-due { display:inline-flex; align-items:center; gap:5px; }
+.plan-category-label { font-weight:600; }
+.plan-state-badge { border-radius:5px; padding:1px 6px; font-size:11px; font-weight:600; }
+.badge-overdue { color:#a12d3d; background:#fce3e6; }.badge-soon { color:#77570d; background:#fff1bb; }.badge-done { color:#176c48; background:#def3e7; }
+.plan-card .plan-card-details { padding-top:12px; margin-top:8px; border-top:1px solid color-mix(in srgb,currentColor 12%,transparent); gap:8px; }
+.plan-card-details[hidden] { display:none; }
+.plan-detail-classification { display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:12px; }
+.plan-card .todo-actions { gap:8px; padding-top:4px; margin:0; }
+.plan-card .todo-actions:empty { display:none; }
+.plan-card .todo-desc { font-size:13px; line-height:1.6; margin:0; }
+.plan-card .plan-start { margin:0; }
+.plan-card .plan-delete-action { color:var(--red); margin-left:auto; }
+.plan-card-summary:focus-visible,.plan-drag-handle:focus-visible { outline:2px solid var(--purple); outline-offset:2px; border-radius:8px; }
+.todo-list li.plan-card.state-overdue { border-color:color-mix(in srgb,#c84b59 35%,transparent); }.todo-list li.plan-card.state-soon { border-color:color-mix(in srgb,#b78918 35%,transparent); }
+@media(prefers-reduced-motion:reduce) { .plan-expand-icon { transition:none; } }
+.quadrant-list::before,.quadrant-list>li::before { display:none; }
+.plan-drag-preview { position:fixed; z-index:500; pointer-events:none; max-width:240px; padding:12px 16px; border-radius:12px; background:var(--surface); color:var(--text); box-shadow:0 10px 30px rgba(30,20,50,.18); font-size:14px; }
+.plan-drag-preview small { display:block; margin-top:6px; color:var(--muted); }
+.quadrant-empty { color:var(--muted); font-size:12px; padding:18px 0; }
+.plan-move-menu select,.plan-views select,.plan-classification-fields input,.plan-classification-fields select { width:100%; min-height:44px; border:1px solid var(--line); background:var(--surface); color:var(--text); border-radius:8px; padding:6px 8px; }
+.plan-classification-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:8px 0; }
+.plan-classification-fields label,.plan-views label { display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted); }
+.plan-views { display:flex; align-items:end; gap:8px; flex-wrap:wrap; margin-bottom:10px; }.plan-views label { flex:1; min-width:100px; }.view-color { height:20px; width:20px; border-radius:50%; }
+.shared-tag-entry { display:flex; gap:6px; }.shared-tag-entry input { flex:1; min-width:0; min-height:44px; padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); }.shared-tag-entry button,.shared-tag-chips button { min-height:44px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); padding:6px 10px; }.shared-tags { margin:10px 0; }.shared-tags label { display:grid; gap:6px; }.shared-tag-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.plan-retry { font-size:12px; }.plan-retry button { min-height:44px; margin-left:8px; }
+.plan-create-actions { display:flex; gap:8px; align-items:center; }
+.plan-filter-details { margin-top:6px; }
+.plan-filter-details>summary { cursor:pointer; min-height:32px; display:flex; align-items:center; font-size:12px; color:var(--muted); }
+:root[data-theme=dark] .category-work { background:#263d50 !important; color:#cee6f8 !important; }:root[data-theme=dark] .category-personal { background:#44382f !important; color:#f0dec8 !important; }
+@media(max-width:899px) {
+  .todo-panel>.section-heading { flex-direction:row; align-items:center; gap:8px; }
+  .todo-panel>.section-heading h2 { font-size:20px; }
+  .todo-panel>.section-heading p { display:none; }
+  .todo-panel>.section-heading>div { flex-shrink:0; }
+  .todo-panel>.section-heading h2 { white-space:nowrap; }
+  .todo-panel>.section-heading .quiet-button { width:auto; flex-shrink:0; min-height:40px; padding:6px 8px; font-size:12px; }
+  .todo-panel>.todo-filters { flex-wrap:nowrap; overflow-x:auto; gap:5px; }
+  .todo-panel>.todo-filters button { flex-shrink:0; padding:6px 8px; font-size:12px; }
+  .todo-panel>.plan-board-scroll { flex:1 !important; flex-shrink:1 !important; min-height:0; max-height:none; }
+  .plan-board { grid-template-columns:1fr; gap:12px; }.plan-quadrant { padding:10px; }.plan-category-tabs { margin:6px 0; gap:4px; }.plan-category-tabs button { padding:6px 8px; font-size:12px; }
+  .plan-views { margin:4px 0; }.plan-views label { font-size:11px; }.plan-classification-fields input { font-size:16px; }.plan-batch-button { margin:4px 0; }
+}

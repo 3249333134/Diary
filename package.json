@@ -13,7 +13,9 @@
     "build": "npm run build:contracts && npm run build -w @diary/api && npm run build -w @diary/web",
     "start": "concurrently -n api,web -c magenta,cyan \"npm run start -w @diary/api\" \"npm run start -w @diary/web\"",
     "test": "vitest run",
-    "qa:screenshots": "node scripts/capture-screenshots.mjs"
+    "qa:screenshots": "node scripts/capture-screenshots.mjs",
+    "demo": "npm run build && node scripts/demo.mjs",
+    "demo:reset": "npm run build && node scripts/demo.mjs --reset"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

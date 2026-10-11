@@ -92,6 +92,6 @@ export function paintTerritories(regions: PlaceRegion[], width: number, height: 
       }
       paths.push(path + " Z");
     }
-    return { ...region, x: cx, y: cy, path: paths.join(" "), bounds: { left: stat.left, right: stat.right, top: stat.top, bottom: stat.bottom }, paintedArea: stat.count * dx * dy, hue: [268, 58, 174, 326, 28, 205][i % 6] };
+    return { ...region, x: cx, y: cy, path: paths.join(" "), bounds: { left: stat.left, right: stat.right, top: stat.top, bottom: stat.bottom }, paintedArea: stat.count * dx * dy };
   });
 }

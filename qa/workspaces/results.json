@@ -1,0 +1,92 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "checks": [
+      "workspace switch retains capture",
+      "mixed draft per-item save",
+      "lost response retry without duplicates",
+      "AI failure requires explicit kind",
+      "undated plan in all",
+      "keyboard dialog dismiss",
+      "automatic fact and diary navigation",
+      "no page errors",
+      "no horizontal overflow"
+    ]
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "checks": [
+      "workspace switch retains capture",
+      "mixed draft per-item save",
+      "lost response retry without duplicates",
+      "AI failure requires explicit kind",
+      "undated plan in all",
+      "keyboard dialog dismiss",
+      "automatic fact and diary navigation",
+      "no page errors",
+      "no horizontal overflow"
+    ]
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "checks": [
+      "workspace switch retains capture",
+      "mixed draft per-item save",
+      "lost response retry without duplicates",
+      "AI failure requires explicit kind",
+      "undated plan in all",
+      "keyboard dialog dismiss",
+      "automatic fact and diary navigation",
+      "no page errors",
+      "no horizontal overflow"
+    ]
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "checks": [
+      "workspace switch retains capture",
+      "mixed draft per-item save",
+      "lost response retry without duplicates",
+      "AI failure requires explicit kind",
+      "undated plan in all",
+      "keyboard dialog dismiss",
+      "automatic fact and diary navigation",
+      "no page errors",
+      "no horizontal overflow"
+    ]
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "checks": [
+      "workspace switch retains capture",
+      "mixed draft per-item save",
+      "lost response retry without duplicates",
+      "AI failure requires explicit kind",
+      "undated plan in all",
+      "keyboard dialog dismiss",
+      "automatic fact and diary navigation",
+      "no page errors",
+      "no horizontal overflow"
+    ]
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "checks": [
+      "workspace switch retains capture",
+      "mixed draft per-item save",
+      "lost response retry without duplicates",
+      "AI failure requires explicit kind",
+      "undated plan in all",
+      "keyboard dialog dismiss",
+      "automatic fact and diary navigation",
+      "no page errors",
+      "no horizontal overflow"
+    ]
+  }
+]

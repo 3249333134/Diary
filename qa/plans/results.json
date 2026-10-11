@@ -1,0 +1,72 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "layout": {
+      "outer": true,
+      "horizontal": true,
+      "boardHeight": 267,
+      "boardOverflow": true
+    },
+    "errors": []
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "layout": {
+      "outer": true,
+      "horizontal": true,
+      "boardHeight": 267,
+      "boardOverflow": true
+    },
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "layout": {
+      "outer": true,
+      "horizontal": true,
+      "boardHeight": 266,
+      "boardOverflow": true
+    },
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "layout": {
+      "outer": true,
+      "horizontal": true,
+      "boardHeight": 266,
+      "boardOverflow": true
+    },
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "layout": {
+      "outer": false,
+      "horizontal": true,
+      "boardHeight": 675,
+      "boardOverflow": true
+    },
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "layout": {
+      "outer": false,
+      "horizontal": true,
+      "boardHeight": 675,
+      "boardOverflow": true
+    },
+    "errors": []
+  },
+  {
+    "interaction": "desktop drag, move menu, conflict retry, shared tag view, auto diary, duplicate retry, diary navigation, mixed AI, failed AI fallback, simulated touch long press",
+    "passed": true
+  }
+]

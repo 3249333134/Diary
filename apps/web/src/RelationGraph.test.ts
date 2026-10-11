@@ -25,6 +25,18 @@ describe("entity ink graph", () => {
     expect(graph.regions.find(region => region.id === root.key)).toMatchObject({ count: 3, childIds: [child.key], ancestorIds: [] });
     expect(graph.regions.find(region => region.id === grandchild.key)?.ancestorIds).toEqual([root.key, child.key]);
     expect(graph.nodes.find(node => node.id === root.key)?.eventCount).toBe(3);
+    const rootRegion = graph.regions.find(region => region.id === root.key)!;
+    expect([265, 210, 165, 32]).toContain(rootRegion.hue);
+    expect(buildGraph([root]).regions[0].hue).toBe(rootRegion.hue);
+    for (const id of [child.key, grandchild.key]) {
+      const region = graph.regions.find(region => region.id === id)!;
+      expect(region.paletteHue).toBe(rootRegion.hue);
+      expect(Math.abs(region.hue - rootRegion.hue)).toBeLessThanOrEqual(10);
+      expect(region.tone).toBeGreaterThan(0);
+    }
+    expect(buildGraph([person, grandchild, child, root]).regions).toEqual(graph.regions);
+    const narrow = buildGraph([root, child, grandchild, person],undefined,false,undefined,false,"relation",{width:375,height:832});
+    expect(narrow.regions.map(region=>region.id).sort()).toEqual(graph.regions.map(region=>region.id).sort());
     expect(coEdges(graph).find(edge => [edge.source, edge.target].includes(root.key) && [edge.source, edge.target].includes(grandchild.key))).toBeUndefined();
     expect(buildGraph([root, { ...child, parentKey: undefined }]).regions.every(region => !region.parentId)).toBe(true);
   });
@@ -86,10 +98,31 @@ describe("entity ink graph", () => {
     expect(buildGraph([person, company, home])).toEqual(buildGraph([home, person, company]));
   });
   it("uses monotonic bounded strength and faint auxiliary edges", () => {
+    const levels = [1, 2, 4, 8, 16, 32].map(count => edgeAppearance(count));
+    expect(levels[0].strength).toBeGreaterThan(0);
+    for (let i = 1; i < levels.length; i++) {
+      expect(levels[i].strength).toBeGreaterThan(levels[i - 1].strength);
+      expect(levels[i].opacity).toBeGreaterThan(levels[i - 1].opacity);
+      expect(levels[i].width).toBeGreaterThan(levels[i - 1].width);
+    }
     expect(edgeAppearance(2).opacity).toBeGreaterThan(edgeAppearance(1).opacity);
     expect(edgeAppearance(8).width).toBeGreaterThan(edgeAppearance(2).width);
     expect(edgeAppearance(10000)).toEqual(edgeAppearance(64));
     expect(edgeAppearance(8, true).opacity).toBeLessThan(edgeAppearance(8).opacity);
+  });
+  it("keeps merged details and frequency in sync when a source event is edited", () => {
+    const records = [entity("person", " Ａ ", [first, first]), entity("person", "a", [second, third]), company];
+    const before = buildGraph(records);
+    const merged = before.nodes.find(node => node.kind === "person")!;
+    expect(merged.entity?.occurrences).toHaveLength(3);
+    expect(merged.entity?.mentions).toHaveLength(2);
+    expect(merged.eventCount).toBe(3);
+    expect(coEdges(before)[0].count).toBe(2);
+    const after = buildGraph([records[0], entity("person", "a", [third]), company]);
+    expect(after.nodes.find(node => node.kind === "person")?.eventCount).toBe(2);
+    expect(coEdges(after)[0].count).toBe(1);
+    expect(after.regions[0].count).toBe(2);
+    expect(buildGraph([entity("thing", "书", [first])]).nodes.map(node => node.kind)).toEqual(["self"]);
   });
   it("reflows place regions for narrow screens", () => {
     const mobile = buildGraph([person, company, home], undefined, false, undefined, false, "relation", { width: 330, height: 520 });

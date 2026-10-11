@@ -1,4 +1,6 @@
 import Fastify from "fastify";
+import { captureRequestSchema } from '@diary/contracts';
+import { parseCapture } from './capture.js';
 import cors from "@fastify/cors";
 import { ProxyAgent, request as undiciRequest } from "undici";
 import { placeParentSchema, entityTypeSchema, pinQuickFactRequestSchema, sentenceSplitRequestSchema, tagCreateSchema, weeklySummaryRequestSchema } from "@diary/contracts";
@@ -36,6 +38,8 @@ const MIME: Record<string, string> = {
   ".ico": "image/x-icon",
   ".map": "application/json",
 };
+
+import { addSharedTag, tagLibrary, getPlanCategories, addPlanCategory, getPlanViews, savePlanViews } from './planSettings.js';
 
 function safeJoin(root: string, ...parts: string[]) {
   const joined = path.join(root, ...parts);
@@ -92,11 +96,22 @@ export async function buildServer(index = new EntityIndex()) {
     await index.setPlaceParent(key, parentKey);
     return { entities: index.list("", undefined, 500) };
   });
-  app.get("/api/tags", async () => ({ tags: index.getTags() }));
+  app.get("/api/tags", async () => {
+    const typed = index.getTags(), shared = await tagLibrary(typed);
+    return { tags: Object.fromEntries(Object.keys(typed).map(type => [type, [...new Set([...typed[type as keyof typeof typed], ...shared])]])), sharedTags: shared };
+  });
+  app.get('/api/tag-library', async () => ({ tags: await tagLibrary(index.getTags()) }));
+  app.post<{ Body: { tag: string } }>('/api/tag-library', async request => { await addSharedTag(request.body.tag); return { tags: await tagLibrary(index.getTags()) }; });
+  app.get('/api/plan-categories', async () => ({categories: await getPlanCategories()}));
+  app.post('/api/plan-categories', async request => addPlanCategory(request.body));
+  app.get('/api/plan-views', async () => ({ views: await getPlanViews() }));
+  app.put<{ Body: { views: unknown } }>('/api/plan-views', async request => { await savePlanViews(request.body.views); return { views: await getPlanViews() }; });
   app.post("/api/tags", async (request) => {
     const input = tagCreateSchema.parse(request.body);
-    return { tags: await index.addTag(input.type, input.name) };
+    const typed = await index.addTag(input.type, input.name), shared = await tagLibrary(typed);
+    return { tags: Object.fromEntries(Object.keys(typed).map(type => [type, [...new Set([...typed[type as keyof typeof typed], ...shared])]])) };
   });
+  app.post('/api/capture/parse', async (request) => parseCapture(captureRequestSchema.parse(request.body), { names: index.list('', undefined, 500).map(entity => entity.name), tags: await tagLibrary(index.getTags()) }));
   app.post("/api/split-sentence", async (request) => {
     const input = sentenceSplitRequestSchema.parse(request.body);
     return { result: await splitSentenceWithAi(input.sentence, index.list("", undefined, 500)), mode: "ai" as const };

@@ -1,0 +1,242 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "dataset": "empty",
+    "entities": 0,
+    "nodes": 1,
+    "passed": true
+  },
+  {
+    "width": 375,
+    "theme": "light",
+    "dataset": "hierarchy",
+    "entities": 4,
+    "nodes": 5,
+    "passed": true
+  },
+  {
+    "width": 375,
+    "theme": "light",
+    "dataset": "fixture",
+    "entities": 5,
+    "nodes": 5,
+    "passed": true
+  },
+  {
+    "width": 375,
+    "theme": "light",
+    "dataset": "actual",
+    "entities": 49,
+    "nodes": 44,
+    "passed": true
+  },
+  {
+    "width": 375,
+    "theme": "light",
+    "dataset": "dense",
+    "entities": 500,
+    "nodes": 500,
+    "passed": true
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "dataset": "empty",
+    "entities": 0,
+    "nodes": 1,
+    "passed": true
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "dataset": "hierarchy",
+    "entities": 4,
+    "nodes": 5,
+    "passed": true
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "dataset": "fixture",
+    "entities": 5,
+    "nodes": 5,
+    "passed": true
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "dataset": "actual",
+    "entities": 49,
+    "nodes": 44,
+    "passed": true
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "dataset": "dense",
+    "entities": 500,
+    "nodes": 500,
+    "passed": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "dataset": "empty",
+    "entities": 0,
+    "nodes": 1,
+    "passed": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "dataset": "hierarchy",
+    "entities": 4,
+    "nodes": 5,
+    "passed": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "dataset": "fixture",
+    "entities": 5,
+    "nodes": 5,
+    "passed": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "dataset": "actual",
+    "entities": 49,
+    "nodes": 44,
+    "passed": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "dataset": "dense",
+    "entities": 500,
+    "nodes": 500,
+    "passed": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "dataset": "empty",
+    "entities": 0,
+    "nodes": 1,
+    "passed": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "dataset": "hierarchy",
+    "entities": 4,
+    "nodes": 5,
+    "passed": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "dataset": "fixture",
+    "entities": 5,
+    "nodes": 5,
+    "passed": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "dataset": "actual",
+    "entities": 49,
+    "nodes": 44,
+    "passed": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "dataset": "dense",
+    "entities": 500,
+    "nodes": 500,
+    "passed": true
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "dataset": "empty",
+    "entities": 0,
+    "nodes": 1,
+    "passed": true
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "dataset": "hierarchy",
+    "entities": 4,
+    "nodes": 5,
+    "passed": true
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "dataset": "fixture",
+    "entities": 5,
+    "nodes": 5,
+    "passed": true
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "dataset": "actual",
+    "entities": 49,
+    "nodes": 44,
+    "passed": true
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "dataset": "dense",
+    "entities": 500,
+    "nodes": 500,
+    "passed": true
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "dataset": "empty",
+    "entities": 0,
+    "nodes": 1,
+    "passed": true
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "dataset": "hierarchy",
+    "entities": 4,
+    "nodes": 5,
+    "passed": true
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "dataset": "fixture",
+    "entities": 5,
+    "nodes": 5,
+    "passed": true
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "dataset": "actual",
+    "entities": 49,
+    "nodes": 44,
+    "passed": true
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "dataset": "dense",
+    "entities": 500,
+    "nodes": 500,
+    "passed": true
+  }
+]

@@ -1,8 +1,16 @@
+import { EntityField, type EntityFieldProps } from './EntityField';
+import { CompactDiaryTools } from './CompactDiaryTools';
+import { DiaryNoteEditor } from './DiaryNoteEditor';
+import { UnifiedCapture } from './Capture';
+import { planClock } from './planFilters';
+import { SharedTagInput } from './PlanFields';
+import { useCompactBrowse } from './useCompactBrowse';
+import { appendCapture, todoSchema, type CaptureDraft } from '@diary/contracts';
 import { createContext, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   BookOpen, Brain, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, Clock,
   CloudOff, Feather, Lightbulb, Link2, Loader2, Moon, Plus, Save, Sparkles,
-  Sun, Trash2, UserRound, MapPin, Utensils, Activity, X, Pin, PinOff, Zap,
+  Sun, Trash2, UserRound, MapPin, Utensils, Activity, X, Pin, PinOff, Zap, ListTodo, SlidersHorizontal,
 } from "lucide-react";
 import { emptyDiary, entityTypes, projectEntries, resolveRecord, type RecordRef, type TextEntry, type TextKind, type DiaryDocument, type DiaryEvent, type EntityRecord, type EntityType, type QuickFact, type TagStore, type TaggedEntity } from "@diary/contracts";
 import { api } from "./api";
@@ -18,7 +26,7 @@ type Conflict = { local: DiaryDocument; remote: DiaryDocument; remoteVersion: st
 const RecordContext = createContext<{ create: (ref: RecordRef) => void; open: (ref: RecordRef) => void; focus?: RecordRef }>({ create: () => {}, open: () => {} });
 function RecordActions({ reference, task }: { reference: RecordRef; task?: RecordRef }) {
   const actions = useContext(RecordContext);
-  return <div className="todo-entry-actions"><button className="quiet-button" onClick={() => actions.create(reference)}><Plus size={16} />创建待办</button>{task && <button className="quiet-button" onClick={() => actions.open(task)}>查看对应待办</button>}</div>;
+  return <div className="todo-entry-actions"><button className="quiet-button" onClick={() => actions.create(reference)}><Plus size={16} />创建计划</button>{task && <button className="quiet-button" onClick={() => actions.open(task)}>查看对应计划</button>}</div>;
 }
 function ensureEntries(d: DiaryDocument): DiaryDocument {
   if (d.entries) return d;
@@ -56,18 +64,6 @@ function StatusBadge({ status }: { status: SaveStatus }) {
   const [label, Icon] = map[status];
   return <span className={`status status-${status}`} role="status" aria-live="polite"><Icon size={15} aria-hidden="true" />{label}</span>;
 }
-
-type EntityFieldProps = {
-  label: string;
-  type: EntityType;
-  values: TaggedEntity[];
-  entities: EntityRecord[];
-  tags: TagStore;
-  onChange: (values: TaggedEntity[]) => void;
-  onCreateTag: (type: EntityType, tag: string) => Promise<void>;
-  forceShow?: boolean;
-  onRequestShow?: () => void;
-};
 
 function AttachmentField({ attachments, onChange, date, variant = "full", limit }: { attachments: Array<{ path: string; name: string }>; onChange: (list: Array<{ path: string; name: string }>) => void; date: string; variant?: "full" | "strip"; limit?: number }) {
   const [uploading, setUploading] = useState(false);
@@ -126,85 +122,6 @@ function AttachmentField({ attachments, onChange, date, variant = "full", limit 
       <Plus size={18} />
       <input ref={inputRef} type="file" multiple accept="image/*,.pdf,.txt" hidden onChange={(e) => void handleFiles(e.target.files)} />
     </label>
-  </div>;
-}
-
-function EntityField({ label, type, values, entities, tags, onChange, onCreateTag, forceShow, onRequestShow }: EntityFieldProps) {
-  const id = useId();
-  const [input, setInput] = useState("");
-  const [editing, setEditing] = useState<string | null>(null);
-  const [newTag, setNewTag] = useState("");
-  const [expanded, setExpanded] = useState(false);
-  const [locating, setLocating] = useState(false);
-  const options = entities.filter((item) => item.type === type && !values.some((value) => value.name === item.name));
-  const getLocation = async () => {
-    if (locating) return;
-    if (!navigator.geolocation) { alert("当前设备不支持定位"); return; }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      try {
-        const { latitude, longitude } = pos.coords;
-        const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14&accept-language=zh-CN`, { headers: { "Accept-Language": "zh-CN" } });
-        const data = await resp.json() as { address?: Record<string, string>; display_name?: string };
-        const addr = data.address || {};
-        const name = addr.suburb || addr.neighbourhood || addr.road || addr.city || data.display_name?.split(",")[0] || "";
-        if (name && !values.some((v) => v.name === name)) {
-          const known = entities.find((e) => e.type === "place" && e.name === name);
-          onChange([...values, { type: "place" as EntityType, name, tags: known?.tags || [] }]);
-        }
-      } catch { alert("定位获取失败，请重试"); }
-      finally { setLocating(false); }
-    }, () => { setLocating(false); alert("定位失败，请检查浏览器权限设置"); }, { enableHighAccuracy: true, timeout: 10_000 });
-  };
-  const add = () => {
-    const name = input.trim();
-    if (!name || values.some((item) => item.name === name)) return;
-    const known = entities.find((item) => item.type === type && item.name === name);
-    onChange([...values, { type, name, tags: known?.tags || [] }]);
-    setInput("");
-  };
-  const toggleTag = (name: string, tag: string) => onChange(values.map((item) => item.name === name ? { ...item, tags: item.tags.includes(tag) ? item.tags.filter((value) => value !== tag) : [...item.tags, tag] } : item));
-  const createTag = async (name: string) => {
-    const clean = newTag.trim();
-    if (!clean) return;
-    await onCreateTag(type, clean);
-    if (!values.find((item) => item.name === name)?.tags.includes(clean)) toggleTag(name, clean);
-    setNewTag("");
-  };
-  const hasValues = values.length > 0;
-  const showInput = expanded || hasValues || !!forceShow;
-  const handleCompactClick = () => { if (onRequestShow) onRequestShow(); else setExpanded(true); };
-  return <div className={`field entity-field${hasValues ? " has-values" : ""}`}>
-    <label htmlFor={id}>{label}</label>
-    {!showInput ? (
-      <button type="button" className="entity-add-compact" onClick={handleCompactClick}>
-        <Plus size={16} />添加{TYPE_LABEL[type]}
-        {type === "place" && <span className="compact-loc-hint"> · 📍定位</span>}
-      </button>
-    ) : (
-      <>
-    <div className="entity-entry">
-      <input id={id} autoFocus={forceShow && !hasValues} list={`${id}-options`} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); add(); } }} placeholder={`添加${TYPE_LABEL[type]}`} />
-      <datalist id={`${id}-options`}>{options.map((item) => <option key={item.key} value={item.name} />)}</datalist>
-      {type === "place" && <button type="button" className="square-button locate-btn" onClick={getLocation} disabled={locating} aria-label="获取定位"><MapPin size={18} className={locating ? "spinning" : ""} /></button>}
-      <button type="button" className="square-button" onClick={add} aria-label={`添加${TYPE_LABEL[type]}`}><Plus size={18} /></button>
-      {!hasValues && <button type="button" className="square-button" onClick={() => { setExpanded(false); }} aria-label="收起"><X size={16} /></button>}
-    </div>
-    {hasValues && <div className="entity-list">
-      {values.map((item) => <div className="entity-wrap" key={`${item.type}-${item.name}`}>
-        <div className={`entity-chip${editing === item.name ? " selected" : ""}`}>
-          <button type="button" className="entity-name" onClick={() => setEditing(editing === item.name ? null : item.name)} aria-expanded={editing === item.name}>{item.name}{item.tags.length > 0 && <small>{item.tags.join(" · ")}</small>}</button>
-          <button type="button" className="chip-remove" onClick={() => onChange(values.filter((value) => value !== item))} aria-label={`移除${item.name}`}><X size={14} /></button>
-        </div>
-        {editing === item.name && <div className="tag-editor">
-          <span>为“{item.name}”选择标签</span>
-          <div className="tag-options">{tags[type].map((tag) => <button type="button" key={tag} className={item.tags.includes(tag) ? "active" : ""} onClick={() => toggleTag(item.name, tag)}>{item.tags.includes(tag) && <Check size={12} />}{tag}</button>)}</div>
-          <div className="tag-create"><input value={newTag} onChange={(event) => setNewTag(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void createTag(item.name); } }} placeholder="新标签" /><button type="button" onClick={() => void createTag(item.name)}>添加</button></div>
-        </div>}
-      </div>)}
-    </div>}
-      </>
-    )}
   </div>;
 }
 
@@ -426,6 +343,7 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
   const [locatingEventId, setLocatingEventId] = useState<string | null>(null);
   const [quickFacts, setQuickFacts] = useState<QuickFact[]>([]);
   const [showQuickMenu, setShowQuickMenu] = useState(false);
+  const [showNoteEditor, setShowNoteEditor] = useState(false);
   const quickMenuRef = useRef<HTMLDivElement>(null);
   useEffect(() => { if (focus?.date === document.date && focus.kind === 'facts') setExpanded(current => new Set(current).add(focus.id)); }, [focus, document.date]);
 
@@ -534,9 +452,9 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
 
   const compactMeta = (event: DiaryEvent) => [event.location?.name, ...event.people, ...event.places, ...event.activities, ...event.foods].filter(Boolean).map((item) => typeof item === "string" ? item : (item as { name: string }).name).slice(0, 4).join(" · ");
 
-  return <section className="panel-section" aria-labelledby="facts-title">
+  return <section className="panel-section facts-panel" aria-labelledby="facts-title">
     <div className="section-heading">
-      <div><Feather /><div><h2 id="facts-title">今日事实</h2><p>按分钟串起今天；点击卡片展开详情。</p></div></div>
+      <div><Feather /><div><h2 id="facts-title">今日事实 <small className="record-count">{events.length} 条</small></h2><p>按分钟串起今天；点击卡片展开详情。</p></div></div>
       <div className="section-heading-actions">
         <div className="quick-facts-dropdown" ref={quickMenuRef}>
           <button type="button" className={`quiet-button quick-facts-toggle ${showQuickMenu ? "active" : ""}`} onClick={() => setShowQuickMenu(s => !s)} aria-expanded={showQuickMenu}><Zap size={17} />快捷</button>
@@ -585,7 +503,9 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
         </datalist>
       </label>
     </div>
-    {events.length === 0 ? <button type="button" className="empty-action" onClick={addEvent}><Feather size={25} /><strong>今天还没有事实记录</strong><span>添加一个事件，或使用上方的一句话快速记录。</span></button> : <div className="event-stack">{events.map((event, index) => {
+    <div className="day-note"><div><label htmlFor="compact-day-note">今日备注</label><button type="button" className="quiet-button" onClick={() => setShowNoteEditor(true)}>展开编辑</button></div><textarea id="compact-day-note" rows={2} value={document.facts.note} onChange={event => update({ ...document, facts: { ...document.facts, note: event.target.value } })} placeholder="补充今天的感受或背景（可选）" /></div>
+    {showNoteEditor && <DiaryNoteEditor value={document.facts.note} onChange={note => update({ ...document, facts: { ...document.facts, note } })} onClose={() => setShowNoteEditor(false)} />}
+    {events.length > 0 && <div className="event-stack" role="region" aria-label="今日事件列表" tabIndex={0}>{events.map((event, index) => {
       const isExpanded = expanded.has(event.id);
       const detailsId = `event-details-${event.id}`;
       const cssVar = isExpanded ? { '--details-height': `${detailHeights.current[event.id] || 450}px` } as React.CSSProperties : undefined;
@@ -613,6 +533,9 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
             ref={(el) => { heightRefs.current[event.id] = el; }}
           >
             <label className="field event-time"><span>发生时间</span><input type="time" step="60" value={event.time} onChange={(e) => updateEvent({ ...event, time: e.target.value })} /></label>
+            {event.plannedStart && <p className="plan-start">原定开始（完成时快照）：{event.plannedStart.date ? `${event.plannedStart.date} ${event.plannedStart.time || '未设置时间'}` : '未设置'}</p>}
+            {!!event.planEntities?.filter(entity=>entity.type==='thing').length && <p>原计划事物：{event.planEntities.filter(entity=>entity.type==='thing').map(entity=>entity.name).join('、')}</p>}
+            <SharedTagInput value={event.tags || []} onChange={tags=>updateEvent({...event,tags})}/>
             <label className="field"><span>事件原句</span><textarea rows={2} value={event.note} onChange={(e) => updateEvent({ ...event, note: e.target.value })} placeholder="用一句话描述整件事" /></label>
             <div className="field event-location">
               <span>📍定位</span>
@@ -692,7 +615,7 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
         </div>
       </article>;
     })}</div>}
-    <label className="field spacious"><span>今日备注</span><textarea rows={4} value={document.facts.note} onChange={(event) => update({ ...document, facts: { ...document.facts, note: event.target.value } })} placeholder="可选：补充当时的感受或背景" /></label>
+
   </section>;
 }
 
@@ -773,7 +696,7 @@ function TextEntries({ label, kind, document, update }: { label: string; kind: T
                   </div>
                   {kind !== 'idea' && <label className="field"><span>来源（顿号分隔）</span><input value={entry.sources.map(s => s.name).join('、')} onChange={e => { const names = e.target.value.split('、'); change(entries.map(item => item.id === entry.id ? { ...item, sources: names.filter(Boolean).map(name => ({ type: 'thing' as const, name, tags: [] })) } : item)); }} /></label>}
                   <div className="field"><span>附件</span><AttachmentField attachments={entry.attachments || []} onChange={(list) => change(entries.map(item => item.id === entry.id ? { ...item, attachments: list } : item))} date={document.date} /></div>
-                  <RecordActions reference={{ date: document.date, kind, id: entry.id, summary: entry.content.slice(0, 2000) }} />
+                  <RecordActions task={entry.task} reference={{ date: document.date, kind, id: entry.id, summary: entry.content.slice(0, 2000) }} />
                 </div>
               </div>
             </article>;
@@ -831,8 +754,20 @@ export function App() {
   const [version, setVersion] = useState("0");
   const [status, setStatus] = useState<SaveStatus>("loading");
   const [activeTab, setActiveTab] = useState(0);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const update = () => { window.document.documentElement.style.setProperty('--app-height', `${viewport?.height || window.innerHeight}px`); };
+    update(); viewport?.addEventListener('resize', update); window.addEventListener('resize', update);
+    return () => { viewport?.removeEventListener('resize', update); window.removeEventListener('resize', update); window.document.documentElement.style.removeProperty('--app-height'); };
+  }, []);
   const [showReceipts, setShowReceipts] = useState(false);
   const [showTodos, setShowTodos] = useState(false);
+  const browseRef = useRef<HTMLElement>(null);
+  const [diaryTools, setDiaryTools] = useState(false);
+  const [planToolbarAction, setPlanToolbarAction] = useState<{kind:'create'|'filters';id:number}>();
+  const requestPlanTool = (kind:'create'|'filters') => setPlanToolbarAction({kind,id:Date.now()});
+  const compactBrowse = useCompactBrowse(browseRef, !showReceipts && (showTodos || activeTab !== 4), `${showTodos ? 'plan' : activeTab}:${date}`);
+  const [actionsRevision, setActionsRevision] = useState(0);
   const [actionSource, setActionSource] = useState<RecordRef>();
   const [focusRecord, setFocusRecord] = useState<RecordRef>();
   const [actionError, setActionError] = useState('');
@@ -935,12 +870,19 @@ export function App() {
   const todayLabel = date === initialDate ? "今天" : shortDate(date);
 
   const updateDiary = (next: DiaryDocument) => { next = projectEntries(ensureEntries(next)); diaryRef.current = next; setDiary(next); };
-  const prepareAction = async () => {
+  const prepareAction = async (targetDate?: string): Promise<string | undefined> => {
+    if (targetDate && targetDate !== diaryRef.current.date) return undefined;
+    const wasDirty = JSON.stringify(diaryRef.current) !== lastSaved.current;
     await saveNow();
-    if (!hydrated.current || saving.current || conflictRef.current || JSON.stringify(diaryRef.current) !== lastSaved.current) throw new Error('请先完成当前草稿保存或处理版本冲突，再操作待办。');
+    if (!hydrated.current || saving.current || conflictRef.current || JSON.stringify(diaryRef.current) !== lastSaved.current) throw new Error('请先完成当前草稿保存或处理版本冲突，再操作计划。');
+    return wasDirty ? versionRef.current : undefined;
   };
   const reloadAfterAction = async () => {
+    setActionsRevision(n => n + 1);
+    if (conflictRef.current || JSON.stringify(diaryRef.current) !== lastSaved.current) { await refreshContext(date); return; }
+    const expected = lastSaved.current;
     const saved = await api.loadDiary(date); saved.document = ensureEntries(saved.document);
+    if (JSON.stringify(diaryRef.current) !== expected || diaryRef.current.date !== date) return;
     lastSaved.current = JSON.stringify(saved.document); versionRef.current = saved.version; setVersion(saved.version); updateDiary(saved.document); setStatus('saved');
     localStorage.removeItem(`diary.draft.${date}`); await refreshContext(date);
   };
@@ -951,18 +893,35 @@ export function App() {
   const openRecord = async (ref: RecordRef) => {
     try { await prepareAction(); const owner = await api.loadDiary(ref.date);
       if (resolveRecord(owner.document, ref) === undefined) { setActionError(`原记录已删除：${ref.summary}`); return; }
-      setDate(ref.date); setFocusRecord(ref); setActionSource(undefined); setShowTodos(ref.kind === 'todo'); setShowReceipts(false); setActionError('');
+      if (ref.kind !== 'todo') setDate(ref.date); setFocusRecord(ref); setActionSource(undefined); setShowTodos(ref.kind === 'todo'); setShowReceipts(false); setActionError('');
       if (ref.kind !== 'todo') selectTab(Math.max(0, tabs.findIndex(tab => tab.id === ref.kind)));
     } catch (e) { setActionError(e instanceof Error ? e.message : '无法打开记录'); }
   };
   useEffect(() => {
-    if (!focusRecord || diary.date !== focusRecord.date || status === 'loading') return;
+    if (!focusRecord || (focusRecord.kind !== 'todo' && diary.date !== focusRecord.date) || status === 'loading') return;
     const timer = window.setTimeout(() => {
       const node = document.querySelector<HTMLElement>(`[data-record-id="${focusRecord.id}"]`);
       node?.scrollIntoView({ block: 'center', behavior: 'auto' }); if (node) { node.tabIndex = -1; node.focus({ preventScroll: true }); }
     }, 150);
     return () => clearTimeout(timer);
-  }, [focusRecord, diary.date, status, showTodos]);
+  }, [focusRecord, diary.date, status, showTodos, actionsRevision]);
+  const captureOwners = useRef(new Map<string, string>());
+  const saveCapture = async (draft: CaptureDraft): Promise<RecordRef> => {
+    const targetDate = captureOwners.current.get(draft.id) || (draft.kind === 'plan' ? planClock().date : draft.date);
+    captureOwners.current.set(draft.id, targetDate);
+    if (!targetDate) throw new Error('请选择日记日期');
+    await prepareAction(targetDate);
+    const target = await api.loadDiary(targetDate);
+    if (draft.kind === 'plan') {
+      const task = todoSchema.parse({ id: draft.id, title: draft.content, description: draft.description, category: draft.category, important: draft.important, urgent: draft.urgent, startDate: draft.startDate, startTime: draft.startTime, dueDate: draft.date, dueTime: draft.time, priority: draft.priority, list: draft.list, tags: draft.tags, entities: Object.values(draft.entities).flat() });
+      await api.changeAction({mode:'create',date:targetDate,version:target.version,task,operationId:draft.id});
+    } else {
+      const document = appendCapture(target.document, draft);
+      await api.saveDiary(targetDate, document, target.version);
+    }
+    await reloadAfterAction();
+    return {date:targetDate,kind:draft.kind === 'plan' ? 'todo' : draft.kind,id:draft.id,summary:draft.content.slice(0,2000)};
+  };
   const applyCapture = (note: string, split: SplitDraft, time: string, category: string, tags: string[], location?: { name: string; lat?: number; lng?: number }) => {
     if (category === 'learn' || category === 'input' || category === 'idea') {
       const current = ensureEntries(diaryRef.current); const entries = current.entries!;
@@ -976,14 +935,13 @@ export function App() {
   };
   const selectTab = (index: number) => {
     setActiveTab(index);
-    const track = trackRef.current;
-    const target = track?.children.item(index) as HTMLElement | null;
-    if (track && target && window.matchMedia("(max-width: 899px)").matches) {
-      const left = target.getBoundingClientRect().left - track.getBoundingClientRect().left + track.scrollLeft;
-      track.scrollTo({ left, behavior: "smooth" });
-    }
+    requestAnimationFrame(() => {
+      const track = trackRef.current;
+      if (track && window.matchMedia('(max-width: 899px)').matches) track.scrollTo({ left: index === 4 ? 0 : index * track.clientWidth, behavior: 'auto' });
+    });
   };
   const onTrackScroll = () => {
+    if (activeTab === 4) return;
     const track = trackRef.current;
     if (!track || !window.matchMedia("(max-width: 899px)").matches) return;
     const trackLeft = track.getBoundingClientRect().left;
@@ -1007,25 +965,38 @@ export function App() {
     <a className="skip-link" href="#main-content">跳到日记内容</a>
     <aside className="date-rail" aria-label="日期导航">
       <div className="brand"><span><Feather /></span><div><strong>独立日记</strong><small>写回 Obsidian</small></div></div>
-      <div className="rail-today"><CalendarDays /><div><strong>{todayLabel}</strong><span>{date}</span></div></div>
+      <nav className="workspace-switch" aria-label="主要功能"><button aria-pressed={!showTodos} onClick={() => setShowTodos(false)}>日记</button><button aria-pressed={showTodos} onClick={() => setShowTodos(true)}>计划</button></nav><div hidden={showTodos}><div className="rail-today"><CalendarDays /><div><strong>{todayLabel}</strong><span>{date}</span></div></div>
       <div className="week-list">{currentWeekDates.map((item) => <button type="button" key={item} className={item === date ? "active" : ""} onClick={() => setDate(item)}><span>{shortDate(item)}</span>{recordedDates.has(item) && <i aria-label="已有日记" />}</button>)}</div>
       <button type="button" className="today-button" onClick={() => setDate(initialDate)}>回到今天</button>
-      <div className="rail-note"><strong>本地私有</strong><span>服务仅监听当前电脑</span></div>
+      </div><div className="rail-note"><strong>本地私有</strong><span>服务仅监听当前电脑</span></div>
     </aside>
 
-    <main id="main-content" className="main-content">
-      <header className="topbar"><div className="date-control"><button type="button" onClick={() => setDate(addDays(date, -1))} aria-label="前一天"><ChevronLeft /></button><label><span className="sr-only">选择日期</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><button type="button" onClick={() => setDate(addDays(date, 1))} aria-label="后一天"><ChevronRight /></button></div><div className="top-actions"><div className="desktop-status"><StatusBadge status={status} /></div><button type="button" className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={theme === "light" ? "切换到深色主题" : "切换到浅色主题"}>{theme === "light" ? <Moon /> : <Sun />}</button><button type="button" className="save-button" onClick={() => void saveNow()} disabled={status === "saving" || status === "loading" || status === "conflict"}><Save />立即保存</button></div></header>
-      <div className="mobile-status"><StatusBadge status={status} /></div>
+    <main ref={browseRef} id="main-content" className="main-content" data-compact={compactBrowse.compact} data-workspace={showTodos ? 'plan' : showReceipts ? 'receipts' : tabs[activeTab].id}>
+      <nav className="compact-browse-bar" aria-label="紧凑浏览工具栏">
+        <button aria-label="日记" aria-pressed={!showTodos} title="日记" onClick={()=>setShowTodos(false)}><Feather size={20}/><small>日记</small></button>
+        <button aria-label="计划" aria-pressed={showTodos} title="计划" onClick={()=>setShowTodos(true)}><ListTodo size={20}/><small>计划</small></button>
+        <button className="compact-browse-context" aria-label={showTodos?'筛选计划':'日期与今日信息'} aria-haspopup="dialog" onClick={()=>showTodos?requestPlanTool('filters'):setDiaryTools(true)}>{showTodos?<SlidersHorizontal size={18}/>:<CalendarDays size={18}/>}<span>{showTodos?'筛选':date.slice(5).replace('-','/')}</span><ChevronDown size={14}/></button>
+        <button aria-label={theme==='light'?'切换到深色主题':'切换到浅色主题'} onClick={()=>setTheme(theme==='light'?'dark':'light')}>{theme==='light'?<Moon size={20}/>:<Sun size={20}/>}</button>
+        {!showTodos&&<button className={status==='dirty'?'has-unsaved-change':''} aria-label="保存日记" disabled={status==='saving'||status==='loading'||status==='conflict'} onClick={()=>void saveNow()}><Save size={20}/></button>}
+        {showTodos&&<button aria-label="新增计划" onClick={()=>requestPlanTool('create')}><Plus size={20}/></button>}
+      </nav>
+      {diaryTools && <CompactDiaryTools date={date} onDate={setDate} diary={diary} update={updateDiary} onClose={()=>setDiaryTools(false)} onExpand={()=>{setDiaryTools(false);compactBrowse.expand();}} onReceipts={()=>{setDiaryTools(false);setShowReceipts(true);}}/>}
+      <nav className="workspace-switch mobile-workspace-switch" aria-label="主要功能"><button aria-pressed={!showTodos} onClick={() => setShowTodos(false)}>日记</button><button aria-pressed={showTodos} onClick={() => setShowTodos(true)}>计划</button></nav>
+      <header className="topbar">{showTodos && <h1 className="plan-page-title">计划</h1>}<div hidden={showTodos} className="date-control"><button type="button" onClick={() => setDate(addDays(date, -1))} aria-label="前一天"><ChevronLeft /></button><label><span className="sr-only">选择日期</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><button type="button" onClick={() => setDate(addDays(date, 1))} aria-label="后一天"><ChevronRight /></button></div><div className="top-actions"><div hidden={showTodos} className="desktop-status"><StatusBadge status={status} /></div><button type="button" className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={theme === "light" ? "切换到深色主题" : "切换到浅色主题"}>{theme === "light" ? <Moon /> : <Sun />}</button><button hidden={showTodos} type="button" className="save-button" onClick={() => void saveNow()} disabled={status === "saving" || status === "loading" || status === "conflict"}><Save />立即保存</button></div></header>
+      <div hidden={showTodos} className="mobile-status"><StatusBadge status={status} /></div>
       {actionError && <p role="alert">{actionError}</p>}
-      <div className="todo-entry-actions"><button type="button" className="quiet-button" onClick={() => { setShowReceipts(true); setShowTodos(false); }}><BookOpen size={18} />每日小票 · 查看收藏</button><button type="button" className="quiet-button" onClick={() => { setActionSource(undefined); setShowTodos(true); setShowReceipts(false); }}><Check size={18} />待办 · {(diary.todos || []).filter(t => !t.done).length} 项未完成</button></div>
-      {showTodos ? (status === 'loading' || diary.date !== date ? <p role="status">正在读取待办…</p> : <TodoPanel key={`${date}:${actionSource?.id || "all"}`} date={date} source={actionSource} prepare={prepareAction} changed={reloadAfterAction} onOpen={ref => void openRecord(ref)} onClose={() => setShowTodos(false)} />) : showReceipts ? (status === 'loading' || diary.date !== date ? <p role="status">正在整理这一天的小票…</p> : <ReceiptCollection key={date} diary={diary} saved={status === 'saved'} onClose={() => setShowReceipts(false)} />) : <>
-      <QuickCapture key={date} entities={entities} onApply={applyCapture} />
+      <UnifiedCapture entityContext={common} hidden={!showTodos && !showReceipts && activeTab === 4} bottomNav={!showTodos && !showReceipts} onSave={saveCapture} onOpen={ref => void openRecord(ref)} />
+      <div className="workspace-root plan-workspace" hidden={!showTodos}><TodoPanel entityContext={common} toolbarAction={planToolbarAction} onExpand={compactBrowse.expand} date={planClock().date} source={actionSource} revision={actionsRevision} focusId={focusRecord?.kind === 'todo' ? focusRecord.id : undefined} prepare={prepareAction} changed={reloadAfterAction} onOpen={ref => void openRecord(ref)} onClose={() => setShowTodos(false)} /></div>
+      <div className="workspace-root diary-workspace" hidden={showTodos}>
+      <div className="todo-entry-actions"><button type="button" className="quiet-button" onClick={() => setShowReceipts(true)}><BookOpen size={18} />每日小票 · 查看收藏</button></div>
+      {showReceipts ? (status === 'loading' || diary.date !== date ? <p role="status">正在整理这一天的小票…</p> : <ReceiptCollection key={date} diary={diary} saved={status === 'saved'} onClose={() => setShowReceipts(false)} />) : <>
       {conflict && <ConflictBanner conflict={conflict} onRemote={() => { updateDiary(conflict.remote); versionRef.current = conflict.remoteVersion; setVersion(conflict.remoteVersion); lastSaved.current = JSON.stringify(conflict.remote); localStorage.removeItem(`diary.draft.${date}`); conflictRef.current = null; setConflict(null); setStatus("saved"); }} onLocal={() => { versionRef.current = conflict.remoteVersion; setVersion(conflict.remoteVersion); updateDiary(conflict.local); conflictRef.current = null; setConflict(null); setStatus("dirty"); }} />}
       <div className="workspace-layout">
         <nav className="section-nav" role="tablist" aria-label="日记栏目">{tabs.map((tab, index) => { const Icon = tab.icon; return <button type="button" key={tab.id} role="tab" aria-selected={activeTab === index} aria-controls={`panel-${tab.id}`} className={activeTab === index ? "active" : ""} onClick={() => selectTab(index)}><Icon /><span>{tab.label}</span></button>; })}</nav>
         <div className="workspace-track" ref={trackRef} onScroll={onTrackScroll}>{tabs.map((tab, index) => <div id={`panel-${tab.id}`} role="tabpanel" aria-hidden={activeTab !== index} inert={activeTab !== index} tabIndex={activeTab === index ? 0 : -1} data-active={activeTab === index} className={`workspace-panel${index === 4 ? " full-page" : ""}`} key={tab.id}>{panel(index)}</div>)}</div>
       </div>
       </>}
+      </div>
     </main>
 
     <aside className="context-rail" aria-label="本周概览">

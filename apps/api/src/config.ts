@@ -8,7 +8,7 @@ export const config = {
   host: process.env.HOST || "127.0.0.1",
   port: Number(process.env.PORT || 4319),
   vaultRoot: path.resolve(process.env.OBSIDIAN_DIR || "D:/prj/obsidian"),
-  dataDir: path.join(projectRoot, "data"),
+  dataDir: process.env.DIARY_DATA_DIR ? path.resolve(process.env.DIARY_DATA_DIR) : path.join(projectRoot, "data"),
   timezone: process.env.DIARY_TIMEZONE || "Asia/Shanghai",
   ai: {
     url: (process.env.AI_API_URL || "https://api.openai.com/v1").replace(/\/$/, ""),

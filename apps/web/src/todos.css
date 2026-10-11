@@ -100,6 +100,8 @@
   margin: 0;
   position: relative;
   padding-left: 28px;
+  display: flex;
+  flex-direction: column;
 }
 .todo-list::before {
   content: "";
@@ -246,6 +248,7 @@
   color: var(--muted);
   font-size: 14px;
   line-height: 1.8;
+  margin: auto 0;
 }
 
 /* ── 完成确认模态框 ── */

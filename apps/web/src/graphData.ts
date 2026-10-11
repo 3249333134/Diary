@@ -48,6 +48,8 @@ export type PlaceRegion = {
   radius: number;
   path: string;
   hue: number;
+  paletteHue?: number;
+  tone?: number;
   neutral: boolean;
   bounds?: { left: number; right: number; top: number; bottom: number };
   paintedArea?: number;
@@ -108,7 +110,7 @@ export function buildPlaceRegions(data: ReturnType<typeof deriveGraphData>, show
       x: 25 + (i % columns + .5) * (width - 50) / columns,
       y: 120 + (Math.floor(i / columns) + .5) * (height - 175) / rows,
       radius: Math.sqrt(Math.min(1400, width * height * .05 / Math.max(1, places.length)) + width * height * .1 * Math.max(1, place.count) / Math.max(1, total)),
-      path: inkPath(seed), hue: [264, 165, 32, 205, 340, 85][seed % 6],
+      path: inkPath(seed), hue: [265, 210, 165, 32][seed % 4], tone: 0,
     };
   });
   const byId = new Map(regions.map(region => [region.id, region]));
@@ -140,20 +142,27 @@ export function buildPlaceRegions(data: ReturnType<typeof deriveGraphData>, show
   const nest = (painted: PlaceRegion[], ancestors: string[] = []): PlaceRegion[] => painted.flatMap(region => {
     const nested = children(region.id).map(aggregate);
     const parent = { ...region, ancestorIds: ancestors, parentId: ancestors.at(-1) };
-    if (!nested.length || !region.bounds) return [parent];
-    const b = region.bounds;
+    if (!nested.length) return [parent];
+    // Narrow territory balancing can leave a root with no sampled cells. Its
+    // children still exist and must receive anchors, membership and ink deposits.
+    const b = region.bounds || { left: Math.max(18,region.x-width*.4), right: Math.min(width-18,region.x+width*.4), top: Math.max(130,region.y-height*.2), bottom: Math.min(height-28,region.y+height*.2) };
     const inset = Math.min(14, (b.right - b.left) * .08, (b.bottom - b.top) * .08);
     const domain = { left: b.left + inset, top: b.top + 40, width: Math.max(20, b.right - b.left - inset * 2), height: Math.max(20, b.bottom - b.top - 40 - inset) };
     const cols = Math.max(1, Math.round(Math.sqrt(nested.length * domain.width / domain.height)));
     const rows = Math.ceil(nested.length / cols);
     nested.forEach((child, i) => { child.x = domain.left + (i % cols + .5) * domain.width / cols; child.y = domain.top + (Math.floor(i / cols) + .5) * domain.height / rows; });
-    const paintedChildren = paintTerritories(nested, width, height, domain).map((child, i) => ({ ...child, hue: (region.hue + 35 + i * 53) % 360 }));
+    const paletteHue = region.paletteHue ?? region.hue;
+    const paintedChildren = paintTerritories(nested, width, height, domain).map(child => {
+      const seed = seedFor(child.id);
+      return { ...child, paletteHue, hue: paletteHue + (seed % 5 - 2) * 5, tone: 1 + (seed >>> 5) % 4 };
+    });
     return [parent, ...nest(paintedChildren, [...ancestors, region.id])];
   });
   return nest(paintTerritories(roots, width, height));
 }
 
 export function edgeAppearance(count: number, auxiliary = false) {
-  const strength = Math.min(1, Math.log2(Math.max(1, count)) / 6);
-  return { opacity: auxiliary ? .16 + strength * .2 : .32 + strength * .6, width: auxiliary ? .8 + strength : 1.1 + strength * 3.2 };
+  const strength = Math.min(1, Math.log2(Math.max(1, count)) / 5);
+  // A single shared event must remain visible over the colored ink, too.
+  return { strength: .4 + strength * .6, opacity: auxiliary ? .16 + strength * .24 : .55 + strength * .4, width: auxiliary ? .8 + strength * 1.2 : 1.2 + strength * 4 };
 }
