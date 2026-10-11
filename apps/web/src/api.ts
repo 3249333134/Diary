@@ -21,6 +21,7 @@ export const api = {
   addSharedTag: (tag: string) => request<{tags: string[]}>('/api/tag-library', {method:'POST',body:JSON.stringify({tag})}),
   planCategories: () => request<{categories:PlanCategory[]}>('/api/plan-categories'),
   addPlanCategory: (name:string,color:string) => request<{category:PlanCategory;categories:PlanCategory[]}>('/api/plan-categories',{method:'POST',body:JSON.stringify({name,color})}),
+  reorderPlanCategories: (ids: string[]) => request<{categories:PlanCategory[]}>('/api/plan-categories/order',{method:'PUT',body:JSON.stringify({ids})}),
   planViews: () => request<{views: PlanView[]}>('/api/plan-views'),
   savePlanViews: (views: PlanView[]) => request<{views: PlanView[]}>('/api/plan-views', {method:'PUT',body:JSON.stringify({views})}),
   parseCapture: (text: string, completion?: {title: string; description: string; date: string; time: string}) => request<{drafts: CaptureDraft[]; today: string; timezone: string; mode: 'ai' | 'manual'}>('/api/capture/parse', { method: 'POST', body: JSON.stringify({text, completion}) }),

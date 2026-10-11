@@ -41,9 +41,9 @@ export const todoAttachmentSchema = z.object({
 });
 export type TodoAttachment = z.infer<typeof todoAttachmentSchema>;
 
-export const planCategorySchema = z.object({ id: z.string().regex(/^(?:work|personal|cat-[a-f0-9-]{36})$/), name: z.string().trim().min(1).max(30), color: z.string().regex(/^#[0-9a-f]{6}$/i) });
+export const planCategorySchema = z.object({ id: z.string().regex(/^(?:work|personal|cat-[a-f0-9-]{36})$/), name: z.string().trim().min(1).max(30), color: z.string().regex(/^#[0-9a-f]{6}$/i), order: z.number().int().nonnegative().default(0) });
 export type PlanCategory = z.infer<typeof planCategorySchema>;
-export const defaultPlanCategories: PlanCategory[] = [{id:'work',name:'工作',color:'#7db2df'},{id:'personal',name:'个人生活',color:'#c1a183'}];
+export const defaultPlanCategories: PlanCategory[] = [{id:'work',name:'工作',color:'#7db2df',order:0},{id:'personal',name:'个人生活',color:'#c1a183',order:1}];
 export const planCategoryIdSchema = planCategorySchema.shape.id;
 export const todoSchema = z.object({
   category: planCategoryIdSchema.nullable().optional(), important: z.boolean().nullable().optional(), urgent: z.boolean().nullable().optional(),

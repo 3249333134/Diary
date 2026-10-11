@@ -43,11 +43,15 @@
 .plan-card .plan-card-details { padding-top:12px; margin-top:8px; border-top:1px solid color-mix(in srgb,currentColor 12%,transparent); gap:8px; }
 .plan-card-details[hidden] { display:none; }
 .plan-detail-classification { display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:12px; }
-.plan-card .todo-actions { gap:8px; padding-top:4px; margin:0; }
+.plan-card .todo-actions { gap:8px; padding-top:4px; margin:0; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; }
 .plan-card .todo-actions:empty { display:none; }
+.plan-actions-left { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.plan-actions-right { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-left:auto; }
 .plan-card .todo-desc { font-size:13px; line-height:1.6; margin:0; }
 .plan-card .plan-start { margin:0; }
-.plan-card .plan-delete-action { color:var(--red); margin-left:auto; }
+.plan-card .plan-delete-action { color:var(--red); }
+.plan-card .plan-primary-action { color:var(--purple-ink); background:var(--purple-soft); font-weight:600; }
+.plan-card .plan-primary-action:hover { background:color-mix(in srgb,var(--purple-soft) 70%,var(--purple) 30%); }
 .plan-card-summary:focus-visible,.plan-drag-handle:focus-visible { outline:2px solid var(--purple); outline-offset:2px; border-radius:8px; }
 .todo-list li.plan-card.state-overdue { border-color:color-mix(in srgb,#c84b59 35%,transparent); }.todo-list li.plan-card.state-soon { border-color:color-mix(in srgb,#b78918 35%,transparent); }
 @media(prefers-reduced-motion:reduce) { .plan-expand-icon { transition:none; } }

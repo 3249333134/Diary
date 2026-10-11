@@ -2,13 +2,14 @@ import {createContext,useContext,useEffect,useRef,useState,type ReactNode,type C
 import {defaultPlanCategories,type PlanCategory} from '@diary/contracts';
 import {api} from './api';
 import {Plus,X} from 'lucide-react';
-const Context=createContext<{categories:PlanCategory[];add:(name:string,color:string)=>Promise<void>}>({categories:defaultPlanCategories,add:async()=>{throw new Error('类别服务未加载');}});
+const Context=createContext<{categories:PlanCategory[];add:(name:string,color:string)=>Promise<void>;reorder:(ids:string[])=>Promise<void>}>({categories:defaultPlanCategories,add:async()=>{throw new Error('类别服务未加载');},reorder:async()=>{throw new Error('类别服务未加载');}});
 export const usePlanCategories=()=>useContext(Context);
 export function PlanCategoryProvider({children}:{children:ReactNode}) {
   const [categories,setCategories]=useState(defaultPlanCategories);
   useEffect(()=>{let active=true;void api.planCategories().then(r=>{if(active&&Array.isArray(r.categories))setCategories(r.categories);}).catch(()=>{});return()=>{active=false};},[]);
   const add=async(name:string,color:string)=>{const result=await api.addPlanCategory(name,color);setCategories(result.categories);};
-  return <Context.Provider value={{categories,add}}>{children}</Context.Provider>;
+  const reorder=async(ids:string[])=>{const result=await api.reorderPlanCategories(ids);setCategories(result.categories);};
+  return <Context.Provider value={{categories,add,reorder}}>{children}</Context.Provider>;
 }
 export const categoryStyle=(color?:string)=>color?{'--category-color':color} as CSSProperties:undefined;
 export function AddPlanCategory({onClose}:{onClose:()=>void}) {

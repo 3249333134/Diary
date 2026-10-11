@@ -9,9 +9,11 @@ import { api, type ActionRow, type ActionInput, type ParsedTodo } from './api';
 import { planClock, matchesPlan, planState, type PlanFilter } from './planFilters';
 import { ClassificationFields, QUADRANTS, quadrant, type Classification } from './PlanFields';
 import { PlanBoard } from './PlanBoard';
+import { PlanWindows } from './PlanWindows';
 import { PlanViews } from './PlanViews';
 import type { PlanView } from './api';
 import './plan-board.css';
+import './plan-windows.css';
 import { PlanCompletion } from './PlanCompletion';
 import type { CaptureDraft } from '@diary/contracts';
 const today = () => planClock().date;
@@ -22,7 +24,7 @@ const PRIORITY_COLOR: Record<string, string> = { high: '#bd3d4c', medium: '#b886
 const STATUS_LABEL: Record<string, string> = { todo: '待开始', doing: '进行中', done: '已完成', cancelled: '已取消' };
 
 function TodoStats({ rows, filter, onFilter }: { rows: ActionRow[]; filter: PlanFilter; onFilter: (f: PlanFilter) => void }) {
-  return <div className="todo-stats">{([['overdue','逾期'],['today','今日'],['upcoming','即将开始'],['done','已完成']] as const).map(([key,label]) => { const count=rows.filter(r=>matchesPlan(r.task,key)).length;const Icon=key==='overdue'?Flag:key==='today'?Calendar:key==='upcoming'?Clock:CheckCircle2;return <button key={key} className={`todo-stat-chip ${key} ${filter === key ? 'active' : ''}`} aria-label={`${label} ${count} 项`} title={label} aria-pressed={filter === key} onClick={() => onFilter(key)}><Icon className="compact-stat-icon" size={16}/><strong>{count}</strong><span>{label}</span></button>;})}</div>;
+  return <div className="todo-stats">{([['all','全部'],['overdue','逾期'],['today','今日'],['upcoming','即将开始'],['done','已完成']] as const).map(([key,label]) => { const count=rows.filter(r=>matchesPlan(r.task,key)).length;const Icon=key==='all'?ListTodo:key==='overdue'?Flag:key==='today'?Calendar:key==='upcoming'?Clock:CheckCircle2;return <button key={key} className={`todo-stat-chip ${key} ${filter === key ? 'active' : ''}`} aria-label={`${label} ${count} 项`} title={label} aria-pressed={filter === key} onClick={() => onFilter(key)}><Icon className="compact-stat-icon" size={16}/><strong>{count}</strong><span>{label}</span></button>;})}</div>;
 }
 
 function PlanDialog({ children, busy, onClose, label = "计划编辑" }: { children: ReactNode; busy: boolean; onClose: () => void; label?: string }) {
@@ -70,14 +72,15 @@ function TodoItem({ row, busy, onCheck, onEdit, onDelete, onStatus, onOpenSource
       data-plan-id={row.task.id}
       data-expanded={expanded}
       className={['plan-card', `category-${row.task.category || 'unset'}`, `state-${planState(row.task)}`,
-        row.task.done ? 'todo-done' : '',
+        `quadrant-${quadrant(row.task)}`,
+        row.task.done || row.task.status === 'done' ? 'todo-done' : '',
         overdue ? 'todo-overdue' : '',
       ].filter(Boolean).join(' ')}
     >
       <label className="todo-check">
         <input
           type="checkbox"
-          checked={row.task.done}
+          checked={row.task.done || row.task.status === 'done'}
           disabled={busy}
           aria-label={`完成：${row.task.title}`}
           onChange={() => onCheck(row)}
@@ -121,26 +124,30 @@ function TodoItem({ row, busy, onCheck, onEdit, onDelete, onStatus, onOpenSource
           )}
         </div>
 
-        {/* 操作按钮 */}
+        {/* 操作按钮：左侧次要操作，右侧主要操作（完成+删除） */}
         <div className="todo-actions">
-          <div className="plan-move-menu"><GlassSelect action placeholder="移动到…" label={'移动到：'+row.task.title} disabled={busy||!!row.task.deletedAt} value={row.task.category||''} options={[...categories.map(c=>({value:c.id,label:c.name,group:'事项类别',color:c.color,selected:row.task.category===c.id})),...QUADRANTS.map((q,i)=>({value:q.id,label:q.label,group:'四象限',selected:q.id===quadrant(row.task),color:['#c05d56','#7856bd','#258378','#9296a3'][i]}))]} onChange={id=>{const q=QUADRANTS.find(q=>q.id===id);onMove(row,q?{important:q.important,urgent:q.urgent}:{category:id});}}/></div>
-          {!row.task.done && !row.task.deletedAt && (
-            <button className="quiet-button plan-primary-action" disabled={busy} onClick={() => onOpenCompletion(row)}>
-              <Check size={15} />完成
+          <div className="plan-actions-left">
+            <div className="plan-move-menu"><GlassSelect action placeholder="移动到…" label={'移动到：'+row.task.title} disabled={busy||!!row.task.deletedAt} value={row.task.category||''} options={[...categories.map(c=>({value:c.id,label:c.name,group:'事项类别',color:c.color,selected:row.task.category===c.id})),...QUADRANTS.map((q,i)=>({value:q.id,label:q.label,group:'四象限',selected:q.id===quadrant(row.task),color:['#c05d56','#7856bd','#258378','#9296a3'][i]}))]} onChange={id=>{const q=QUADRANTS.find(q=>q.id===id);onMove(row,q?{important:q.important,urgent:q.urgent}:{category:id});}}/></div>
+            <GlassSelect label={'计划状态：'+row.task.title} value={status} disabled={busy||!!row.task.deletedAt} options={Object.entries(STATUS_LABEL).map(([value,label])=>({value,label,color:({todo:'#9296a3',doing:'#7856bd',done:'#258378',cancelled:'#a36b76'} as Record<string,string>)[value]}))} onChange={status=>onStatus(row,status as 'todo'|'doing'|'done'|'cancelled')}/>
+            <button className="quiet-button" disabled={busy || !!row.task.deletedAt} onClick={() => onEdit(row)}>
+              <Pencil size={15} />修改
             </button>
-          )}
-          <GlassSelect label={'计划状态：'+row.task.title} value={status} disabled={busy||!!row.task.deletedAt} options={Object.entries(STATUS_LABEL).map(([value,label])=>({value,label,color:({todo:'#9296a3',doing:'#7856bd',done:'#258378',cancelled:'#a36b76'} as Record<string,string>)[value]}))} onChange={status=>onStatus(row,status as 'todo'|'doing'|'done'|'cancelled')}/>
-          <button className="quiet-button" disabled={busy || !!row.task.deletedAt} onClick={() => onEdit(row)}>
-            <Pencil size={15} />修改
-          </button>
-          <button className="quiet-button plan-delete-action" disabled={busy} aria-label={`${row.task.deletedAt ? '永久删除' : '删除计划'}：${row.task.title}`} onClick={() => onDelete(row)}>
-        <Trash2 size={15} />{row.task.deletedAt ? "永久删除" : "删除"}
-      </button>
-          {(row.task.done || row.task.deletedAt || row.restorePending) && (
-            <button className="quiet-button" disabled={busy} onClick={() => onCheck(row)}>
-              <RotateCcw size={15} />恢复
+            {(row.task.done || row.task.deletedAt || row.restorePending) && (
+              <button className="quiet-button" disabled={busy} onClick={() => onCheck(row)}>
+                <RotateCcw size={15} />恢复
+              </button>
+            )}
+          </div>
+          <div className="plan-actions-right">
+            {!row.task.done && !row.task.deletedAt && (
+              <button className="quiet-button plan-primary-action" disabled={busy} onClick={() => onOpenCompletion(row)}>
+                <Check size={15} />完成
+              </button>
+            )}
+            <button className="quiet-button plan-delete-action" disabled={busy} aria-label={`${row.task.deletedAt ? '永久删除' : '删除计划'}：${row.task.title}`} onClick={() => onDelete(row)}>
+              <Trash2 size={15} />{row.task.deletedAt ? "永久删除" : "删除"}
             </button>
-          )}
+          </div>
         </div>
 
         {row.restorePending && <p role="status">恢复计划待重试，请点击“恢复”补全撤销；其他事实不受影响。</p>}
@@ -317,20 +324,20 @@ function EditModal({ row, busy, onSave, onClose, entityContext }: {
   );
 }
 
-export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, revision = 0, focusId, toolbarAction, onExpand, entityContext }: {
+export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, revision = 0, focusId, toolbarAction, onExpand, fullscreen, onToggleFullscreen, entityContext }: {
   entityContext: EntityContext;
   date: string; source?: RecordRef; revision?: number; focusId?: string;
-  toolbarAction?: { kind: "create" | "filters"; id: number }; onExpand?: () => void;
+  toolbarAction?: { kind: "create" | "filters"; id: number }; onExpand?: () => void; fullscreen?: boolean; onToggleFullscreen?: () => void;
   prepare: (targetDate?: string) => Promise<string | undefined>;
   changed: () => Promise<void>;
   onOpen: (ref: RecordRef) => void;
   onClose: () => void;
 }) {
-  const {categories}=usePlanCategories();
+  const {categories,reorder:reorderCategories}=usePlanCategories();
   const [addingCategory,setAddingCategory]=useState(false);
   const confirmation=useGlassConfirm();
   const [showFilters, setShowFilters] = useState(false);
-  const createPlan = () => { setQuickText(''); setCreateId(crypto.randomUUID()); setParsed({title:'',dueDate:'',dueTime:'',priority:'medium',list:'',tags:[]}); };
+  const createPlan = (category?: string) => { setQuickText(''); setCreateId(crypto.randomUUID()); setParsed({title:'',dueDate:'',dueTime:'',priority:'medium',list:'',tags:[],category:category||undefined}); };
   useEffect(() => { if(toolbarAction?.kind==='create')createPlan(); if(toolbarAction?.kind==='filters')setShowFilters(true); }, [toolbarAction]);
   const [quickText, setQuickText] = useState('');
   const [parsed, setParsed] = useState<ParsedTodo | null>(null);
@@ -339,7 +346,7 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
   const [createId, setCreateId] = useState(() => crypto.randomUUID());
   const [rows, setRows] = useState<ActionRow[]>([]);
   const [filter, setFilter] = useState<PlanFilter>('all');
-  const [layout, setLayout] = useState<'board'|'list'>('board');
+  const [layout, setLayout] = useState<'board'|'list'|'windows'>('board');
   const [categoryFilter,setCategoryFilter] = useState('all');
   const [viewFilter,setViewFilter] = useState('');
   const [views,setViews] = useState<PlanView[]>([]);
@@ -492,7 +499,7 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
     {hasUnclassified&&<button type="button" className="quiet-button plan-batch-button" onClick={()=>{setShowFilters(false);setBatch({category:null,important:null,urgent:null});}}>批量归类</button>}</>;
   const renderItem=(row:ActionRow,handle?:ReactNode)=><TodoItem key={`${row.date}:${row.task.id}`} row={row} busy={busy} handle={handle} onMove={(r,p)=>void move(r,p)} onCheck={r=>r.task.deletedAt?void act(r,'restore'):onCheck(r)} onEdit={onEdit} onDelete={onDelete} onStatus={onStatus} onOpenSource={onOpen} onOpenCompletion={r=>{if(r.pendingRecord&&!r.completionPending)setCompleting(r);else void act(r,'complete',undefined,{automaticRecord:true});}}/>;
   return (
-    <section className="panel-section todo-panel" aria-labelledby="todo-title">
+    <section className="panel-section todo-panel" data-fullscreen={fullscreen ? 'true' : undefined} aria-labelledby="todo-title">
       {confirmation.dialog}
       {addingCategory&&<AddPlanCategory onClose={()=>setAddingCategory(false)}/>}
       <div className="section-heading">
@@ -503,7 +510,7 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
             <p>从记录出发，完成后留下真正发生的事。</p>
           </div>
         </div>
-        <button type="button" className="plan-add-button" aria-label="新增计划" title="新增计划" onClick={createPlan}><Plus size={21}/></button>
+        <button type="button" className="plan-add-button" aria-label="新增计划" title="新增计划" onClick={()=>createPlan()}><Plus size={21}/></button>
       </div>
 
       {source && (
@@ -529,13 +536,13 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
         <div className="plan-content-toolbar">
           <button type="button" className={`quiet-button plan-filter-trigger${hasExtraFilters?' has-extra-filters':''}`} aria-label="筛选计划" aria-haspopup="dialog" onClick={()=>setShowFilters(true)}><SlidersHorizontal size={16}/><span>{rangeLabels[filter]}</span>{hasExtraFilters&&<span className="plan-filter-dot" aria-label="已应用其他筛选"/>}<ChevronDown size={14}/></button>
           <span className="plan-range-label">{rangeLabels[filter]}{hasExtraFilters?' · 已筛选':''}</span>
-          <nav className="plan-view-switch" aria-label="计划视图"><button type="button" aria-pressed={layout==='board'&&filter!=='trash'} disabled={filter==='trash'} title={filter==='trash'?'回收站以列表显示':'四象限'} onClick={()=>setLayout('board')}>四象限</button><button type="button" aria-pressed={layout==='list'||filter==='trash'} onClick={()=>setLayout('list')}>列表</button></nav>
+          <nav className="plan-view-switch" aria-label="计划视图"><button type="button" aria-pressed={layout==='board'&&filter!=='trash'} disabled={filter==='trash'} title={filter==='trash'?'回收站以列表显示':'四象限'} onClick={()=>setLayout('board')}>四象限</button><button type="button" aria-pressed={layout==='windows'&&filter!=='trash'} disabled={filter==='trash'} title={filter==='trash'?'回收站以列表显示':'窗口'} onClick={()=>setLayout('windows')}>窗口</button><button type="button" aria-pressed={layout==='list'||filter==='trash'} onClick={()=>setLayout('list')}>列表</button></nav>
         </div>
       </div>
       {showFilters&&<PlanDialog label="筛选计划" busy={false} onClose={()=>setShowFilters(false)}><div className="compact-sheet"><header><div><h2>筛选计划</h2><p>调整筛选后，继续浏览当前视图。</p></div><button className="square-button" aria-label="关闭计划筛选" onClick={()=>setShowFilters(false)}><X size={20}/></button></header><section className="plan-filter-section"><h3>事项类别</h3>{categoryControls}</section>{filterControls}<footer><button className="quiet-button" onClick={()=>{setFilter('all');setCategoryFilter('all');setSourceFilter('all');setListFilter('');setViewFilter('');}}>重置筛选</button><button className="save-button" onClick={()=>setShowFilters(false)}>显示 {visible.length} 项</button><button className="quiet-button" onClick={()=>{setShowFilters(false);onExpand?.();}}>展开完整顶部</button></footer></div></PlanDialog>}
 
       {/* 计划列表 */}
-      {layout==='board'&&filter!=='trash'?<PlanBoard rows={visible} busy={busy} render={renderItem} onMove={(r,p)=>void move(r,p)}/>:<ul className="todo-list plan-list-view">
+      {filter==='trash'||layout==='list'?<ul className="todo-list plan-list-view">
         {visible.map(row => (
           <TodoItem
             onMove={(r,p)=>void move(r,p)}
@@ -550,7 +557,7 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
             onOpenCompletion={r => { if(r.pendingRecord&&!r.completionPending)setCompleting(r);else void act(r,'complete',undefined,{automaticRecord:true}); }}
           />
         ))}
-      </ul>}
+      </ul>:layout==='windows'?<PlanWindows rows={visible} categories={categories} busy={busy} render={renderItem} onMove={(r,p)=>void move(r,p)} onCreate={categoryId=>createPlan(categoryId)} onAddCategory={()=>setAddingCategory(true)} onReorder={reorderCategories}/>:<PlanBoard rows={visible} busy={busy} render={renderItem} onMove={(r,p)=>void move(r,p)}/>}
       {batch&&<PlanDialog busy={busy} onClose={()=>setBatch(undefined)}><div className="todo-modal"><div className="todo-modal-header"><h3>批量归类</h3><p>仅修改当前筛选范围内的待分类事项。</p></div><div className="todo-modal-body"><ClassificationFields value={batch} start={false} onChange={patch=>setBatch({...batch,...patch})}/></div><div className="todo-modal-footer"><button className="quiet-button" disabled={busy} onClick={()=>setBatch(undefined)}>取消</button><button className="save-button" disabled={busy||!batch.category||typeof batch.important!=='boolean'||typeof batch.urgent!=='boolean'} onClick={()=>void batchSave()}>应用分类</button></div></div></PlanDialog>}
 
       {!visible.length && <p className="todo-empty">此范围暂无计划。可以从一条记录创建行动，也可以直接在上方添加。</p>}

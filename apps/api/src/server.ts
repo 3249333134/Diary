@@ -39,7 +39,7 @@ const MIME: Record<string, string> = {
   ".map": "application/json",
 };
 
-import { addSharedTag, tagLibrary, getPlanCategories, addPlanCategory, getPlanViews, savePlanViews } from './planSettings.js';
+import { addSharedTag, tagLibrary, getPlanCategories, addPlanCategory, reorderPlanCategories, getPlanViews, savePlanViews } from './planSettings.js';
 
 function safeJoin(root: string, ...parts: string[]) {
   const joined = path.join(root, ...parts);
@@ -104,6 +104,7 @@ export async function buildServer(index = new EntityIndex()) {
   app.post<{ Body: { tag: string } }>('/api/tag-library', async request => { await addSharedTag(request.body.tag); return { tags: await tagLibrary(index.getTags()) }; });
   app.get('/api/plan-categories', async () => ({categories: await getPlanCategories()}));
   app.post('/api/plan-categories', async request => addPlanCategory(request.body));
+  app.put<{ Body: { ids: string[] } }>('/api/plan-categories/order', async request => reorderPlanCategories(request.body.ids));
   app.get('/api/plan-views', async () => ({ views: await getPlanViews() }));
   app.put<{ Body: { views: unknown } }>('/api/plan-views', async request => { await savePlanViews(request.body.views); return { views: await getPlanViews() }; });
   app.post("/api/tags", async (request) => {

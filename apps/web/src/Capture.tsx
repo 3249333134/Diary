@@ -1,7 +1,7 @@
 import { PlanEntityFields, type EntityContext } from './PlanEntities';
 import { useEffect, useRef, useState } from 'react';
 import { captureDraftSchema, type CaptureDraft, type RecordRef } from '@diary/contracts';
-import { Sparkles, X } from 'lucide-react';
+import { Sparkles, X, Maximize2, Minimize2 } from 'lucide-react';
 import { api } from './api';
 import { planClock } from './planFilters';
 import './capture.css';
@@ -27,7 +27,7 @@ export function DraftFields({ draft, onChange, diaryOnly = false, disabled = fal
 }
 
 type Row = { draft: CaptureDraft; submitted?: CaptureDraft; state: 'draft' | 'saving' | 'saved' | 'error'; error?: string; ref?: RecordRef };
-export function UnifiedCapture({ onSave, onOpen, hidden = false, bottomNav = false, entityContext }: { entityContext?: EntityContext; hidden?: boolean; bottomNav?: boolean; onSave: (draft: CaptureDraft) => Promise<RecordRef>; onOpen: (ref: RecordRef) => void }) {
+export function UnifiedCapture({ onSave, onOpen, hidden = false, bottomNav = false, entityContext, fullscreen, onToggleFullscreen }: { entityContext?: EntityContext; hidden?: boolean; bottomNav?: boolean; onSave: (draft: CaptureDraft) => Promise<RecordRef>; onOpen: (ref: RecordRef) => void; fullscreen?: boolean; onToggleFullscreen?: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 899px)').matches);
   const panel = useRef<HTMLElement>(null);
@@ -74,7 +74,10 @@ export function UnifiedCapture({ onSave, onOpen, hidden = false, bottomNav = fal
     catch (e) { update({ state: 'error', error: e instanceof Error ? e.message : '保存失败，草稿仍保留' }); }
   };
   return <div className={`capture-shell${bottomNav ? ' has-bottom-nav' : ''}${expanded ? ' capture-expanded' : ''}`} hidden={hidden}>
-    <button ref={trigger} type="button" className="capture-mobile-trigger" aria-expanded={expanded} aria-controls="capture-panel" onClick={() => setExpanded(true)}><Sparkles size={19} /><span>AI · 记一句话 / 建计划</span>{(text || rows.some(r => r.state !== 'saved')) && <small>有草稿</small>}</button>
+    <div className="capture-mobile-bar">
+      <button ref={trigger} type="button" className="capture-mobile-trigger" aria-expanded={expanded} aria-controls="capture-panel" onClick={() => setExpanded(true)}><Sparkles size={19} /><span>AI · 记一句话 / 建计划</span>{(text || rows.some(r => r.state !== 'saved')) && <small>有草稿</small>}</button>
+      {onToggleFullscreen && <button type="button" className="capture-fullscreen-btn" aria-pressed={fullscreen} aria-label={fullscreen ? '退出全屏' : '全屏显示'} title={fullscreen ? '退出全屏' : '全屏显示'} onClick={onToggleFullscreen}>{fullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}</button>}
+    </div>
     {mobile && expanded && <button className="capture-backdrop" aria-label="收起 AI 录入" tabIndex={-1} onClick={close} />}
     <section ref={panel} id="capture-panel" className="unified-capture" aria-labelledby="capture-title" role={mobile && expanded ? 'dialog' : undefined} aria-modal={mobile && expanded ? true : undefined}>
     <button type="button" className="capture-mobile-close quiet-button" onClick={close}><X size={18} />收起</button>

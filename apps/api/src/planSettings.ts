@@ -29,7 +29,8 @@ export const savePlanViews = (views: unknown) => withVaultLock(() => writeJson(`
 
 export async function getPlanCategories(): Promise<PlanCategory[]> {
   const saved = z.array(planCategorySchema).parse(await readJson<unknown>(`${vaultPaths.system}/plan-categories.json`, []));
-  return [...defaultPlanCategories, ...saved.filter(c=>!defaultPlanCategories.some(d=>d.id===c.id))];
+  const merged = [...defaultPlanCategories.map((c, i) => ({ ...c, order: c.order ?? i })), ...saved.filter(c=>!defaultPlanCategories.some(d=>d.id===c.id))];
+  return merged.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 export async function addPlanCategory(input: unknown) {
   const data = planCategorySchema.pick({name:true,color:true}).parse(input);
@@ -38,8 +39,27 @@ export async function addPlanCategory(input: unknown) {
     const normalize = (name:string)=>name.normalize('NFKC').trim().toLocaleLowerCase();
     if(categories.some(c=>normalize(c.name)===normalize(data.name))) throw Object.assign(new Error('已有同名类别，请使用其他名称'),{statusCode:409});
     if(categories.length>=30) throw Object.assign(new Error('最多可设置 30 个计划类别'),{statusCode:400});
-    const category = planCategorySchema.parse({id:'cat-'+randomUUID(),...data});
-    await writeJson(`${vaultPaths.system}/plan-categories.json`, [...categories.filter(c=>!defaultPlanCategories.some(d=>d.id===c.id)),category]);
-    return {category,categories:[...categories,category]};
+    const maxOrder = categories.reduce((m, c) => Math.max(m, c.order ?? 0), -1);
+    const category = planCategorySchema.parse({id:'cat-'+randomUUID(),...data, order: maxOrder + 1});
+    const toSave = [...categories.filter(c=>!defaultPlanCategories.some(d=>d.id===c.id)), category];
+    await writeJson(`${vaultPaths.system}/plan-categories.json`, toSave);
+    return {category,categories: await getPlanCategories()};
+  });
+}
+export async function reorderPlanCategories(ids: string[]) {
+  return withVaultLock(async () => {
+    const current = await getPlanCategories();
+    const idSet = new Set(ids);
+    const ordered = ids.map((id, i) => {
+      const c = current.find((c) => c.id === id);
+      return c ? { ...c, order: i } : null;
+    }).filter((c): c is PlanCategory => c !== null);
+    const rest = current.filter((c) => !idSet.has(c.id)).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    let nextOrder = ordered.length;
+    for (const c of rest) c.order = nextOrder++;
+    const all = [...ordered, ...rest];
+    const toSave = all.filter((c) => !defaultPlanCategories.some((d) => d.id === c.id));
+    await writeJson(`${vaultPaths.system}/plan-categories.json`, toSave);
+    return { categories: await getPlanCategories() };
   });
 }

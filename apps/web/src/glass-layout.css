@@ -110,8 +110,8 @@ html:has(.main-content[data-workspace="lookup"]),body:has(.main-content[data-wor
   .todo-panel>.todo-list { flex:1; min-height:0; overflow-y:auto; overscroll-behavior-y:contain; margin:0; }
   .todo-panel>:not(.todo-list) { flex-shrink:0; }
   .main-content[data-workspace="receipts"] .diary-workspace { overflow-y:auto; }
-  .capture-mobile-trigger { bottom:calc(8px + env(safe-area-inset-bottom,0px) + var(--keyboard-lift)); }
-  .has-bottom-nav .capture-mobile-trigger { bottom:calc(76px + env(safe-area-inset-bottom,0px) + var(--keyboard-lift)); }
+  .capture-mobile-bar { bottom:calc(8px + env(safe-area-inset-bottom,0px) + var(--keyboard-lift)); }
+  .has-bottom-nav .capture-mobile-bar { bottom:calc(76px + env(safe-area-inset-bottom,0px) + var(--keyboard-lift)); }
   .capture-expanded .unified-capture { background:var(--glass); max-height:calc(var(--app-height,100dvh) - 16px); bottom:var(--keyboard-lift); }
   .section-nav { bottom:var(--keyboard-lift); height:calc(68px + env(safe-area-inset-bottom,0px)); padding:6px 12px calc(6px + env(safe-area-inset-bottom,0px)); }
   .plan-edit-dialog,.completion-dialog,.diary-note-dialog { max-height:calc(var(--app-height,100dvh) - 20px); }
