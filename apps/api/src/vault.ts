@@ -1,80 +1,90 @@
-import { createHash, randomUUID } from "node:crypto";
-import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { createHash } from "node:crypto";
 import { diaryDocumentSchema, emptyDiary, type DiaryDocument, type DiaryResponse } from "@diary/contracts";
-import { config, vaultPaths } from "./config.js";
 import { assertDate } from "./date.js";
 import { parseDiaryMarkdown, serializeDiaryMarkdown } from "./markdown.js";
-
-function absoluteFor(relative: string): string {
-  const absolute = path.resolve(config.vaultRoot, relative);
-  const prefix = config.vaultRoot.endsWith(path.sep) ? config.vaultRoot : `${config.vaultRoot}${path.sep}`;
-  if (absolute !== config.vaultRoot && !absolute.startsWith(prefix)) throw new Error("知识库路径越界");
-  return absolute;
-}
+import { pool, queryRows } from "./db.js";
 
 function versionOf(content: string): string {
   return createHash("sha256").update(content).digest("hex");
 }
 
-export async function atomicWrite(relative: string, content: string): Promise<void> {
-  const absolute = absoluteFor(relative);
-  await mkdir(path.dirname(absolute), { recursive: true });
-  const temporary = `${absolute}.${randomUUID()}.tmp`;
-  await writeFile(temporary, content, "utf8");
-  await rename(temporary, absolute);
+// 按用户维度的写锁，避免单用户并发写冲突
+const userLocks = new Map<number, Promise<unknown>>();
+export function withVaultLock<T>(userId: number, work: () => Promise<T>): Promise<T> {
+  const prev = userLocks.get(userId) ?? Promise.resolve();
+  const result = prev.then(work, work);
+  userLocks.set(userId, result.catch(() => {}));
+  return result;
 }
 
-export async function loadDiary(date: string): Promise<DiaryResponse> {
+export async function loadDiary(date: string, userId: number): Promise<DiaryResponse> {
   assertDate(date);
-  const relative = `${vaultPaths.daily}/${date}.md`;
-  try {
-    const content = await readFile(absoluteFor(relative), "utf8");
-    return { document: parseDiaryMarkdown(content, date), version: versionOf(content), exists: true };
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return { document: emptyDiary(date), version: "0", exists: false };
-    throw error;
+  const rows = await queryRows<{ content: string }>("SELECT content FROM diaries WHERE user_id = ? AND date = ?", [userId, date]);
+  if (rows.length === 0) {
+    return { document: emptyDiary(date), version: "0", exists: false };
   }
+  const content = rows[0].content;
+  return { document: parseDiaryMarkdown(content, date), version: versionOf(content), exists: true };
 }
 
-// ponytail: one local writer queue; use per-vault queues if multi-user support is added.
-let writes: Promise<unknown> = Promise.resolve();
-export function withVaultLock<T>(work: () => Promise<T>): Promise<T> {
-  const result = writes.then(work, work); writes = result.catch(() => {}); return result;
+export function saveDiary(
+  date: string,
+  input: unknown,
+  expectedVersion: string,
+  userId: number
+): Promise<DiaryResponse> {
+  return withVaultLock(userId, () => saveDiaryUnlocked(date, input, expectedVersion, userId));
 }
-export function saveDiary(date: string, input: unknown, expectedVersion: string): Promise<DiaryResponse> {
-  return withVaultLock(() => saveDiaryUnlocked(date, input, expectedVersion));
-}
-export async function saveDiaryUnlocked(date: string, input: unknown, expectedVersion: string): Promise<DiaryResponse> {
+
+export async function saveDiaryUnlocked(
+  date: string,
+  input: unknown,
+  expectedVersion: string,
+  userId: number
+): Promise<DiaryResponse> {
   assertDate(date);
   const document = diaryDocumentSchema.parse(input);
   if (document.date !== date) throw Object.assign(new Error("路径日期与日记日期不一致"), { statusCode: 400 });
-  const current = await loadDiary(date);
-  if (current.version !== expectedVersion) throw Object.assign(new Error("日记已在其他位置修改"), { statusCode: 409, code: "VERSION_CONFLICT", current });
+  const current = await loadDiary(date, userId);
+  if (current.version !== expectedVersion) {
+    throw Object.assign(new Error("日记已在其他位置修改"), { statusCode: 409, code: "VERSION_CONFLICT", current });
+  }
   const content = serializeDiaryMarkdown(document);
-  await atomicWrite(`${vaultPaths.daily}/${date}.md`, content);
-  const saved = await loadDiary(date);
+  const version = versionOf(content);
+  await pool.query(
+    "INSERT INTO diaries (user_id, date, content, version) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE content = VALUES(content), version = VALUES(version)",
+    [userId, date, content, version]
+  );
+  const saved = await loadDiary(date, userId);
   return { ...saved, savedAt: new Date().toISOString() };
 }
 
-export async function listDiaryDates(from?: string, to?: string): Promise<string[]> {
+export async function listDiaryDates(userId: number, from?: string, to?: string): Promise<string[]> {
   if (from) assertDate(from);
   if (to) assertDate(to);
+  let sql = "SELECT date FROM diaries WHERE user_id = ?";
+  const params: (string | number)[] = [userId];
+  if (from) { sql += " AND date >= ?"; params.push(from); }
+  if (to) { sql += " AND date <= ?"; params.push(to); }
+  sql += " ORDER BY date ASC";
+  const rows = await queryRows<{ date: string }>(sql, params);
+  return rows.map((r) => r.date);
+}
+
+export async function readJson<T>(key: string, fallback: T, userId: number): Promise<T> {
+  const rows = await queryRows<{ value: string }>("SELECT value FROM settings WHERE user_id = ? AND `key` = ?", [userId, key]);
+  if (rows.length === 0) return fallback;
   try {
-    const entries = await readdir(absoluteFor(vaultPaths.daily), { withFileTypes: true });
-    return entries.filter((entry) => entry.isFile() && /^\d{4}-\d{2}-\d{2}\.md$/.test(entry.name))
-      .map((entry) => entry.name.slice(0, 10)).filter((date) => (!from || date >= from) && (!to || date <= to)).sort();
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
-    throw error;
+    return JSON.parse(rows[0].value) as T;
+  } catch {
+    return fallback;
   }
 }
 
-export async function readJson<T>(relative: string, fallback: T): Promise<T> {
-  try { return JSON.parse(await readFile(absoluteFor(relative), "utf8")) as T; }
-  catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT" || error instanceof SyntaxError) return fallback; throw error; }
-}
-
-export async function writeJson(relative: string, value: unknown): Promise<void> {
-  await atomicWrite(relative, `${JSON.stringify(value, null, 2)}\n`);
+export async function writeJson(key: string, value: unknown, userId: number): Promise<void> {
+  const json = JSON.stringify(value, null, 2);
+  await pool.query(
+    "INSERT INTO settings (user_id, `key`, value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)",
+    [userId, key, json]
+  );
 }

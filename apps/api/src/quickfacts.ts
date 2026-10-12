@@ -81,11 +81,11 @@ async function generateShortLabel(fact: { note: string; activities: ActivityEnt[
 }
 
 /** 自动发现：近 N 天按活动组合分组的高频事实 */
-export async function discoverQuickFacts(index: EntityIndex, days: number, limit: number): Promise<QuickFact[]> {
+export async function discoverQuickFacts(index: EntityIndex, days: number, limit: number, userId: number): Promise<QuickFact[]> {
   const today = todayInTimezone(config.timezone);
   const start = addDays(today, -(days - 1));
-  const dates = await listDiaryDates(start, today);
-  const docs = await Promise.all(dates.map(async (date) => ({ date, doc: (await loadDiary(date)).document })));
+  const dates = await listDiaryDates(userId, start, today);
+  const docs = await Promise.all(dates.map(async (date) => ({ date, doc: (await loadDiary(date, userId)).document })));
 
   // signature (sorted activity names) -> { events, days: Set<date> }
   const groups = new Map<string, { events: DiaryEvent[]; days: Set<string> }>();
@@ -152,12 +152,12 @@ export async function discoverQuickFacts(index: EntityIndex, days: number, limit
   });
 }
 
-async function readStore(): Promise<PinnedEntry[]> {
-  return readJson<PinnedEntry[]>(STORE_PATH, []);
+async function readStore(userId: number): Promise<PinnedEntry[]> {
+  return readJson<PinnedEntry[]>(STORE_PATH, [], userId);
 }
 
-async function writeStore(entries: PinnedEntry[]): Promise<void> {
-  await writeJson(STORE_PATH, entries);
+async function writeStore(entries: PinnedEntry[], userId: number): Promise<void> {
+  await writeJson(STORE_PATH, entries, userId);
 }
 
 function toQuickFact(e: PinnedEntry): QuickFact {
@@ -178,8 +178,8 @@ function toQuickFact(e: PinnedEntry): QuickFact {
 }
 
 /** 列出未过期的钉选事实（读时衰减过滤） */
-export async function listPinnedQuickFacts(retentionDays = DEFAULT_RETENTION_DAYS): Promise<QuickFact[]> {
-  const store = await readStore();
+export async function listPinnedQuickFacts(userId: number, retentionDays = DEFAULT_RETENTION_DAYS): Promise<QuickFact[]> {
+  const store = await readStore(userId);
   const today = todayInTimezone(config.timezone);
   return store
     .filter((e) => daysBetween(e.lastUsedAt, today) <= retentionDays)
@@ -188,9 +188,9 @@ export async function listPinnedQuickFacts(retentionDays = DEFAULT_RETENTION_DAY
 }
 
 /** 钉选一条事实为快捷按钮 */
-export async function pinQuickFact(index: EntityIndex, input: PinQuickFactRequest): Promise<QuickFact> {
-  return withVaultLock(async () => {
-    const store = await readStore();
+export async function pinQuickFact(index: EntityIndex, input: PinQuickFactRequest, userId: number): Promise<QuickFact> {
+  return withVaultLock(userId, async () => {
+    const store = await readStore(userId);
     const today = todayInTimezone(config.timezone);
     const known = index.list("", undefined, 500);
     const fillTags = <T extends TaggedEntity["type"]>(type: T, items: TaggedEntity[]): Array<{ type: T; name: string; tags: string[] }> =>
@@ -222,46 +222,46 @@ export async function pinQuickFact(index: EntityIndex, input: PinQuickFactReques
       store[existingIdx].lastUsedAt = today;
       store[existingIdx].useCount += 1;
       if (!store[existingIdx].shortLabel) store[existingIdx].shortLabel = entry.shortLabel;
-      await writeStore(store);
+      await writeStore(store, userId);
       return toQuickFact(store[existingIdx]);
     }
     store.push(entry);
     // clean up expired entries while we're here
     const fresh = store.filter((e) => daysBetween(e.lastUsedAt, today) <= DEFAULT_RETENTION_DAYS);
-    await writeStore(fresh);
+    await writeStore(fresh, userId);
     return toQuickFact(entry);
   });
 }
 
 /** 点击使用钉选事实 → 续命 */
-export async function useQuickFact(id: string): Promise<QuickFact | null> {
-  return withVaultLock(async () => {
-    const store = await readStore();
+export async function useQuickFact(id: string, userId: number): Promise<QuickFact | null> {
+  return withVaultLock(userId, async () => {
+    const store = await readStore(userId);
     const entry = store.find((e) => e.id === id);
     if (!entry) return null;
     entry.lastUsedAt = todayInTimezone(config.timezone);
     entry.useCount += 1;
-    await writeStore(store);
+    await writeStore(store, userId);
     return toQuickFact(entry);
   });
 }
 
 /** 取消钉选 */
-export async function unpinQuickFact(id: string): Promise<boolean> {
-  return withVaultLock(async () => {
-    const store = await readStore();
+export async function unpinQuickFact(id: string, userId: number): Promise<boolean> {
+  return withVaultLock(userId, async () => {
+    const store = await readStore(userId);
     const next = store.filter((e) => e.id !== id);
     if (next.length === store.length) return false;
-    await writeStore(next);
+    await writeStore(next, userId);
     return true;
   });
 }
 
 /** 合并 auto + pinned */
-export async function getAllQuickFacts(index: EntityIndex, days: number, limit: number): Promise<QuickFact[]> {
+export async function getAllQuickFacts(index: EntityIndex, days: number, limit: number, userId: number): Promise<QuickFact[]> {
   const [auto, pinned] = await Promise.all([
-    discoverQuickFacts(index, days, limit),
-    listPinnedQuickFacts(),
+    discoverQuickFacts(index, days, limit, userId),
+    listPinnedQuickFacts(userId),
   ]);
   // pinned 置顶，auto 按 count 降序
   return [...pinned, ...auto].slice(0, Math.max(limit, pinned.length));

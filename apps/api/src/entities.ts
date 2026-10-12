@@ -1,7 +1,5 @@
-import chokidar, { type FSWatcher } from "chokidar";
-import path from "node:path";
 import { entityKey, entityTypes, type DiaryDocument, type EntityRecord, type EntityRelation, type EntityType, type TagStore, type TaggedEntity } from "@diary/contracts";
-import { config, vaultPaths } from "./config.js";
+import { vaultPaths } from "./config.js";
 import { listDiaryDates, loadDiary, readJson, writeJson, withVaultLock } from "./vault.js";
 
 const SEED_TAGS: TagStore = {
@@ -33,17 +31,20 @@ function relation(key: string, mutable: Map<string, MutableEntity>, events: Set<
 }
 
 export class EntityIndex {
+  private userId: number;
   private records = new Map<string, EntityRecord>();
   private tags: TagStore = structuredClone(SEED_TAGS);
-  private watcher: FSWatcher | null = null;
-  private rebuildTimer: NodeJS.Timeout | null = null;
+
+  constructor(userId: number) {
+    this.userId = userId;
+  }
 
   async rebuild(): Promise<void> {
-    const parents = await readJson<Record<string, string>>(`${vaultPaths.system}/place-parents.json`, {});
+    const parents = await readJson<Record<string, string>>(`${vaultPaths.system}/place-parents.json`, {}, this.userId);
     const occurrences = new Map<string, NonNullable<EntityRecord["occurrences"]>>();
     const mutable = new Map<string, MutableEntity>();
-    const dates = await listDiaryDates();
-    const documents = await Promise.all(dates.map(async (date) => (await loadDiary(date)).document));
+    const dates = await listDiaryDates(this.userId);
+    const documents = await Promise.all(dates.map(async (date) => (await loadDiary(date, this.userId)).document));
     const ensure = (ref: TaggedEntity): MutableEntity => {
       const key = entityKey(ref.type, ref.name);
       let item = mutable.get(key);
@@ -79,10 +80,9 @@ export class EntityIndex {
           link(mutable.get(keys[j])!.event, keys[i], `event|${document.date}|${event.id}`);
         }
       }
-      // Sharing a date is archival context, not evidence of an entity relationship.
     }
 
-    const savedTags = await readJson<Partial<TagStore>>(`${vaultPaths.system}/tags.json`, {});
+    const savedTags = await readJson<Partial<TagStore>>(`${vaultPaths.system}/tags.json`, {}, this.userId);
     this.tags = structuredClone(SEED_TAGS);
     for (const type of entityTypes) {
       const inferred = [...mutable.values()].filter((item) => item.type === type).flatMap((item) => [...item.tags]);
@@ -109,11 +109,11 @@ export class EntityIndex {
   getTags(): TagStore { return structuredClone(this.tags); }
 
   async setPlaceParent(key: string, parentKey: string | null): Promise<void> {
-    await withVaultLock(async () => {
+    await withVaultLock(this.userId, async () => {
       if (this.records.get(key)?.type !== "place" || (parentKey && this.records.get(parentKey)?.type !== "place")) {
         throw Object.assign(new Error("请选择已记录的地点"), { statusCode: 400 });
       }
-      const parents = await readJson<Record<string, string>>(`${vaultPaths.system}/place-parents.json`, {});
+      const parents = await readJson<Record<string, string>>(`${vaultPaths.system}/place-parents.json`, {}, this.userId);
       const visited = new Set([key]);
       let ancestor = parentKey;
       while (ancestor) {
@@ -122,7 +122,7 @@ export class EntityIndex {
       }
       if (parentKey) parents[key] = parentKey;
       else delete parents[key];
-      await writeJson(`${vaultPaths.system}/place-parents.json`, parents);
+      await writeJson(`${vaultPaths.system}/place-parents.json`, parents, this.userId);
       await this.rebuild();
     });
   }
@@ -130,19 +130,7 @@ export class EntityIndex {
   async addTag(type: EntityType, name: string): Promise<TagStore> {
     const clean = name.trim();
     if (!this.tags[type].includes(clean)) this.tags[type] = [...this.tags[type], clean].sort((a, b) => a.localeCompare(b, "zh-CN"));
-    await writeJson(`${vaultPaths.system}/tags.json`, this.tags);
+    await writeJson(`${vaultPaths.system}/tags.json`, this.tags, this.userId);
     return this.getTags();
   }
-
-  startWatching(): void {
-    if (this.watcher) return;
-    const directory = path.resolve(config.vaultRoot, vaultPaths.daily);
-    this.watcher = chokidar.watch(path.join(directory, "*.md"), { ignoreInitial: true });
-    this.watcher.on("all", () => {
-      if (this.rebuildTimer) clearTimeout(this.rebuildTimer);
-      this.rebuildTimer = setTimeout(() => void this.rebuild(), 300);
-    });
-  }
-
-  async close(): Promise<void> { if (this.watcher) await this.watcher.close(); }
 }

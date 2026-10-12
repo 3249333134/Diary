@@ -17,6 +17,8 @@ import { generateWeeklySummary } from "./weekly.js";
 import { splitSentenceWithAi, parseTodoFromText, suggestTags } from "./split.js";
 import { listActions, changeAction, actionRequestSchema } from './actions.js';
 import { getAllQuickFacts, pinQuickFact, useQuickFact, unpinQuickFact } from "./quickfacts.js";
+import { registerAuth, hashPassword, verifyPassword, createSession, destroySession, verifySession, setSessionCookie, clearSessionCookie, getSessionToken } from "./auth.js";
+import { pool, queryRows } from "./db.js";
 
 // ── SPA 静态文件服务：原生 fs ──
 const distPath = path.resolve(fileURLToPath(new URL("../../web/dist", import.meta.url)));
@@ -47,93 +49,240 @@ function safeJoin(root: string, ...parts: string[]) {
   return joined;
 }
 
-export async function buildServer(index = new EntityIndex()) {
+export async function buildServer() {
   const app = Fastify({ logger: { redact: ["req.headers.authorization", "req.body", "res.body"] }, bodyLimit: 10_485_760 });
 
   // CORS — 放开 remote 代理和本地
   await app.register(cors, { origin: true, credentials: true });
 
-  await index.rebuild();
-  index.startWatching();
-  app.addHook("onClose", async () => index.close());
+  // 注册认证（preHandler 钩子解析 session，未登录返回 401）
+  registerAuth(app);
+
+  // 按用户隔离的 EntityIndex
+  const indexes = new Map<number, EntityIndex>();
+  const getIndex = async (userId: number): Promise<EntityIndex> => {
+    let idx = indexes.get(userId);
+    if (!idx) {
+      idx = new EntityIndex(userId);
+      await idx.rebuild();
+      indexes.set(userId, idx);
+    }
+    return idx;
+  };
+
+  /* ── 认证路由 ── */
+  app.post<{ Body: { username: string; password: string } }>("/api/auth/register", async (request, reply) => {
+    const { username, password } = request.body || {};
+    if (!username || !password) return reply.code(400).send({ error: "用户名和密码不能为空" });
+    if (username.length < 2 || username.length > 80) return reply.code(400).send({ error: "用户名长度 2-80" });
+    if (password.length < 6) return reply.code(400).send({ error: "密码至少 6 位" });
+    const [existing] = await pool.query("SELECT id FROM users WHERE username = ?", [username]);
+    if ((existing as unknown[]).length > 0) return reply.code(409).send({ error: "用户名已被占用" });
+    const hash = await hashPassword(password);
+    const [result] = await pool.query("INSERT INTO users (username, password_hash) VALUES (?, ?)", [username, hash]);
+    const userId = (result as { insertId: number }).insertId;
+    const token = await createSession(userId);
+    setSessionCookie(reply, token);
+    return { id: userId, username };
+  });
+
+  app.post<{ Body: { username: string; password: string } }>("/api/auth/login", async (request, reply) => {
+    const { username, password } = request.body || {};
+    if (!username || !password) return reply.code(400).send({ error: "用户名和密码不能为空" });
+    const rows = await queryRows<{ id: number; password_hash: string }>("SELECT id, password_hash FROM users WHERE username = ?", [username]);
+    if (rows.length === 0) return reply.code(401).send({ error: "用户名或密码错误" });
+    const user = rows[0];
+    if (!(await verifyPassword(password, user.password_hash))) return reply.code(401).send({ error: "用户名或密码错误" });
+    const token = await createSession(user.id);
+    setSessionCookie(reply, token);
+    return { id: user.id, username };
+  });
+
+  app.post("/api/auth/logout", async (request, reply) => {
+    const token = getSessionToken(request);
+    if (token) await destroySession(token);
+    clearSessionCookie(reply);
+    return { ok: true };
+  });
+
+  app.get("/api/auth/me", async (request, reply) => {
+    const token = getSessionToken(request);
+    if (!token) return reply.code(401).send({ error: "未登录" });
+    const userId = await verifySession(token);
+    if (!userId) return reply.code(401).send({ error: "登录已过期" });
+    const rows = await queryRows<{ id: number; username: string }>("SELECT id, username FROM users WHERE id = ?", [userId]);
+    if (rows.length === 0) return reply.code(401).send({ error: "用户不存在" });
+    return rows[0];
+  });
 
   /* ── 健康检查 ── */
-  app.get("/api/health", async () => ({ ok: true, localOnly: config.host === "127.0.0.1", timezone: config.timezone }));
+  app.get("/api/health", async () => ({ ok: true, timezone: config.timezone }));
+
   app.get<{ Params: { date: string } }>("/api/obsidian/:date", async (request, reply) => {
+    const userId = request.userId!;
     const date = assertDate(request.params.date);
-    if (!(await loadDiary(date)).exists) return reply.code(404).send({ error: "请先保存这一天的日记" });
-    return { uri: `obsidian://open?path=${encodeURIComponent(path.join(config.vaultRoot, vaultPaths.daily, `${date}.md`))}` };
+    if (!(await loadDiary(date, userId)).exists) return reply.code(404).send({ error: "请先保存这一天的日记" });
+    // 已迁移至云端，不再关联本地 Obsidian，返回提示
+    return { message: "数据已存储在云端，不再关联本地 Obsidian 文件。" };
   });
-  app.get<{ Params: { date: string } }>("/api/diaries/:date", async (request) => loadDiary(assertDate(request.params.date)));
+
+  app.get<{ Params: { date: string } }>("/api/diaries/:date", async (request) => {
+    const userId = request.userId!;
+    return loadDiary(assertDate(request.params.date), userId);
+  });
+
   app.put<{ Params: { date: string } }>("/api/diaries/:date", async (request, reply) => {
+    const userId = request.userId!;
     if (request.headers['x-diary-record-version'] !== '2') return reply.code(428).send({ error: '日记结构已升级，请刷新页面后再保存，避免丢失关联。' });
     const expected = String(request.headers["if-match"] || "").replace(/^W\//, "").replace(/^"|"$/g, "");
     if (!expected) return reply.code(428).send({ error: "保存前需要日记版本" });
-    const result = await saveDiary(assertDate(request.params.date), request.body, expected);
-    await index.rebuild();
+    const result = await saveDiary(assertDate(request.params.date), request.body, expected, userId);
+    const idx = await getIndex(userId);
+    await idx.rebuild();
     return result;
   });
-  app.get<{ Querystring: { from?: string; to?: string } }>("/api/diaries", async (request) => ({ dates: await listDiaryDates(request.query.from, request.query.to) }));
-  app.get('/api/actions', async () => listActions());
-  app.post('/api/actions', async request => { const result = await changeAction(actionRequestSchema.parse(request.body)); await index.rebuild(); return result; });
+
+  app.get<{ Querystring: { from?: string; to?: string } }>("/api/diaries", async (request) => {
+    const userId = request.userId!;
+    return { dates: await listDiaryDates(userId, request.query.from, request.query.to) };
+  });
+
+  app.get('/api/actions', async (request) => {
+    const userId = request.userId!;
+    return listActions(userId);
+  });
+
+  app.post('/api/actions', async request => {
+    const userId = request.userId!;
+    const result = await changeAction(actionRequestSchema.parse(request.body), userId);
+    const idx = await getIndex(userId);
+    await idx.rebuild();
+    return result;
+  });
+
   app.get<{ Querystring: { date?: string } }>("/api/weeks", async (request) => {
+    const userId = request.userId!;
     const date = assertDate(request.query.date || todayInTimezone(config.timezone));
     const start = weekStart(date);
-    const dates = await listDiaryDates(start, addDays(start, 6));
-    return { start, end: addDays(start, 6), entries: await Promise.all(dates.map(async (item) => ({ date: item, document: (await loadDiary(item)).document }))) };
+    const dates = await listDiaryDates(userId, start, addDays(start, 6));
+    return { start, end: addDays(start, 6), entries: await Promise.all(dates.map(async (item) => ({ date: item, document: (await loadDiary(item, userId)).document }))) };
   });
+
   app.get<{ Querystring: { q?: string; type?: string; limit?: string } }>("/api/entities", async (request) => {
+    const userId = request.userId!;
+    const idx = await getIndex(userId);
     const type = request.query.type ? entityTypeSchema.parse(request.query.type) : undefined;
-    return { entities: index.list(request.query.q, type, Number(request.query.limit || 100)) };
+    return { entities: idx.list(request.query.q, type, Number(request.query.limit || 100)) };
   });
+
   app.get<{ Params: { type: string; name: string } }>("/api/entities/:type/:name", async (request, reply) => {
+    const userId = request.userId!;
+    const idx = await getIndex(userId);
     const type = entityTypeSchema.parse(request.params.type);
-    const entity = index.get(type, request.params.name);
+    const entity = idx.get(type, request.params.name);
     return entity || reply.code(404).send({ error: "未找到该实体" });
   });
+
   app.put("/api/place-parent", async request => {
+    const userId = request.userId!;
+    const idx = await getIndex(userId);
     const { key, parentKey } = placeParentSchema.parse(request.body);
-    await index.setPlaceParent(key, parentKey);
-    return { entities: index.list("", undefined, 500) };
+    await idx.setPlaceParent(key, parentKey);
+    return { entities: idx.list("", undefined, 500) };
   });
-  app.get("/api/tags", async () => {
-    const typed = index.getTags(), shared = await tagLibrary(typed);
+
+  app.get("/api/tags", async (request) => {
+    const userId = request.userId!;
+    const idx = await getIndex(userId);
+    const typed = idx.getTags(), shared = await tagLibrary(typed, userId);
     return { tags: Object.fromEntries(Object.keys(typed).map(type => [type, [...new Set([...typed[type as keyof typeof typed], ...shared])]])), sharedTags: shared };
   });
-  app.get('/api/tag-library', async () => ({ tags: await tagLibrary(index.getTags()) }));
-  app.post<{ Body: { tag: string } }>('/api/tag-library', async request => { await addSharedTag(request.body.tag); return { tags: await tagLibrary(index.getTags()) }; });
-  app.get('/api/plan-categories', async () => ({categories: await getPlanCategories()}));
-  app.post('/api/plan-categories', async request => addPlanCategory(request.body));
-  app.put<{ Body: { ids: string[] } }>('/api/plan-categories/order', async request => reorderPlanCategories(request.body.ids));
-  app.get('/api/plan-views', async () => ({ views: await getPlanViews() }));
-  app.put<{ Body: { views: unknown } }>('/api/plan-views', async request => { await savePlanViews(request.body.views); return { views: await getPlanViews() }; });
+
+  app.get('/api/tag-library', async (request) => {
+    const userId = request.userId!;
+    const idx = await getIndex(userId);
+    return { tags: await tagLibrary(idx.getTags(), userId) };
+  });
+
+  app.post<{ Body: { tag: string } }>('/api/tag-library', async request => {
+    const userId = request.userId!;
+    const idx = await getIndex(userId);
+    await addSharedTag(request.body.tag, userId);
+    return { tags: await tagLibrary(idx.getTags(), userId) };
+  });
+
+  app.get('/api/plan-categories', async (request) => {
+    const userId = request.userId!;
+    return { categories: await getPlanCategories(userId) };
+  });
+
+  app.post('/api/plan-categories', async request => {
+    const userId = request.userId!;
+    return addPlanCategory(request.body, userId);
+  });
+
+  app.put<{ Body: { ids: string[] } }>('/api/plan-categories/order', async request => {
+    const userId = request.userId!;
+    return reorderPlanCategories(request.body.ids, userId);
+  });
+
+  app.get('/api/plan-views', async (request) => {
+    const userId = request.userId!;
+    return { views: await getPlanViews(userId) };
+  });
+
+  app.put<{ Body: { views: unknown } }>('/api/plan-views', async request => {
+    const userId = request.userId!;
+    await savePlanViews(request.body.views, userId);
+    return { views: await getPlanViews(userId) };
+  });
+
   app.post("/api/tags", async (request) => {
+    const userId = request.userId!;
+    const idx = await getIndex(userId);
     const input = tagCreateSchema.parse(request.body);
-    const typed = await index.addTag(input.type, input.name), shared = await tagLibrary(typed);
+    const typed = await idx.addTag(input.type, input.name), shared = await tagLibrary(typed, userId);
     return { tags: Object.fromEntries(Object.keys(typed).map(type => [type, [...new Set([...typed[type as keyof typeof typed], ...shared])]])) };
   });
-  app.post('/api/capture/parse', async (request) => parseCapture(captureRequestSchema.parse(request.body), { names: index.list('', undefined, 500).map(entity => entity.name), tags: await tagLibrary(index.getTags()) }));
+
+  app.post('/api/capture/parse', async (request) => {
+    const userId = request.userId!;
+    const idx = await getIndex(userId);
+    return parseCapture(captureRequestSchema.parse(request.body), { names: idx.list('', undefined, 500).map(entity => entity.name), tags: await tagLibrary(idx.getTags(), userId) });
+  });
+
   app.post("/api/split-sentence", async (request) => {
+    const userId = request.userId!;
+    const idx = await getIndex(userId);
     const input = sentenceSplitRequestSchema.parse(request.body);
-    return { result: await splitSentenceWithAi(input.sentence, index.list("", undefined, 500)), mode: "ai" as const };
+    return { result: await splitSentenceWithAi(input.sentence, idx.list("", undefined, 500)), mode: "ai" as const };
   });
 
   /* ── 快捷事实（Quick Facts）：自动发现 + 钉选衰减 ── */
   app.get<{ Querystring: { days?: string; limit?: string } }>("/api/quick-facts", async (request) => {
+    const userId = request.userId!;
+    const idx = await getIndex(userId);
     const days = Math.min(Math.max(Number(request.query.days || 30), 7), 90);
     const limit = Math.min(Math.max(Number(request.query.limit || 15), 1), 40);
-    return { facts: await getAllQuickFacts(index, days, limit) };
+    return { facts: await getAllQuickFacts(idx, days, limit, userId) };
   });
+
   app.post("/api/quick-facts/pin", async (request) => {
+    const userId = request.userId!;
+    const idx = await getIndex(userId);
     const input = pinQuickFactRequestSchema.parse(request.body);
-    return await pinQuickFact(index, input);
+    return await pinQuickFact(idx, input, userId);
   });
+
   app.post<{ Params: { id: string } }>("/api/quick-facts/:id/use", async (request, reply) => {
-    const result = await useQuickFact(request.params.id);
+    const userId = request.userId!;
+    const result = await useQuickFact(request.params.id, userId);
     return result || reply.code(404).send({ error: "未找到该快捷事实" });
   });
+
   app.delete<{ Params: { id: string } }>("/api/quick-facts/:id", async (request, reply) => {
-    const ok = await unpinQuickFact(request.params.id);
+    const userId = request.userId!;
+    const ok = await unpinQuickFact(request.params.id, userId);
     return ok ? { ok: true } : reply.code(404).send({ error: "未找到该快捷事实" });
   });
 
@@ -174,7 +323,6 @@ export async function buildServer(index = new EntityIndex()) {
       }
       const data = await response.body.json() as { address?: Record<string, string>; display_name?: string };
       const addr = data.address || {};
-      // 优先返回有意义的中文地名
       const name = addr.suburb || addr.neighbourhood || addr.road || addr.city || addr.town || addr.village || addr.county || addr.state || "";
       return { name: name || data.display_name?.split(",")[0] || `${lat.toFixed(4)}, ${lng.toFixed(4)}`, address: data.display_name || "", lat, lng };
     } catch {
@@ -232,8 +380,9 @@ export async function buildServer(index = new EntityIndex()) {
   );
 
   app.post("/api/weekly-summaries", async (request) => {
+    const userId = request.userId!;
     const input = weeklySummaryRequestSchema.parse(request.body || {});
-    return generateWeeklySummary(input.date || todayInTimezone(config.timezone), { useAi: input.useAi ?? Boolean(config.ai.key) });
+    return generateWeeklySummary(userId, input.date || todayInTimezone(config.timezone), { useAi: input.useAi ?? Boolean(config.ai.key) });
   });
 
   // Custom parser: save raw multipart body into request.body so handler can parse it manually
@@ -245,6 +394,7 @@ export async function buildServer(index = new EntityIndex()) {
   });
 
   app.post("/api/upload", async (request, reply) => {
+    const userId = request.userId!;
     const boundaryMatch = (request.headers["content-type"] || "").match(/boundary=(?:"([^"]+)"|([^;]+))/i);
     if (!boundaryMatch) return reply.code(400).send({ error: "缺少 boundary" });
     const boundary = (boundaryMatch[1] || boundaryMatch[2]!).trim();
@@ -280,22 +430,30 @@ export async function buildServer(index = new EntityIndex()) {
     const allowed = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".pdf", ".txt"]);
     if (!allowed.has(ext)) return reply.code(400).send({ error: "不支持的文件类型" });
     const yearMonth = dateParam.slice(0, 7);
-    const assetsDir = path.resolve(config.vaultRoot, "assets", yearMonth);
+    // 附件存到服务器磁盘 data/assets/{userId}/{yearMonth}/
+    const assetsDir = path.resolve(config.dataDir, "assets", String(userId), yearMonth);
     fs.mkdirSync(assetsDir, { recursive: true });
     const baseName = crypto.randomUUID().replace(/-/g, "");
     const fileName = `${baseName}${ext}`;
     const targetPath = path.join(assetsDir, fileName);
     fs.writeFileSync(targetPath, fileBuf);
-    const relPath = `assets/${yearMonth}/${fileName}`;
+    const relPath = `assets/${userId}/${yearMonth}/${fileName}`;
+    // 元数据存 assets 表
+    const mime = MIME[ext] || "application/octet-stream";
+    await pool.query(
+      "INSERT INTO assets (user_id, date, filename, path, size, mime) VALUES (?, ?, ?, ?, ?, ?)",
+      [userId, dateParam, filename || fileName, relPath, fileBuf.length, mime]
+    );
     return { path: relPath, name: filename || fileName, size: fileBuf.length };
   });
 
-  /* ── Vault assets static serving (images etc.) ── */
-  app.get("/assets/:yearMonth/:file", async (request, reply) => {
-    const { yearMonth, file } = request.params as { yearMonth: string; file: string };
+  /* ── Assets static serving (images etc.) ── */
+  app.get<{ Params: { userId: string; yearMonth: string; file: string } }>("/assets/:userId/:yearMonth/:file", async (request, reply) => {
+    const { userId, yearMonth, file } = request.params;
+    if (!/^\d+$/.test(userId)) return reply.code(400).send("bad");
     if (!/^\d{4}-\d{2}$/.test(yearMonth)) return reply.code(400).send("bad");
     if (/[\/\\]/.test(file)) return reply.code(400).send("bad");
-    const filePath = safeJoin(path.resolve(config.vaultRoot, "assets"), yearMonth, file);
+    const filePath = safeJoin(path.resolve(config.dataDir, "assets"), userId, yearMonth, file);
     if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) return reply.code(404).send();
     const ext = path.extname(file).toLowerCase();
     reply.header("Content-Type", MIME[ext] || "application/octet-stream");
@@ -306,10 +464,8 @@ export async function buildServer(index = new EntityIndex()) {
   /* ── SPA fallback + 原生静态文件服务 ── */
   app.get("/*", async (request, reply) => {
     const raw = String((request.params as Record<string, string>)["*"] || "");
-    // 安全校验（path traversal）
     const safeRaw = raw.startsWith("/") ? raw.slice(1) : raw;
 
-    // 如果有扩展名 → 尝试当静态文件
     const ext = path.extname(safeRaw).toLowerCase();
     if (ext && MIME[ext]) {
       try {
@@ -324,7 +480,6 @@ export async function buildServer(index = new EntityIndex()) {
       } catch { /* traversal 或文件不存在 → fallback 到 index.html */ }
     }
 
-    // 否则 fallback → index.html（SPA 路由）
     const indexPath = safeJoin(distPath, "index.html");
     if (fs.existsSync(indexPath)) {
       reply.header("Content-Type", "text/html; charset=utf-8");

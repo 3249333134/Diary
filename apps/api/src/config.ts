@@ -10,6 +10,14 @@ export const config = {
   vaultRoot: path.resolve(process.env.OBSIDIAN_DIR || "D:/prj/obsidian"),
   dataDir: process.env.DIARY_DATA_DIR ? path.resolve(process.env.DIARY_DATA_DIR) : path.join(projectRoot, "data"),
   timezone: process.env.DIARY_TIMEZONE || "Asia/Shanghai",
+  db: {
+    host: process.env.DB_HOST || "127.0.0.1",
+    port: Number(process.env.DB_PORT || 3306),
+    user: process.env.DB_USER || "root",
+    password: process.env.DB_PASSWORD || "",
+    database: process.env.DB_NAME || "diary",
+  },
+  sessionSecret: process.env.SESSION_SECRET || "dev-secret-change-me",
   ai: {
     url: (process.env.AI_API_URL || "https://api.openai.com/v1").replace(/\/$/, ""),
     key: process.env.AI_API_KEY || "",

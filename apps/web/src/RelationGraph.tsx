@@ -33,7 +33,6 @@ export function RelationGraph({ entities: sourceEntities, selected, onSelect, on
   const [actions, setActions] = useState<{ tasks: ActionRow[]; records: RecordRef[] }>();
   const [showActions, setShowActions] = useState(false);
   useEffect(() => { let cancelled = false; void api.actions().then(data => { if (!cancelled) setActions(data); }).catch(() => {}); return () => { cancelled = true; }; }, [entities]);
-  const [openError, setOpenError] = useState("");
   const [query, setQuery] = useState("");
   const [enabledTypes, setEnabledTypes] = useState<EntityType[]>(["person", "place", "activity", "food"]);
   const [showDates, setShowDates] = useState(false);
@@ -300,8 +299,6 @@ export function RelationGraph({ entities: sourceEntities, selected, onSelect, on
         </>}
         {selectedDate && <><p className="date-node-copy">{selectedNode.kind === "event" ? "连线仅表示这条事件明确记录的实体，不推断实体之间的关系。" : "日期仅用于归档，不表示同一天的事件彼此相关。"}</p><button type="button" className="open-diary-button" onClick={() => onOpenDate(selectedDate)}><CalendarDays />打开 {selectedDate} 的日记</button></>}
         {selectedNode.kind === "self" && <p className="date-node-copy">这是你的中心节点，淡线连接你记录过的实体。实体间的深色连线表示同一事件中的共同出现，次数越多，线越深。地点墨迹面积表示在那里发生的事件数量。</p>}
-        {selectedDate && <button type="button" className="open-diary-button" onClick={async () => { setOpenError(""); try { const { uri } = await api.obsidian(selectedDate); window.location.assign(uri); } catch { setOpenError("无法打开，请确认日记已保存且本机已安装 Obsidian。"); } }}>在 Obsidian 打开</button>}
-        {openError && <p role="alert">{openError}</p>}
       </aside>}
     </div>
   </section>;

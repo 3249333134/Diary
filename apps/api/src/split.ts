@@ -13,10 +13,14 @@ function unique(items: TaggedEntity[]): TaggedEntity[] {
   });
 }
 
-function readJsonObject(content: string): unknown {
+export function readJsonObject(content: string): unknown {
   const fenced = content.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1];
-  const source = fenced || content.slice(content.indexOf("{"), content.lastIndexOf("}") + 1);
-  return JSON.parse(source);
+  const source = (fenced || content).trim();
+  const start = source.search(/[[{]/);
+  if (start < 0) throw new Error("响应中未找到 JSON");
+  const end = source[start] === "[" ? source.lastIndexOf("]") : source.lastIndexOf("}");
+  if (end <= start) throw new Error("响应中 JSON 不完整");
+  return JSON.parse(source.slice(start, end + 1));
 }
 
 export async function splitSentenceWithAi(sentence: string, known: EntityRecord[]): Promise<SentenceSplitResult & { category: string; time: string; tags: string[] }> {
@@ -29,37 +33,42 @@ export async function splitSentenceWithAi(sentence: string, known: EntityRecord[
       {
         role: "system",
         content: [
-          "你是中文日记事件结构化助手。只输出一个 JSON 对象，不要 Markdown。",
-          "对象包含 people、places、activities、foods 四个数组（每项 {name,tags}），以及 category、time、tags 字段。category 选 facts（发生的事）、learn（学到的知识）、input（阅读观看摘录）、idea（想法灵感）。time 只提取明确时间为24小时HH:mm；未给出或只有模糊时段返回空字符串，不猜分钟。",
+          "你是中文日记事件结构化助手。直接以 { 开头输出纯 JSON 对象，禁止任何解释、前后缀文字或 Markdown 代码块标记。",
+          "顶层字段：people、places、activities、foods 四个数组放对应类型的实体（每项 {name,tags}），以及 category、time、tags。严禁把地点/活动/食物放进 people，严禁把 category/time/tags 放进实体数组。",
+          "category 选 facts（发生的事）、learn（学到的知识）、input（阅读观看摘录）、idea（想法灵感）。time 只提取明确时间为24小时HH:mm；未给出或只有模糊时段返回空字符串，不猜分钟。",
           "tags 是 2-5 个概括本条内容主题的简短标签（2-6字，名词短语），如：产品设计、AI、旅行、美食、心理学。",
           "识别整句话中所有明确或可由语境直接判断的人物、地点、活动和食物，不要把整段从句当作实体。",
           "人物不包含说话者‘我/自己’。活动应是简洁动作短语，食物与地点不要互相混淆。",
           "严禁把字段标签（如‘在哪’、‘做了什么’、‘和谁’、‘吃了什么’、‘人物’、‘地点’、‘活动’、‘食物’及其带符号变体如‘- 在哪：’）当作实体名称。如果某个实体名称看起来像字段标签，直接忽略它。",
           "这是一次全新的独立记录，只提取本次 sentence 的实体。不补充历史事件的人物、地点、活动或食物；缺失的类别返回空数组。为实体根据本句语境给 1-3 个简短标签。",
+          '示例：输入“晚上和小李在海底捞吃了火锅”，输出 {"people":[{"name":"小李","tags":["朋友"]}],"places":[{"name":"海底捞","tags":["餐厅"]}],"activities":[{"name":"吃火锅","tags":["聚餐"]}],"foods":[{"name":"火锅","tags":["川味"]}],"category":"facts","time":"","tags":["美食","聚餐"]}',
         ].join("\n"),
       },
       { role: "user", content: JSON.stringify({ sentence }) },
     ],
   });
   const dispatcher = config.ai.proxy ? new ProxyAgent(config.ai.proxy) : undefined;
-  const response = await request(`${config.ai.url}/chat/completions`, {
-    method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${config.ai.key}` },
-    body,
-    dispatcher,
-    signal: AbortSignal.timeout(25_000),
-    headersTimeout: 25_000,
-    bodyTimeout: 25_000,
-  });
-  if (response.statusCode < 200 || response.statusCode >= 300) {
-    await response.body.dump();
-    throw Object.assign(new Error(`AI 拆分服务响应 ${response.statusCode}`), { statusCode: 502 });
-  }
-  const payload = await response.body.json() as { choices?: Array<{ message?: { content?: string } }> };
-  const content = payload.choices?.[0]?.message?.content?.trim();
-  if (!content) throw Object.assign(new Error("AI 拆分服务未返回结果"), { statusCode: 502 });
-  try {
-    const raw = readJsonObject(content) as Record<string, unknown>;
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    let content = "";
+    try {
+      const response = await request(`${config.ai.url}/chat/completions`, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${config.ai.key}` },
+        body,
+        dispatcher,
+        signal: AbortSignal.timeout(25_000),
+        headersTimeout: 25_000,
+        bodyTimeout: 25_000,
+      });
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        await response.body.dump();
+        throw Object.assign(new Error(`AI 拆分服务响应 ${response.statusCode}`), { statusCode: 502 });
+      }
+      const payload = await response.body.json() as { choices?: Array<{ message?: { content?: string } }> };
+      content = payload.choices?.[0]?.message?.content?.trim() || "";
+      if (!content) throw new Error("AI 拆分服务未返回结果");
+      const raw = readJsonObject(content) as Record<string, unknown>;
     const fieldLabels = new Set(["在哪", "做了什么", "和谁", "吃了什么", "人物", "地点", "活动", "食物", "去哪", "见谁", "描述", "一句话", "事件备注", "时间"]);
     const isFieldLabel = (name: string) => {
       const cleaned = name.replace(/^[-—·•\s]+|[:：\s]+$/g, "").trim();
@@ -86,9 +95,13 @@ export async function splitSentenceWithAi(sentence: string, known: EntityRecord[
       ? metadata.tags.filter((t): t is string => typeof t === "string").map((t) => t.trim()).filter(Boolean).slice(0, 6)
       : [];
     return { ...sentenceSplitResultSchema.parse(result), category: ["facts", "learn", "input", "idea"].includes(metadata.category || "") ? metadata.category! : "facts", time: /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(metadata.time || "") ? metadata.time! : "", tags };
-  } catch {
-    throw Object.assign(new Error("AI 返回的拆分格式无法识别，请重试"), { statusCode: 502 });
+    } catch (error) {
+      lastError = error;
+      console.error(`[split] AI 拆分第 ${attempt} 次失败:`, error instanceof Error ? error.message : error, content ? `内容片段: ${content.slice(0, 300)}` : "");
+    }
   }
+  console.error("[split] AI 拆分最终失败:", lastError instanceof Error ? lastError.message : lastError);
+  throw Object.assign(new Error("AI 返回的拆分格式无法识别，请重试"), { statusCode: 502 });
 }
 
 /** AI 根据文本内容推荐标签 */
@@ -137,8 +150,10 @@ export async function suggestTags(text: string, kind: "idea" | "learn" | "input"
     if (Array.isArray(raw)) {
       return raw.filter((t): t is string => typeof t === "string").map(t => t.trim()).filter(Boolean).slice(0, 6);
     }
+    console.error("[suggestTags] AI 返回非数组:", content.slice(0, 200));
     return [];
-  } catch {
+  } catch (error) {
+    console.error("[suggestTags] AI 标签解析失败:", error instanceof Error ? error.message : error, content.slice(0, 200));
     return [];
   }
 }

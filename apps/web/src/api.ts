@@ -9,7 +9,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const timer = window.setTimeout(() => controller.abort(), (path === "/api/split-sentence" || path === "/api/parse-todo" || path === "/api/capture/parse") ? 30_000 : 15_000);
   try {
     const hasBody = init?.body != null;
-    const response = await fetch(path, { ...init, signal: controller.signal, headers: hasBody ? { "content-type": "application/json", ...init?.headers } : init?.headers });
+    const response = await fetch(path, { ...init, credentials: 'include', signal: controller.signal, headers: hasBody ? { "content-type": "application/json", ...init?.headers } : init?.headers });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw Object.assign(new Error(data.error || `请求失败（${response.status}）`), { status: response.status, data });
     return data as T;
@@ -50,10 +50,16 @@ export const api = {
     const fd = new FormData();
     fd.append("file", file);
     const url = date ? `/api/upload?date=${date}` : `/api/upload`;
-    const response = await fetch(url, { method: "POST", body: fd });
+    const response = await fetch(url, { method: "POST", body: fd, credentials: 'include' });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || `上传失败（${response.status}）`);
     return data;
   },
   assetUrl: (path: string) => `/${path}`,
+  auth: {
+    me: () => request<{ id: number; username: string }>('/api/auth/me'),
+    login: (username: string, password: string) => request<{ id: number; username: string }>('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
+    register: (username: string, password: string) => request<{ id: number; username: string }>('/api/auth/register', { method: 'POST', body: JSON.stringify({ username, password }) }),
+    logout: () => request<{ ok: boolean }>('/api/auth/logout', { method: 'POST' }),
+  },
 };

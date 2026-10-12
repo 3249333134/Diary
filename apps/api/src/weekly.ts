@@ -4,7 +4,8 @@ import { ProxyAgent, request } from "undici";
 import type { DiaryDocument } from "@diary/contracts";
 import { config, vaultPaths } from "./config.js";
 import { addDays, todayInTimezone, weekLabel, weekStart, zonedClock } from "./date.js";
-import { atomicWrite, loadDiary } from "./vault.js";
+import { loadDiary, readJson, writeJson } from "./vault.js";
+import { queryRows } from "./db.js";
 
 type SummaryResult = { ok: true; mode: "ai" | "rule"; week: string; count: number; summaryPath: string; materialPath?: string } | { ok: false; skipped: true; reason: string };
 
@@ -54,11 +55,11 @@ function ruleSummary(documents: DiaryDocument[], source: string): string {
   return [`> 本摘要由本地规则生成，未向外部服务发送日记。`, "", "## 本周概览", `- 记录 ${documents.length} 天，共 ${facts} 个事实事件。`, `- ${learned} 天记录了新知，${ideas} 天留下了灵感。`, "", "## 每日记录", source].join("\n");
 }
 
-export async function generateWeeklySummary(date = todayInTimezone(config.timezone), options: { useAi?: boolean } = {}): Promise<SummaryResult> {
+export async function generateWeeklySummary(userId: number, date = todayInTimezone(config.timezone), options: { useAi?: boolean } = {}): Promise<SummaryResult> {
   const start = weekStart(date);
   const documents: DiaryDocument[] = [];
   for (let offset = 0; offset < 7; offset++) {
-    const entry = await loadDiary(addDays(start, offset));
+    const entry = await loadDiary(addDays(start, offset), userId);
     if (entry.exists) documents.push(entry.document);
   }
   if (!documents.length) return { ok: false, skipped: true, reason: "本周暂无日记" };
@@ -68,13 +69,13 @@ export async function generateWeeklySummary(date = todayInTimezone(config.timezo
   const week = weekLabel(start);
   const summaryRelative = `${vaultPaths.weekly}/${week}.md`;
   const summary = [`---`, `type: weekly-summary`, `week: ${week}`, `start: ${start}`, `end: ${addDays(start, 6)}`, `diaryCount: ${documents.length}`, `mode: ${useAi ? "ai" : "rule"}`, `tags: [周复盘, 独立日记]`, `---`, "", `# 周复盘 ${week}`, "", content, "", "## 原始日记", ...documents.map((item) => `- [[${vaultPaths.daily}/${item.date}|${item.date}]]`), ""].join("\n");
-  await atomicWrite(summaryRelative, summary);
+  await writeJson(`weekly-summary:${week}`, { content: summary }, userId);
 
   const learned = documents.filter((item) => item.learn.content.trim()).map((item) => `## ${item.date}\n${item.learn.content}`).join("\n\n");
   let materialPath: string | undefined;
   if (learned) {
     materialPath = `${vaultPaths.material}/${week}-素材.md`;
-    await atomicWrite(materialPath, [`---`, `type: material`, `week: ${week}`, `tags: [素材库, 独立日记]`, `---`, "", `# 本周新知素材 ${week}`, "", learned, ""].join("\n"));
+    await writeJson(`weekly-material:${week}`, { content: [`---`, `type: material`, `week: ${week}`, `tags: [素材库, 独立日记]`, `---`, "", `# 本周新知素材 ${week}`, "", learned, ""].join("\n") }, userId);
   }
   return { ok: true, mode: useAi ? "ai" : "rule", week, count: documents.length, summaryPath: summaryRelative, materialPath };
 }
@@ -99,10 +100,16 @@ export function startWeeklyScheduler(): NodeJS.Timeout {
     if (state.lastWeek === targetWeek) return;
     running = true;
     try {
-      const result = await generateWeeklySummary(clock.date, { useAi: config.ai.automatic });
-      if (result.ok) {
+      // 遍历所有用户生成周复盘
+      const users = await queryRows<{ id: number }>("SELECT id FROM users");
+      let okCount = 0;
+      for (const user of users) {
+        const result = await generateWeeklySummary(user.id, clock.date, { useAi: config.ai.automatic });
+        if (result.ok) okCount++;
+      }
+      if (okCount > 0) {
         await mkdir(config.dataDir, { recursive: true });
-        await writeFile(statePath, `${JSON.stringify({ lastWeek: targetWeek, completedAt: new Date().toISOString(), mode: result.mode }, null, 2)}\n`, "utf8");
+        await writeFile(statePath, `${JSON.stringify({ lastWeek: targetWeek, completedAt: new Date().toISOString(), mode: config.ai.automatic ? "ai" : "rule" }, null, 2)}\n`, "utf8");
       }
     } finally { running = false; }
   };

@@ -20,6 +20,7 @@ import { RelationGraph } from "./RelationGraph";
 import { ReceiptCollection, ReceiptNotice } from "./ReceiptCollection";
 import { addedReceipts, type Receipt } from "./receipts";
 import { TodoPanel } from './TodoPanel';
+import { Login } from './Login';
 
 type SaveStatus = "loading" | "saved" | "dirty" | "saving" | "offline" | "error" | "conflict";
 type Conflict = { local: DiaryDocument; remote: DiaryDocument; remoteVersion: string };
@@ -754,6 +755,24 @@ export function App() {
   const [version, setVersion] = useState("0");
   const [status, setStatus] = useState<SaveStatus>("loading");
   const [activeTab, setActiveTab] = useState(0);
+  // ── 登录态 ──
+  const [authState, setAuthState] = useState<{ checking: boolean; user: { id: number; username: string } | null }>({ checking: true, user: null });
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const me = await api.auth.me();
+        if (!cancelled) setAuthState({ checking: false, user: me });
+      } catch {
+        if (!cancelled) setAuthState({ checking: false, user: null });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+  const handleLogout = async () => {
+    try { await api.auth.logout(); } catch { /* ignore */ }
+    setAuthState({ checking: false, user: null });
+  };
   useEffect(() => {
     const viewport = window.visualViewport;
     const update = () => { window.document.documentElement.style.setProperty('--app-height', `${viewport?.height || window.innerHeight}px`); };
@@ -967,14 +986,21 @@ export function App() {
     return <LookupPanel entities={entities} selected={selectedEntity} onSelect={setSelectedEntity} onOpenDate={(next) => { setDate(next); selectTab(0); }} />;
   };
 
+  if (authState.checking) {
+    return <div className="login-page"><div className="login-card" style={{textAlign:'center'}}>加载中...</div></div>;
+  }
+  if (!authState.user) {
+    return <Login onAuth={async () => { try { const me = await api.auth.me(); setAuthState({ checking: false, user: me }); } catch { setAuthState({ checking: false, user: null }); } }} />;
+  }
+
   return <RecordContext.Provider value={{ create: ref => void createFromRecord(ref), open: ref => void openRecord(ref), focus: focusRecord }}><div className="app-shell">
     <a className="skip-link" href="#main-content">跳到日记内容</a>
     <aside className="date-rail" aria-label="日期导航">
-      <div className="brand"><span><Feather /></span><div><strong>独立日记</strong><small>写回 Obsidian</small></div></div>
+      <div className="brand"><span><Feather /></span><div><strong>独立日记</strong><small>云端存储</small></div></div>
       <nav className="workspace-switch" aria-label="主要功能"><button aria-pressed={!showTodos} onClick={() => setShowTodos(false)}>日记</button><button aria-pressed={showTodos} onClick={() => setShowTodos(true)}>计划</button></nav><div hidden={showTodos}><div className="rail-today"><CalendarDays /><div><strong>{todayLabel}</strong><span>{date}</span></div></div>
       <div className="week-list">{currentWeekDates.map((item) => <button type="button" key={item} className={item === date ? "active" : ""} onClick={() => setDate(item)}><span>{shortDate(item)}</span>{recordedDates.has(item) && <i aria-label="已有日记" />}</button>)}</div>
       <button type="button" className="today-button" onClick={() => setDate(initialDate)}>回到今天</button>
-      </div><div className="rail-note"><strong>本地私有</strong><span>服务仅监听当前电脑</span></div>
+      </div><div className="rail-note"><strong>{authState.user?.username}</strong><span>已登录云端</span></div>
     </aside>
 
     <main ref={browseRef} id="main-content" className="main-content" data-compact={compactBrowse.compact} data-workspace={showTodos ? 'plan' : showReceipts ? 'receipts' : tabs[activeTab].id}>
@@ -985,6 +1011,7 @@ export function App() {
         <button aria-label={theme==='light'?'切换到深色主题':'切换到浅色主题'} onClick={()=>setTheme(theme==='light'?'dark':'light')}>{theme==='light'?<Moon size={20}/>:<Sun size={20}/>}</button>
         {!showTodos&&<button className={status==='dirty'?'has-unsaved-change':''} aria-label="保存日记" disabled={status==='saving'||status==='loading'||status==='conflict'} onClick={()=>void saveNow()}><Save size={20}/></button>}
         {showTodos&&<button aria-label="新增计划" onClick={()=>requestPlanTool('create')}><Plus size={20}/></button>}
+        <button aria-label={`退出登录 ${authState.user?.username || ''}`} title={`退出登录 (${authState.user?.username})`} onClick={()=>void handleLogout()}><UserRound size={20}/></button>
       </nav>
       {diaryTools && <CompactDiaryTools date={date} onDate={setDate} diary={diary} update={updateDiary} onClose={()=>setDiaryTools(false)} onExpand={()=>{setDiaryTools(false);compactBrowse.expand();}} onReceipts={()=>{setDiaryTools(false);setShowReceipts(true);}}/>}
       <nav className="workspace-switch mobile-workspace-switch" aria-label="主要功能"><button aria-pressed={!showTodos} onClick={() => setShowTodos(false)}>日记</button><button aria-pressed={showTodos} onClick={() => setShowTodos(true)}>计划</button></nav>
