@@ -1,3 +1,6 @@
+import {fieldLimit,diaryDocumentSchema} from '@diary/contracts';
+import {GlassComboBox} from './GlassUI';
+import {FieldHint} from './FieldHint';
 import { useId, useState } from 'react';
 import { Check, MapPin, Plus, X } from 'lucide-react';
 import type { EntityType, TaggedEntity, EntityRecord, TagStore } from '@diary/contracts';
@@ -42,8 +45,9 @@ export function EntityField({ label, type, values, entities, tags, onChange, onC
       finally { setLocating(false); }
     }, () => { setLocating(false); alert("定位失败，请检查浏览器权限设置"); }, { enableHighAccuracy: true, timeout: 10_000 });
   };
-  const add = () => {
-    const name = input.trim();
+  const add = (candidate=input) => {
+    const name = candidate.trim();
+    if(name.length>(fieldLimit(diaryDocumentSchema,'facts.events.0.people.0.name')||80)){setTagError("名称最多 80 字符");return;}
     if (!name || values.some((item) => item.name === name)) return;
     const known = entities.find((item) => item.type === type && item.name === name);
     onChange([...values, { type, name, tags: known?.tags || [] }]);
@@ -53,6 +57,7 @@ export function EntityField({ label, type, values, entities, tags, onChange, onC
   const createTag = async (name: string) => {
     const clean = newTag.trim();
     if (!clean) return;
+    if(clean.length>(fieldLimit(diaryDocumentSchema,'facts.events.0.people.0.tags.0')||40)){setTagError('标签最多 40 字符');return;}
     setTagError('');
     try { await onCreateTag(type, clean); } catch(error) { setTagError(error instanceof Error ? error.message : '标签保存失败，请重试'); return; }
     if (!values.find((item) => item.name === name)?.tags.includes(clean)) toggleTag(name, clean);
@@ -71,12 +76,12 @@ export function EntityField({ label, type, values, entities, tags, onChange, onC
     ) : (
       <>
     <div className="entity-entry">
-      <input id={id} autoFocus={forceShow && !hasValues} list={`${id}-options`} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); add(); } }} placeholder={`添加${TYPE_LABEL[type]}`} />
-      <datalist id={`${id}-options`}>{options.map((item) => <option key={item.key} value={item.name} />)}</datalist>
+      <GlassComboBox label={'添加'+TYPE_LABEL[type]} id={id} autoFocus={forceShow&&!hasValues} value={input} onChange={setInput} onCommit={add} options={options.map(item=>item.name)} placeholder={'添加'+TYPE_LABEL[type]}/>
       {type === "place" && <button type="button" className="square-button locate-btn" onClick={getLocation} disabled={locating} aria-label="获取定位"><MapPin size={18} className={locating ? "spinning" : ""} /></button>}
-      <button type="button" className="square-button" onClick={add} aria-label={`添加${TYPE_LABEL[type]}`}><Plus size={18} /></button>
+      <button type="button" className="square-button" onClick={()=>add()} aria-label={`添加${TYPE_LABEL[type]}`}><Plus size={18} /></button>
       {!hasValues && <button type="button" className="square-button" onClick={() => { setExpanded(false); }} aria-label="收起"><X size={16} /></button>}
     </div>
+    <FieldHint path="facts.events.0.people.0.name" value={input}/>
     {hasValues && <div className="entity-list">
       {values.map((item) => <div className="entity-wrap" key={`${item.type}-${item.name}`}>
         <div className={`entity-chip${editing === item.name ? " selected" : ""}`}>
@@ -86,7 +91,7 @@ export function EntityField({ label, type, values, entities, tags, onChange, onC
         {editing === item.name && <div className="tag-editor">
           <span>为“{item.name}”选择标签</span>{tagError && <p role="alert">{tagError}</p>}
           <div className="tag-options">{tags[type].map((tag) => <button type="button" key={tag} className={item.tags.includes(tag) ? "active" : ""} onClick={() => toggleTag(item.name, tag)}>{item.tags.includes(tag) && <Check size={12} />}{tag}</button>)}</div>
-          <div className="tag-create"><input value={newTag} onChange={(event) => setNewTag(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void createTag(item.name); } }} placeholder="新标签" /><button type="button" onClick={() => void createTag(item.name)}>添加</button></div>
+          <div className="tag-create"><input value={newTag} onChange={(event) => setNewTag(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void createTag(item.name); } }} placeholder="新标签" /><FieldHint path="facts.events.0.people.0.tags.0" value={newTag}/><button type="button" onClick={() => void createTag(item.name)}>添加</button></div>
         </div>}
       </div>)}
     </div>}

@@ -1,3 +1,4 @@
+import {GlassSelect} from './GlassSelect';
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { CalendarDays, Check, Filter, Focus, Link2, Maximize2, Minus, Move, Palette, Plus, Search, X } from "lucide-react";
 import { entityTypes, type EntityRecord, type EntityType, type RecordRef } from "@diary/contracts";
@@ -324,10 +325,7 @@ function PlaceParentEditor({ entity, entities, onSaved }: { entity: EntityRecord
   });
   const children = places.filter(place => place.parentKey === entity.key);
   return <div className="place-parent-editor">
-    <label>所属地点<select value={parent} onChange={event => setParent(event.target.value)} disabled={saving}>
-      <option value="">独立地点（无上级）</option>
-      {eligible.map(place => <option key={place.key} value={place.key}>{place.name}</option>)}
-    </select></label>
+    <label>所属地点<GlassSelect label="所属地点" value={parent} onChange={setParent} disabled={saving} options={[{value:'',label:'独立地点（无上级）'},...eligible.map(place=>({value:place.key,label:place.name}))]}/></label>
     <button type="button" className="quiet-button" disabled={saving || parent === (entity.parentKey || "")} onClick={async () => {
       setSaving(true); setError("");
       try { const response = await api.setPlaceParent(entity.key, parent || null); onSaved(response.entities); }

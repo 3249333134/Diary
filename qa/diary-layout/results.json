@@ -1,0 +1,210 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "four matching diary panels and compact metadata",
+        "passed": true
+      },
+      {
+        "name": "metadata dialog focus, tags and unsent composer survive tab changes",
+        "passed": true
+      },
+      {
+        "name": "all plan views use the same footer slot",
+        "passed": true
+      },
+      {
+        "name": "drop immediately moves card without writes, Escape and redrag cancel",
+        "passed": true
+      },
+      {
+        "name": "confirmation saves once and failures return to saved deadline",
+        "passed": true
+      },
+      {
+        "name": "month date preview preserves time and remains visible in dense dates",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps composer, dialogs and footer reachable",
+        "passed": true
+      },
+      {
+        "name": "populated diary keeps composer, expansion and scroll across tabs and workspaces",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "four matching diary panels and compact metadata",
+        "passed": true
+      },
+      {
+        "name": "metadata dialog focus, tags and unsent composer survive tab changes",
+        "passed": true
+      },
+      {
+        "name": "all plan views use the same footer slot",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps composer, dialogs and footer reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 624,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "four matching diary panels and compact metadata",
+        "passed": true
+      },
+      {
+        "name": "metadata dialog focus, tags and unsent composer survive tab changes",
+        "passed": true
+      },
+      {
+        "name": "all plan views use the same footer slot",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps composer, dialogs and footer reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 624,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "four matching diary panels and compact metadata",
+        "passed": true
+      },
+      {
+        "name": "metadata dialog focus, tags and unsent composer survive tab changes",
+        "passed": true
+      },
+      {
+        "name": "all plan views use the same footer slot",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps composer, dialogs and footer reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "four matching diary panels and compact metadata",
+        "passed": true
+      },
+      {
+        "name": "metadata dialog focus, tags and unsent composer survive tab changes",
+        "passed": true
+      },
+      {
+        "name": "all plan views use the same footer slot",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps composer, dialogs and footer reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "four matching diary panels and compact metadata",
+        "passed": true
+      },
+      {
+        "name": "metadata dialog focus, tags and unsent composer survive tab changes",
+        "passed": true
+      },
+      {
+        "name": "all plan views use the same footer slot",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps composer, dialogs and footer reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "four matching diary panels and compact metadata",
+        "passed": true
+      },
+      {
+        "name": "metadata dialog focus, tags and unsent composer survive tab changes",
+        "passed": true
+      },
+      {
+        "name": "all plan views use the same footer slot",
+        "passed": true
+      },
+      {
+        "name": "drop immediately moves card without writes, Escape and redrag cancel",
+        "passed": true
+      },
+      {
+        "name": "confirmation saves once and failures return to saved deadline",
+        "passed": true
+      },
+      {
+        "name": "month date preview preserves time and remains visible in dense dates",
+        "passed": true
+      },
+      {
+        "name": "populated diary keeps composer, expansion and scroll across tabs and workspaces",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "four matching diary panels and compact metadata",
+        "passed": true
+      },
+      {
+        "name": "metadata dialog focus, tags and unsent composer survive tab changes",
+        "passed": true
+      },
+      {
+        "name": "all plan views use the same footer slot",
+        "passed": true
+      }
+    ],
+    "errors": []
+  }
+]

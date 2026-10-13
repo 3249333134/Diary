@@ -83,12 +83,12 @@ export function registerAuth(server: FastifyInstance) {
 
     const token = getSessionToken(request);
     if (!token) {
-      reply.code(401).send({ error: "未登录" });
+      reply.code(401).send({ error: "未登录",code:'AUTH_REQUIRED',requestId:request.id });
       return;
     }
     const userId = await verifySession(token);
     if (!userId) {
-      reply.code(401).send({ error: "登录已过期" });
+      reply.code(401).send({ error: "登录已过期",code:'AUTH_REQUIRED',requestId:request.id });
       return;
     }
     request.userId = userId;

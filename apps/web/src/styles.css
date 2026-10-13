@@ -1075,9 +1075,9 @@ textarea { line-height: 1.65; resize: vertical; }
   .desktop-status { display: none; }
   .mobile-status { display: flex; justify-content: flex-end; min-height: 36px; margin: 10px 0 -8px; }
   .mobile-status .status { white-space: nowrap; }
-  .save-button { width: 44px; padding: 0; }
+  .topbar .save-button { width: 44px; padding: 0; }
   .save-button svg { width: 19px; }
-  .save-button { font-size: 0; }
+  .topbar .save-button { font-size: 0; }
   .quick-capture { margin-top: 18px; padding: 18px; }
   .capture-title { grid-template-columns: auto 1fr; align-items: flex-start; gap: 8px; }
   .capture-title p { grid-column: 1 / -1; text-align: left; }
@@ -1119,7 +1119,7 @@ textarea { line-height: 1.65; resize: vertical; }
   .topbar { margin-left: -12px; margin-right: -12px; padding-left: 12px; padding-right: 12px; }
   .date-control { gap: 4px; }
   .date-control input { width: 128px; padding: 0 6px; font-size: 12px; }
-  .date-control > button, .icon-button, .save-button { width: 44px; height: 44px; }
+  .date-control > button, .icon-button, .topbar .save-button { width: 44px; height: 44px; }
   .top-actions { gap: 5px; }
   .quick-capture { margin-left: -2px; margin-right: -2px; padding: 16px; }
   .split-grid { grid-template-columns: 1fr; }
@@ -1267,7 +1267,7 @@ body { font-size: 14px; line-height: 1.5; }
   .app-shell { display: block; }
   .main-content { padding: 0 20px 32px; }
   .topbar { margin: 0 -20px; padding: 0 20px; height: 68px; gap: 8px; }
-  .save-button { font-size: 0; }
+  .topbar .save-button { font-size: 0; }
   .mobile-status { min-height: 24px; margin: 10px 0 0; }
   .main-content > .todo-entry-actions { margin: 10px 0 16px; }
   .quick-capture { padding: 20px; margin-bottom: 20px; }
@@ -1285,7 +1285,7 @@ body { font-size: 14px; line-height: 1.5; }
   .date-control { gap: 0; }
   .date-control input { width: 122px; font-size: 13px; }
   .top-actions { gap: 4px; }
-  .save-button { font-size: 0; }
+  .topbar .save-button { font-size: 0; }
   .quick-capture { margin-left: 0; margin-right: 0; padding: 16px; }
   .capture-title h2 { font-size: 17px; }
   .capture-title p { font-size: 11px; }

@@ -1,3 +1,6 @@
+import {fieldLimit,diaryDocumentSchema} from '@diary/contracts';
+import {GlassComboBox} from './GlassUI';
+import {FieldHint} from './FieldHint';
 import { usePlanCategories } from './PlanCategories';
 import { GlassSelect } from './GlassSelect';
 import { useEffect, useId, useState } from 'react';
@@ -25,13 +28,14 @@ export function ClassificationFields({ value, onChange, start = true }: { value:
   </div>;
 }
 export function SharedTagInput({ value, onChange }: { value: string[]; onChange: (tags: string[]) => void }) {
-  const id = useId(), [tags, setTags] = useState<string[]>([]), [input, setInput] = useState(''), [error, setError] = useState('');
+  const [tags, setTags] = useState<string[]>([]), [input, setInput] = useState(''), [error, setError] = useState('');
   useEffect(() => { void api.tagLibrary().then(data => setTags(data.tags)).catch(() => setError('标签候选暂不可用，仍可手动输入。')); }, []);
-  const add = () => {
-    const added = input.split(/[,，]/).map(t => t.trim()).filter(Boolean);
+  const add = (candidate=input) => {
+    const added = candidate.split(/[,，]/).map(t => t.trim()).filter(Boolean);
     if (!added.length) return;
+    if(added.some(tag=>tag.length>(fieldLimit(diaryDocumentSchema,'todos.0.tags.0')||40))){setError('标签最多 40 字符');return;}
     onChange([...new Set([...value, ...added])]); setInput('');
     void Promise.all(added.map(tag => api.addSharedTag(tag))).then(data => { setTags(data.at(-1)?.tags || tags); setError(''); }).catch(() => setError('标签已加入草稿，保存后仍会进入共享候选。'));
   };
-  return <div className="shared-tags"><label>共享标签<div className="shared-tag-entry"><input aria-label="共享标签" list={id} value={input} maxLength={40} onChange={e => setInput(e.target.value)} onBlur={add} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }} placeholder="选择或输入标签，回车添加" /><button type="button" onClick={add}>添加</button></div></label><datalist id={id}>{tags.map(tag => <option key={tag} value={tag} />)}</datalist><div className="shared-tag-chips">{value.map(tag => <button type="button" key={tag} aria-label={`移除标签 ${tag}`} onClick={() => onChange(value.filter(t => t !== tag))}>{tag} ×</button>)}</div>{error && <small role="status">{error}</small>}</div>;
+  return <div className="shared-tags"><label>共享标签<div className="shared-tag-entry"><GlassComboBox label="共享标签" value={input} onChange={setInput} onCommit={add} options={tags} placeholder="选择或输入标签，回车添加"/><button type="button" onClick={()=>add()}>添加</button></div></label><FieldHint path="todos.0.tags.0" value={input}/><div className="shared-tag-chips">{value.map(tag => <button type="button" key={tag} aria-label={`移除标签 ${tag}`} onClick={() => onChange(value.filter(t => t !== tag))}>{tag} ×</button>)}</div>{error && <small role="status">{error}</small>}</div>;
 }

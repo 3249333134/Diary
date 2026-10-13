@@ -15,11 +15,14 @@
 .calendar-drag-ghost strong { font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .calendar-drag-ghost small { font-size:11px; color:var(--purple-ink); }
 .calendar-chip[data-dragging=true] { opacity:.3; }
+.calendar-chip[data-pending=true] { outline:2px solid var(--purple);outline-offset:-2px;background:var(--purple-soft);z-index:4; }
+.calendar-batch-message { flex-shrink:0;max-height:72px;overflow:auto;margin:4px 0 8px;color:var(--text);font-size:12px;overflow-wrap:anywhere; }
+.plan-calendar[data-dragging=true] .calendar-selected-day { position:relative; }
 .calendar-heading nav { flex-wrap:wrap; justify-content:flex-end; }
 .calendar-heading .calendar-hours-toggle { font-size:11px; color:var(--purple-ink); background:var(--purple-soft); padding:6px 10px; }
 @media(min-width:900px) {
   .app-shell:has(.main-content[data-workspace=plan]) { height:100dvh; min-height:0; overflow:hidden; }
-  .main-content[data-workspace=plan] { display:flex; flex-direction:column; height:100dvh; min-height:0; padding:0 24px 12px; gap:12px; overflow:hidden; }
+  .main-content[data-workspace=plan] { display:flex; flex-direction:column; height:100dvh; min-height:0; padding:0 24px 12px; gap:8px; overflow:hidden; }
   .main-content[data-workspace=plan]>.topbar { position:relative; height:64px; flex:0 0 64px; }
   .main-content[data-workspace=plan]>.plan-workspace { display:flex; flex:1; min-height:0; overflow:hidden; }
   .main-content[data-workspace=plan] .todo-panel { display:flex; flex-direction:column; flex:1; min-height:0; height:auto; margin:0; padding:16px; overflow:hidden; }
@@ -34,7 +37,7 @@
   .main-content[data-workspace=plan] .calendar-scroll { max-height:none; min-height:0; }
   .main-content[data-workspace=plan] .plan-list-view { flex:1; min-height:0; overflow:auto; }
   .main-content[data-workspace=plan] .plan-board-scroll { flex:1; min-height:0; max-height:none; overflow:auto; }
-  .main-content[data-workspace=plan]>.capture-plan-docked { order:3; flex:0 0 52px; height:52px; position:relative; }
+  .main-content[data-workspace=plan]>.workspace-footer { display:block; order:3; flex:0 0 52px; height:52px; position:relative; }
   .capture-plan-docked .capture-mobile-bar { display:flex; align-items:stretch; gap:8px; height:52px; }
   .capture-plan-docked .capture-mobile-trigger { display:flex; flex:1; align-items:center; justify-content:center; gap:8px; border:1px solid var(--glass-edge); border-radius:14px; background:var(--glass); color:var(--purple-ink); font:inherit; font-weight:600; cursor:pointer; }
   .capture-plan-docked .capture-fullscreen-btn { display:grid; place-items:center; width:52px; border:1px solid var(--glass-edge); border-radius:14px; background:var(--glass); color:var(--purple-ink); }

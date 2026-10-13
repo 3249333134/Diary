@@ -1,6 +1,13 @@
+import {useGlassConfirm} from './GlassConfirm';
+import {GlassDialog,GlassComboBox} from './GlassUI';
+import {diaryPresets} from './diaryPresets';
+import {GlassSelect} from './GlassSelect';
+import {GlassDate} from './GlassDate';
+import {FieldHint} from './FieldHint';
+import {validateDiary,fieldLimit,diaryDocumentSchema,type FieldIssue} from '@diary/contracts';
 import { EntityField, type EntityFieldProps } from './EntityField';
 import { CompactDiaryTools } from './CompactDiaryTools';
-import { DiaryNoteEditor } from './DiaryNoteEditor';
+import { DiaryPanel, DiaryInformation } from './DiaryPanel';
 import { UnifiedCapture } from './Capture';
 import { planClock } from './planFilters';
 import { SharedTagInput } from './PlanFields';
@@ -13,7 +20,7 @@ import {
   Sun, Trash2, UserRound, MapPin, Utensils, Activity, X, Pin, PinOff, Zap, ListTodo, SlidersHorizontal,
 } from "lucide-react";
 import { emptyDiary, entityTypes, projectEntries, resolveRecord, type RecordRef, type TextEntry, type TextKind, type DiaryDocument, type DiaryEvent, type EntityRecord, type EntityType, type QuickFact, type TagStore, type TaggedEntity } from "@diary/contracts";
-import { api } from "./api";
+import { api, ApiError } from "./api";
 import { addDays, shortDate, today, weekDates } from "./date";
 import { splitSentence, type SplitDraft } from "./sentence";
 import { RelationGraph } from "./RelationGraph";
@@ -60,7 +67,7 @@ function newEvent(): DiaryEvent {
 
 function StatusBadge({ status }: { status: SaveStatus }) {
   const map = {
-    loading: ["正在读取", Sparkles], saved: ["已写入 Obsidian", Check], dirty: ["有未保存修改", Feather],
+    loading: ["正在读取", Sparkles], saved: ["已保存", Check], dirty: ["有未保存修改", Feather],
     saving: ["正在保存", Sparkles], offline: ["离线草稿", CloudOff], error: ["保存失败", CircleAlert], conflict: ["发现版本冲突", CircleAlert],
   } as const;
   const [label, Icon] = map[status];
@@ -320,7 +327,7 @@ function QuickCapture({ entities, onApply }: { entities: EntityRecord[]; onApply
     </div>
     {analysisNote && <p className="analysis-note" role="status">{analysisNote}</p>}
     {draft && <div className="split-review">
-      <div className="capture-metadata"><label>时间标签<input aria-label="记录时间" type="time" step="60" value={captureTime} onChange={(e) => setCaptureTime(e.target.value)} /></label><label>卡片类型<select value={category} onChange={(e) => setCategory(e.target.value)}>{tabs.slice(0, 4).map((tab) => <option key={tab.id} value={tab.id}>{tab.label}</option>)}</select></label></div>
+      <div className="capture-metadata"><label>时间标签<GlassDate label="记录时间" timeOnly date={planClock().date} time={captureTime} onChange={(_,time)=>setCaptureTime(time)}/></label><label>卡片类型<GlassSelect label="卡片类型" value={category} onChange={setCategory} options={tabs.slice(0,4).map(tab=>({value:tab.id,label:tab.label}))}/></label></div>
       <label className="split-field"><span>AI 推荐标签</span><input value={aiTags.join("、")} onChange={(e) => setAiTags(e.target.value.split(/[、,，]/).map(t => t.trim()).filter(Boolean))} placeholder="AI 根据内容推荐，可修改" />{aiTags.length > 0 && <small className="split-tags">{aiTags.join(" · ")}</small>}</label>
       {category === "facts" && <details className="capture-entities"><summary>查看或修改人物、地点与标签</summary><div className="split-grid">{listField("people", "人物")}{listField("places", "地点")}{listField("activities", "活动")}{listField("foods", "食物")}</div></details>}
       <div className="split-actions"><button type="button" className="quiet-button" onClick={() => setDraft(null)}>重新识别</button><button type="button" className="apply-button" onClick={() => { onApply(text.trim(), draft, captureTime, category, aiTags, currentLocation || undefined); setText(""); setDraft(null); setAnalysisNote(""); setAiTags([]); setCaptureTime(currentMinute()); }}><Check size={17} />新建{tabs.find((tab) => tab.id === category)?.label || "事实"}</button></div>
@@ -343,9 +350,10 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [optionalExpanded, setOptionalExpanded] = useState<Record<string, Set<string>>>({});
   const [locatingEventId, setLocatingEventId] = useState<string | null>(null);
+  const confirmation=useGlassConfirm();
   const [quickFacts, setQuickFacts] = useState<QuickFact[]>([]);
   const [showQuickMenu, setShowQuickMenu] = useState(false);
-  const [showNoteEditor, setShowNoteEditor] = useState(false);
+  const [showInformation, setShowInformation] = useState(false);
   const quickMenuRef = useRef<HTMLDivElement>(null);
   useEffect(() => { if (focus?.date === document.date && focus.kind === 'facts') setExpanded(current => new Set(current).add(focus.id)); }, [focus, document.date]);
 
@@ -433,6 +441,7 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
     setExpanded((current) => new Set(current).add(event.id));
     update({ ...document, facts: { ...document.facts, events: [...events, event] } });
   };
+  useEffect(()=>{const add=()=>addEvent();window.document.addEventListener('diary-add-event',add);return()=>window.document.removeEventListener('diary-add-event',add);},[document]);
 
   const toggleEvent = (id: string) => {
     setExpanded((current) => {
@@ -454,12 +463,10 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
 
   const compactMeta = (event: DiaryEvent) => [event.location?.name, ...event.people, ...event.places, ...event.activities, ...event.foods].filter(Boolean).map((item) => typeof item === "string" ? item : (item as { name: string }).name).slice(0, 4).join(" · ");
 
-  return <section className="panel-section facts-panel" aria-labelledby="facts-title">
-    <div className="section-heading">
-      <div><Feather /><div><h2 id="facts-title">今日事实 <small className="record-count">{events.length} 条</small></h2><p>按分钟串起今天；点击卡片展开详情。</p></div></div>
-      <div className="section-heading-actions">
+  const informationSummary = [document.weather,document.sleep,document.mood,document.facts.note ? '有今日备注' : ''].filter(Boolean).join(' · ') || '天气、睡眠、心情与备注';
+  return <DiaryPanel id="facts-title" title="今日事实" icon={Feather} count={events.length} className="facts-panel" informationLabel="今日信息" summary={informationSummary} onInformation={()=>setShowInformation(true)} onCreate={addEvent} actions={
         <div className="quick-facts-dropdown" ref={quickMenuRef}>
-          <button type="button" className={`quiet-button quick-facts-toggle ${showQuickMenu ? "active" : ""}`} onClick={() => setShowQuickMenu(s => !s)} aria-expanded={showQuickMenu}><Zap size={17} />快捷</button>
+          <button type="button" aria-label="快捷事实" title="快捷事实" className={`quiet-button quick-facts-toggle ${showQuickMenu ? "active" : ""}`} onClick={() => setShowQuickMenu(s => !s)} aria-expanded={showQuickMenu}><Zap size={17} /><span>快捷</span></button>
           {showQuickMenu && (
             <div className="quick-facts-menu" role="menu">
               {quickFacts.length === 0 ? (
@@ -474,39 +481,13 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
             </div>
           )}
         </div>
-        <button type="button" className="quiet-button" onClick={addEvent}><Plus size={17} />添加事件</button>
-      </div>
-    </div>
-    {/* 今日概况：天气、睡眠、心情 */}
-    <div className="day-overview">
-      <label className="overview-item">
-        <span>☀️ 天气</span>
-        <input list="weather-options" value={document.weather} onChange={e => update({ ...document, weather: e.target.value })} placeholder="晴/阴/雨..." />
-        <datalist id="weather-options">
-          <option value="晴" /><option value="多云" /><option value="阴" /><option value="小雨" />
-          <option value="中雨" /><option value="大雨" /><option value="雷阵雨" /><option value="雪" />
-          <option value="雾" /><option value="霾" />
-        </datalist>
-      </label>
-      <label className="overview-item">
-        <span>😴 睡眠</span>
-        <input list="sleep-options" value={document.sleep} onChange={e => update({ ...document, sleep: e.target.value })} placeholder="7.5h" />
-        <datalist id="sleep-options">
-          <option value="5h" /><option value="6h" /><option value="6.5h" /><option value="7h" />
-          <option value="7.5h" /><option value="8h" /><option value="8.5h" /><option value="9h" />
-        </datalist>
-      </label>
-      <label className="overview-item">
-        <span>😊 心情</span>
-        <input list="mood-options" value={document.mood} onChange={e => update({ ...document, mood: e.target.value })} placeholder="不错/一般/差..." />
-        <datalist id="mood-options">
-          <option value="很好" /><option value="不错" /><option value="一般" />
-          <option value="有点累" /><option value="差" /><option value="焦虑" /><option value="平静" />
-        </datalist>
-      </label>
-    </div>
-    <div className="day-note"><div><label htmlFor="compact-day-note">今日备注</label><button type="button" className="quiet-button" onClick={() => setShowNoteEditor(true)}>展开编辑</button></div><textarea id="compact-day-note" rows={2} value={document.facts.note} onChange={event => update({ ...document, facts: { ...document.facts, note: event.target.value } })} placeholder="补充今天的感受或背景（可选）" /></div>
-    {showNoteEditor && <DiaryNoteEditor value={document.facts.note} onChange={note => update({ ...document, facts: { ...document.facts, note } })} onClose={() => setShowNoteEditor(false)} />}
+      }>
+    {confirmation.dialog}
+    {showInformation && <DiaryInformation title="今日信息" onClose={()=>setShowInformation(false)}><div className="diary-day-information">
+      {(['weather','sleep','mood'] as const).map((key,index)=><label className="field" key={key}><span>{['天气','睡眠','心情'][index]}</span><GlassComboBox label={['天气','睡眠','心情'][index]} fieldPath={key} value={document[key]} options={diaryPresets[key]} onChange={value=>update({...document,[key]:value})}/><FieldHint path={key} value={document[key]}/></label>)}
+      <label className="field diary-day-note"><span>今日备注</span><textarea id="compact-day-note" data-field="facts.note" rows={4} value={document.facts.note} onChange={event=>update({...document,facts:{...document.facts,note:event.target.value}})} placeholder="补充今天的感受或背景（可选）"/><FieldHint path="facts.note" value={document.facts.note}/></label>
+    </div></DiaryInformation>}
+    {!events.length && <button type="button" className="diary-empty" onClick={addEvent}><Plus size={17}/>还没有事件，添加第一条记录</button>}
     {events.length > 0 && <div className="event-stack" role="region" aria-label="今日事件列表" tabIndex={0}>{events.map((event, index) => {
       const isExpanded = expanded.has(event.id);
       const detailsId = `event-details-${event.id}`;
@@ -521,7 +502,7 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
           {/* 紧凑视图的附件缩略图条 */}
           <AttachmentField attachments={event.attachments || []} onChange={(list) => updateEvent({ ...event, attachments: list })} date={document.date} variant="strip" limit={3} />
           {/* 折叠/展开都可见的侧栏删除按钮 */}
-          <button type="button" className="event-delete-icon" onClick={(e) => { e.stopPropagation(); if (window.confirm(`确定删除事件 ${index + 1} 吗？事件备注也会一起删除。`)) {
+          <button type="button" className="event-delete-icon" onClick={async(e) => { e.stopPropagation(); if (await confirmation.confirm(`确定删除事件 ${index + 1} 吗？事件备注也会一起删除。`)) {
             const next = document.facts.events.filter(item => item.id !== event.id);
             update({ ...document, facts: { ...document.facts, events: next } });
             delete detailHeights.current[event.id];
@@ -534,11 +515,11 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
             className="event-details-inner"
             ref={(el) => { heightRefs.current[event.id] = el; }}
           >
-            <label className="field event-time"><span>发生时间</span><input type="time" step="60" value={event.time} onChange={(e) => updateEvent({ ...event, time: e.target.value })} /></label>
+            <label className="field event-time"><span>发生时间</span><GlassDate label="发生时间" timeOnly date={document.date} time={event.time} onChange={(_,time)=>updateEvent({...event,time})}/></label>
             {event.plannedStart && <p className="plan-start">原定开始（完成时快照）：{event.plannedStart.date ? `${event.plannedStart.date} ${event.plannedStart.time || '未设置时间'}` : '未设置'}</p>}
             {!!event.planEntities?.filter(entity=>entity.type==='thing').length && <p>原计划事物：{event.planEntities.filter(entity=>entity.type==='thing').map(entity=>entity.name).join('、')}</p>}
             <SharedTagInput value={event.tags || []} onChange={tags=>updateEvent({...event,tags})}/>
-            <label className="field"><span>事件原句</span><textarea rows={2} value={event.note} onChange={(e) => updateEvent({ ...event, note: e.target.value })} placeholder="用一句话描述整件事" /></label>
+            <label className="field"><span>事件原句</span><textarea data-field={'facts.events.'+document.facts.events.findIndex(e=>e.id===event.id)+'.note'} rows={2} value={event.note} onChange={(e) => updateEvent({ ...event, note: e.target.value })} placeholder="用一句话描述整件事" /><FieldHint path="facts.events.0.note" value={event.note}/></label>
             <div className="field event-location">
               <span>📍定位</span>
               <div className="event-location-row">
@@ -562,7 +543,7 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
                 return next;
               });
               const fields = [
-                { key: 'remark', label: '事件备注', hasValue: !!event.remark, render: (force: boolean) => <label className="field event-remark"><span>事件备注</span><textarea rows={3} value={event.remark} onChange={(e) => updateEvent({ ...event, remark: e.target.value })} placeholder="补充这件事当时的感受、背景或后续；备注会始终跟随此事件" />{!event.remark && <button type="button" className="square-button opt-collapse" onClick={() => toggleOpt('remark')} aria-label="收起"><X size={16} /></button>}</label> },
+                { key: 'remark', label: '事件备注', hasValue: !!event.remark, render: (force: boolean) => <label className="field event-remark"><span>事件备注</span><textarea data-field={'facts.events.'+document.facts.events.findIndex(e=>e.id===event.id)+'.remark'} rows={3} value={event.remark} onChange={(e) => updateEvent({ ...event, remark: e.target.value })} placeholder="补充这件事当时的感受、背景或后续；备注会始终跟随此事件" /><FieldHint path="facts.events.0.remark" value={event.remark}/>{!event.remark && <button type="button" className="square-button opt-collapse" onClick={() => toggleOpt('remark')} aria-label="收起"><X size={16} /></button>}</label> },
                 { key: 'people', label: '和谁', hasValue: event.people.length > 0, render: (force: boolean) => <EntityField label="和谁" type="person" values={event.people} onChange={(people) => updateEvent({ ...event, people })} forceShow={force} onRequestShow={() => toggleOpt('people')} {...common} /> },
                 { key: 'places', label: '在哪', hasValue: event.places.length > 0, render: (force: boolean) => <EntityField label="在哪" type="place" values={event.places} onChange={(places) => updateEvent({ ...event, places })} forceShow={force} onRequestShow={() => toggleOpt('places')} {...common} /> },
                 { key: 'activities', label: '做了什么', hasValue: event.activities.length > 0, render: (force: boolean) => <EntityField label="做了什么" type="activity" values={event.activities} onChange={(activities) => updateEvent({ ...event, activities })} forceShow={force} onRequestShow={() => toggleOpt('activities')} {...common} /> },
@@ -603,7 +584,7 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
                   }).then(() => { void refreshQuickFacts(); }).catch(() => { /* 忽略 */ });
                 }}><Pin size={15} />存为快捷</button>
               )}
-              <button type="button" className="event-delete" onClick={() => { if (window.confirm(`确定删除事件 ${index + 1} 吗？事件备注也会一起删除。`)) {
+              <button type="button" className="event-delete" onClick={async() => { if (await confirmation.confirm(`确定删除事件 ${index + 1} 吗？事件备注也会一起删除。`)) {
                 const next = document.facts.events.filter(item => item.id !== event.id);
                 update({ ...document, facts: { ...document.facts, events: next } });
                 // 清理测量缓存
@@ -618,12 +599,19 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
       </article>;
     })}</div>}
 
-  </section>;
+  </DiaryPanel>;
 }
 
-function TextEntries({ label, kind, document, update }: { label: string; kind: TextKind; document: DiaryDocument; update: (document: DiaryDocument) => void }) {
+function TextEntries({ label, kind, document, update,createRequest }: { label: string; kind: TextKind; document: DiaryDocument; update: (document: DiaryDocument) => void;createRequest:number }) {
   const entries = document.entries?.[kind] || [];
   const [newText, setNewText] = useState('');
+  const newTextRef=useRef<HTMLTextAreaElement>(null);
+  const [composing,setComposing]=useState(false);
+  const focusRequested=useRef(false);
+  const focusComposer=()=>{focusRequested.current=true;setComposing(true);if(newTextRef.current){newTextRef.current.scrollIntoView({block:'nearest'});newTextRef.current.focus();focusRequested.current=false;}};
+  useEffect(()=>{if(composing&&focusRequested.current&&newTextRef.current){newTextRef.current.scrollIntoView({block:'nearest'});newTextRef.current.focus();focusRequested.current=false;}},[composing,createRequest]);
+  useEffect(()=>{if(createRequest)focusComposer();},[createRequest]);
+  const confirmation=useGlassConfirm();
   const [tagging, setTagging] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const heightRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -663,9 +651,9 @@ function TextEntries({ label, kind, document, update }: { label: string; kind: T
   };
   const iconForKind = kind === 'learn' ? Lightbulb : kind === 'input' ? BookOpen : Brain;
   const KindIcon = iconForKind;
-  return <div className="spacious">
+  return <div className="diary-entries">{confirmation.dialog}
     {entries.length === 0
-      ? <button type="button" className="empty-action" onClick={() => setNewText(' ')}><KindIcon size={25} /><strong>还没有{label}记录</strong><span>写一条吧，或者用上面的一句话快速记录。</span></button>
+      ? <button type="button" className="diary-empty" onClick={focusComposer}><KindIcon size={18}/><span>还没有{label}记录，先写一句。</span></button>
       : <div className="event-stack">
           {entries.map((entry, index) => {
             const isExpanded = expanded.has(entry.id);
@@ -681,12 +669,12 @@ function TextEntries({ label, kind, document, update }: { label: string; kind: T
                 </button>
                 {/* 紧凑视图的附件缩略图条 */}
                 <AttachmentField attachments={entry.attachments || []} onChange={(list) => change(entries.map(item => item.id === entry.id ? { ...item, attachments: list } : item))} date={document.date} variant="strip" limit={3} />
-                <button type="button" className="event-delete-icon" onClick={(e) => { e.stopPropagation(); if (window.confirm(`删除此${label}？相关待办保留。`)) { change(entries.filter(e => e.id !== entry.id)); delete detailHeights.current[entry.id]; delete heightRefs.current[entry.id]; } }} aria-label={`删除${label}${index + 1}`}><Trash2 size={16} /></button>
+                <button type="button" className="event-delete-icon" onClick={async(e) => { e.stopPropagation(); if (await confirmation.confirm(`删除此${label}？相关待办保留。`)) { change(entries.filter(e => e.id !== entry.id)); delete detailHeights.current[entry.id]; delete heightRefs.current[entry.id]; } }} aria-label={`删除${label}${index + 1}`}><Trash2 size={16} /></button>
               </header>
               <div className="event-details" id={detailsId}>
                 <div className="event-details-inner" ref={(el) => { heightRefs.current[entry.id] = el; }}>
-                  <label className="field event-time"><span>记录时间</span><input type="time" step="60" value={entry.time} onChange={e => change(entries.map(item => item.id === entry.id ? { ...item, time: e.target.value } : item))} /></label>
-                  <label className="field"><span>{label}内容</span><textarea rows={4} value={entry.content} onChange={e => change(entries.map(item => item.id === entry.id ? { ...item, content: e.target.value } : item))} /></label>
+                  <label className="field event-time"><span>记录时间</span><GlassDate label="记录时间" timeOnly date={document.date} time={entry.time} onChange={(_,time)=>change(entries.map(item=>item.id===entry.id?{...item,time}:item))}/></label>
+                  <label className="field"><span>{label}内容</span><textarea data-field={'entries.'+kind+'.'+index+'.content'} rows={4} value={entry.content} onChange={e => change(entries.map(item => item.id === entry.id ? { ...item, content: e.target.value } : item))} /><FieldHint path="entries.input.0.content" value={entry.content}/></label>
                   <div className="field">
                     <span>标签</span>
                     <div className="ai-tag-row">
@@ -704,39 +692,42 @@ function TextEntries({ label, kind, document, update }: { label: string; kind: T
             </article>;
           })}
         </div>}
-    <form onSubmit={e => { e.preventDefault(); if (!newText.trim()) return; const entry: TextEntry = { id: crypto.randomUUID(), content: newText.trim(), time: currentMinute(), sources: [], tags: [], attachments: [] }; change([...entries, entry]); setExpanded(prev => new Set([...prev, entry.id])); setNewText(''); }}>
-      <label className="field spacious"><span>新建一条{label}</span><textarea rows={2} value={newText} onChange={e => setNewText(e.target.value)} placeholder={`写一条${label.toLowerCase()}...`} /></label>
-      <button className="quiet-button" disabled={!newText.trim()}><Plus size={17} />新建{label}</button>
-    </form>
+    {(composing||!entries.length||newText.length>0)&&<form className="diary-entry-composer" onSubmit={e => { e.preventDefault(); if (!newText.trim() || newText.length>(fieldLimit(diaryDocumentSchema,'entries.input.0.content')||50000)) return; const entry: TextEntry = { id: crypto.randomUUID(), content: newText.trim(), time: currentMinute(), sources: [], tags: [], attachments: [] }; change([...entries, entry]); setExpanded(prev => new Set([...prev, entry.id])); setNewText('');setComposing(false); }}>
+      <label className="field"><span>新建一条{label}</span><textarea ref={newTextRef} rows={3} value={newText} onChange={e => setNewText(e.target.value)} placeholder={`写一条${label.toLowerCase()}...`} /></label>
+      <FieldHint path="entries.input.0.content" value={newText}/><button className="quiet-button" disabled={!newText.trim()||newText.length>(fieldLimit(diaryDocumentSchema,'entries.input.0.content')||50000)}><Plus size={17} />新建{label}</button>
+    </form>}
   </div>;
 }
 
 function TextPanel({ kind, document, update, common }: { kind: "learn" | "input"; document: DiaryDocument; update: (document: DiaryDocument) => void; common: Pick<EntityFieldProps, "entities" | "tags" | "onCreateTag"> }) {
-  if (kind === "learn") return <section className="panel-section" aria-labelledby="learn-title">
-    <div className="section-heading"><div><Lightbulb /><div><h2 id="learn-title">今日新知</h2><p>留下来源，以及真正改变你理解的那一句。</p></div></div></div>
-    <EntityField label="来源" type="thing" values={document.learn.sources} onChange={(sources) => update({ ...document, learn: { ...document.learn, sources } })} {...common} />
-    <TextEntries label="新知" kind="learn" document={document} update={update} />
-  </section>;
-  return <section className="panel-section" aria-labelledby="input-title">
-    <div className="section-heading"><div><BookOpen /><div><h2 id="input-title">输入记录</h2><p>书、文章、影视和播客，都可以成为以后调用的素材。</p></div></div></div>
-    <label className="field"><span>类型</span><select value={document.input.kind} onChange={(event) => update({ ...document, input: { ...document.input, kind: event.target.value } })}>{INPUT_KINDS.map((item) => <option key={item}>{item}</option>)}</select></label>
-    <EntityField label="名称" type="thing" values={document.input.names} onChange={(names) => update({ ...document, input: { ...document.input, names } })} {...common} />
-    <TextEntries label="输入" kind="input" document={document} update={update} />
-  </section>;
+  const [information,setInformation]=useState(false),[createRequest,setCreateRequest]=useState(0);
+  const learn=kind==='learn',label=learn?'新知':'输入';
+  const summary=learn?(document.learn.sources.map(s=>s.name).join('、')||'添加来源'):[document.input.kind,document.input.names.map(s=>s.name).join('、')||'添加名称'].filter(Boolean).join(' · ');
+  return <DiaryPanel id={`${kind}-title`} title={learn?'今日新知':'输入记录'} icon={learn?Lightbulb:BookOpen} count={document.entries?.[kind].length||0} summary={summary} informationLabel={learn?'来源':'输入信息'} onInformation={()=>setInformation(true)} onCreate={()=>setCreateRequest(n=>n+1)}>
+    {information&&<DiaryInformation title={learn?'新知来源':'输入信息'} onClose={()=>setInformation(false)}>
+      {learn?<EntityField label="来源" type="thing" values={document.learn.sources} onChange={sources=>update({...document,learn:{...document.learn,sources}})} {...common}/>:<>
+        <label className="field"><span>类型</span><GlassSelect label="类型" value={document.input.kind} onChange={kind=>update({...document,input:{...document.input,kind}})} options={INPUT_KINDS.map(value=>({value,label:value}))}/></label>
+        <EntityField label="名称" type="thing" values={document.input.names} onChange={names=>update({...document,input:{...document.input,names}})} {...common}/>
+      </>}
+    </DiaryInformation>}
+    <TextEntries label={label} kind={kind} document={document} update={update} createRequest={createRequest}/>
+  </DiaryPanel>;
 }
 
 function IdeaPanel({ document, update, tags, onCreateTag }: { document: DiaryDocument; update: (document: DiaryDocument) => void; tags: TagStore; onCreateTag: (type: EntityType, tag: string) => Promise<void> }) {
   const [input, setInput] = useState("");
+  const [information,setInformation]=useState(false),[createRequest,setCreateRequest]=useState(0);
   const options = [...new Set(Object.values(tags).flat())].filter((tag) => !document.idea.tags.includes(tag)).slice(0, 16);
   const add = async () => { const value = input.trim(); if (!value) return; update({ ...document, idea: { ...document.idea, tags: [...new Set([...document.idea.tags, value])] } }); await onCreateTag("thing", value); setInput(""); };
-  return <section className="panel-section" aria-labelledby="idea-title">
-    <div className="section-heading"><div><Brain /><div><h2 id="idea-title">灵感碎片</h2><p>不要求完整，先让转瞬即逝的线索有一个落点。</p></div></div></div>
+  return <DiaryPanel id="idea-title" title="灵感碎片" icon={Brain} count={document.entries?.idea.length||0} summary={document.idea.tags.join(' · ')||'选择或新建标签'} informationLabel="标签" onInformation={()=>setInformation(true)} onCreate={()=>setCreateRequest(n=>n+1)}>
+    {information&&<DiaryInformation title="灵感标签" onClose={()=>setInformation(false)}>
     <div className="field"><span>标签</span><div className="idea-tags">{document.idea.tags.map((tag) => <span key={tag}>{tag}<button type="button" onClick={() => update({ ...document, idea: { ...document.idea, tags: document.idea.tags.filter((item) => item !== tag) } })} aria-label={`移除标签${tag}`}><X size={13} /></button></span>)}</div>
       <div className="tag-options suggestions">{options.map((tag) => <button type="button" key={tag} onClick={() => update({ ...document, idea: { ...document.idea, tags: [...document.idea.tags, tag] } })}>{tag}</button>)}</div>
       <div className="entity-entry"><input value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void add(); } }} placeholder="输入新标签" /><button type="button" className="square-button" onClick={() => void add()} aria-label="添加标签"><Plus size={18} /></button></div>
     </div>
-    <TextEntries label="灵感" kind="idea" document={document} update={update} />
-  </section>;
+    </DiaryInformation>}
+    <TextEntries label="灵感" kind="idea" document={document} update={update} createRequest={createRequest}/>
+  </DiaryPanel>;
 }
 
 function LookupPanel({ entities, selected, onSelect, onOpenDate }: { entities: EntityRecord[]; selected: EntityRecord | null; onSelect: (entity: EntityRecord) => void; onOpenDate: (date: string) => void }) {
@@ -746,7 +737,7 @@ function LookupPanel({ entities, selected, onSelect, onOpenDate }: { entities: E
 
 function ConflictBanner({ conflict, onRemote, onLocal }: { conflict: Conflict; onRemote: () => void; onLocal: () => void }) {
   const [showDiff, setShowDiff] = useState(false);
-  return <div className="conflict-banner" role="alert"><CircleAlert /><div><strong>Obsidian 中的内容已经变化</strong><p>自动保存已暂停。你可以先比较两个版本，再决定保留哪一份。</p><div><button type="button" onClick={() => void navigator.clipboard.writeText(JSON.stringify(conflict.local, null, 2))}>复制本地草稿</button><button type="button" onClick={() => setShowDiff((value) => !value)}>{showDiff ? "收起对比" : "查看差异"}</button><button type="button" onClick={onRemote}>加载 Obsidian</button><button type="button" className="danger-choice" onClick={onLocal}>以本地草稿继续</button></div>{showDiff && <div className="conflict-compare"><section><h3>本地草稿</h3><pre>{JSON.stringify(conflict.local, null, 2)}</pre></section><section><h3>Obsidian 版本</h3><pre>{JSON.stringify(conflict.remote, null, 2)}</pre></section></div>}</div></div>;
+  return <div className="conflict-banner" role="alert"><CircleAlert /><div><strong>云端内容已经变化</strong><p>自动保存已暂停。你可以先比较两个版本，再决定保留哪一份。</p><div><button type="button" onClick={() => void navigator.clipboard.writeText(JSON.stringify(conflict.local, null, 2))}>复制本地草稿</button><button type="button" onClick={() => setShowDiff((value) => !value)}>{showDiff ? "收起对比" : "查看差异"}</button><button type="button" onClick={onRemote}>加载云端版本</button><button type="button" className="danger-choice" onClick={onLocal}>以本地草稿继续</button></div>{showDiff && <div className="conflict-compare"><section><h3>本地草稿</h3><pre>{JSON.stringify(conflict.local, null, 2)}</pre></section><section><h3>云端版本</h3><pre>{JSON.stringify(conflict.remote, null, 2)}</pre></section></div>}</div></div>;
 }
 
 export function App() {
@@ -755,6 +746,27 @@ export function App() {
   const [diary, setDiary] = useState<DiaryDocument>(() => emptyDiary(initialDate));
   const [version, setVersion] = useState("0");
   const [status, setStatus] = useState<SaveStatus>("loading");
+  const [saveError,setSaveError]=useState('');
+  const [serverIssues,setServerIssues]=useState<FieldIssue[]>([]);
+  const [refreshWarning,setRefreshWarning]=useState('');
+  const [reauth,setReauth]=useState(false);
+  const activeDate=useRef(date);activeDate.current=date;
+  const localIssues=useMemo(()=>validateDiary(diary),[diary]);
+  const issues=localIssues.length?localIssues:serverIssues;
+  const focusIssue=(issue?:FieldIssue)=>{
+    if(!issue)return;
+    setShowReceipts(false);setShowTodos(false);
+    const tab=issue.path.startsWith('learn')||issue.path.startsWith('entries.learn')?1:issue.path.startsWith('input')||issue.path.startsWith('entries.input')?2:issue.path.startsWith('idea')||issue.path.startsWith('entries.idea')?3:0;
+    selectTab(tab);
+    requestAnimationFrame(()=>{
+      let el=window.document.querySelector<HTMLElement>('[data-field="'+CSS.escape(issue.path)+'"]');
+      const metadata=issue.path==='facts.note'||['weather','sleep','mood'].includes(issue.path)||/^(learn\.sources|input\.(kind|names)|idea\.tags)/.test(issue.path);
+      if(metadata&&!el)window.document.querySelector<HTMLButtonElement>('#panel-'+tabs[tab].id+' .diary-information')?.click();
+      const toggle=el?.closest('article')?.querySelector<HTMLButtonElement>('[aria-expanded=false]');
+      toggle?.click();
+      requestAnimationFrame(()=>{el=window.document.querySelector<HTMLElement>('[data-field="'+CSS.escape(issue.path)+'"]')||window.document.querySelector<HTMLElement>('#panel-'+tabs[tab].id+' textarea')||window.document.querySelector('#compact-day-note');el?.scrollIntoView({block:'center'});el?.focus();});
+    });
+  };
   const [activeTab, setActiveTab] = useState(0);
   // ── 登录态 ──
   const [authState, setAuthState] = useState<{ checking: boolean; user: { id: number; username: string } | null }>({ checking: true, user: null });
@@ -770,6 +782,7 @@ export function App() {
     })();
     return () => { cancelled = true; };
   }, []);
+  useEffect(()=>{const expired=()=>{if(authState.user)setReauth(true);};window.addEventListener('diary-auth-required',expired);return()=>window.removeEventListener('diary-auth-required',expired);},[authState.user]);
   const handleLogout = async () => {
     try { await api.auth.logout(); } catch { /* ignore */ }
     setAuthState({ checking: false, user: null });
@@ -780,6 +793,8 @@ export function App() {
     update(); viewport?.addEventListener('resize', update); window.addEventListener('resize', update);
     return () => { viewport?.removeEventListener('resize', update); window.removeEventListener('resize', update); window.document.documentElement.style.removeProperty('--app-height'); };
   }, []);
+  const [mobileLayout,setMobileLayout]=useState(()=>window.matchMedia('(max-width:899px)').matches);
+  useEffect(()=>{const media=window.matchMedia('(max-width:899px)'),update=()=>setMobileLayout(media.matches);media.addEventListener('change',update);return()=>media.removeEventListener('change',update);},[]);
   const [showReceipts, setShowReceipts] = useState(false);
   const [showTodos, setShowTodos] = useState(false);
   const browseRef = useRef<HTMLElement>(null);
@@ -821,6 +836,7 @@ export function App() {
 
   const refreshContext = async (currentDate = date) => {
     const [entityData, tagData, weekData] = await Promise.all([api.entities(), api.tags(), api.week(currentDate)]);
+    if(activeDate.current!==currentDate)return;
     setEntities(entityData.entities); setTags(tagData.tags); setWeek(weekData);
     if (selectedEntity) setSelectedEntity(entityData.entities.find((item) => item.key === selectedEntity.key) || null);
   };
@@ -829,7 +845,8 @@ export function App() {
 
   useEffect(() => {
     let cancelled = false;
-    hydrated.current = false; setStatus("loading"); conflictRef.current = null; setConflict(null); setSelectedEntity(null);
+    if(!authState.user){hydrated.current=false;return;}
+    hydrated.current = false; setSaveError(""); setServerIssues([]); setRefreshWarning(""); setStatus("loading"); conflictRef.current = null; setConflict(null); setSelectedEntity(null);
     void (async () => {
       try {
         const remote = await api.loadDiary(date);
@@ -844,29 +861,39 @@ export function App() {
         else if (draft && draft.baseVersion !== remote.version) { const nextConflict = { local: draft.document, remote: remote.document, remoteVersion: remote.version }; setDiary(remote.document); conflictRef.current = nextConflict; setConflict(nextConflict); setStatus("conflict"); }
         else { setDiary(remote.document); setStatus("saved"); }
         hydrated.current = true;
-        await refreshContext(date);
+        await refreshContext(date).catch(()=>{if(!cancelled)setRefreshWarning("日记已读取，关联信息刷新失败");});
       } catch { if (!cancelled) setStatus(navigator.onLine ? "error" : "offline"); }
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [date]);
+  }, [date,authState.user?.id]);
 
-  async function saveNow(snapshot = diaryRef.current) {
-    if (!hydrated.current || conflictRef.current || JSON.stringify(snapshot) === lastSaved.current) return;
+  async function saveNow(snapshot = diaryRef.current, explicit=false) {
+    if (!hydrated.current || conflictRef.current || snapshot.date!==activeDate.current) return;
+    const problems=validateDiary(snapshot);
+    if(problems.length){setServerIssues([]);setSaveError('请修改标出的字段，草稿已保留');setStatus('error');if(explicit)focusIssue(problems[0]);return;}
+    if(JSON.stringify(snapshot)===lastSaved.current){if(explicit&&refreshWarning)void refreshContext(snapshot.date).then(()=>setRefreshWarning('')).catch(()=>{});return;}
     if (saving.current) { pending.current = true; return; }
-    saving.current = true; setStatus("saving");
+    const target=snapshot.date,expected=versionRef.current,serialized=JSON.stringify(snapshot);
+    const previous=lastSaved.current;
+    saving.current = true; setSaveError('');setServerIssues([]);setStatus("saving");
     try {
-      const result = await api.saveDiary(date, snapshot, versionRef.current);
-      const printed = addedReceipts(lastSaved.current ? JSON.parse(lastSaved.current) as DiaryDocument : emptyDiary(snapshot.date), snapshot);
+      const result = await api.saveDiary(target, snapshot, expected);
+      const key='diary.draft.'+target;
+      const stored=localStorage.getItem(key);
+      try{if(stored){const draft=JSON.parse(stored);if(JSON.stringify(draft.document)===serialized)localStorage.removeItem(key);else localStorage.setItem(key,JSON.stringify({...draft,baseVersion:result.version}));}}catch{ /* Cloud write succeeded; local metadata must not turn it into a save failure. */ }
+      if(activeDate.current!==target)return;
+      const printed = addedReceipts(previous ? JSON.parse(previous) as DiaryDocument : emptyDiary(target), snapshot);
       if (printed.length) setPrintedReceipts(printed);
-      versionRef.current = result.version; setVersion(result.version); lastSaved.current = JSON.stringify(snapshot);
-      localStorage.removeItem(`diary.draft.${date}`);
-      if (JSON.stringify(diaryRef.current) === lastSaved.current) setStatus("saved"); else { setStatus("dirty"); pending.current = true; }
-      await refreshContext(date);
+      versionRef.current = result.version; setVersion(result.version); lastSaved.current = serialized;
+      if (JSON.stringify(diaryRef.current) === serialized) setStatus("saved"); else { setStatus("dirty"); pending.current = true; }
+      setRefreshWarning(result.warning?.message||'');
+      await refreshContext(target).catch(()=>{if(activeDate.current===target)setRefreshWarning('日记已保存，关联信息刷新失败，可重试');});
     } catch (error) {
-      const problem = error as Error & { status?: number; data?: { current?: { document: DiaryDocument; version: string } } };
+      if(activeDate.current!==target)return;
+      const problem = error as ApiError;
       if (problem.status === 409 && problem.data?.current) { const nextConflict = { local: diaryRef.current, remote: problem.data.current.document, remoteVersion: problem.data.current.version }; conflictRef.current = nextConflict; setConflict(nextConflict); setStatus("conflict"); }
-      else setStatus(navigator.onLine ? "error" : "offline");
+      else {setServerIssues(problem.data?.issues||[]);setSaveError(problem.message+(problem.data?.requestId?'（请求 '+problem.data.requestId+'）':''));setStatus(navigator.onLine ? "error" : "offline");}
     } finally {
       saving.current = false;
       if (pending.current && !conflictRef.current) { pending.current = false; window.setTimeout(() => void saveNow(diaryRef.current), 50); }
@@ -875,6 +902,7 @@ export function App() {
 
   useEffect(() => {
     if (!hydrated.current) return;
+    setServerIssues([]);setSaveError("");
     const serialized = JSON.stringify(diary);
     if (serialized === lastSaved.current) return;
     localStorage.setItem(`diary.draft.${date}`, JSON.stringify({ document: diary, baseVersion: versionRef.current }));
@@ -987,6 +1015,7 @@ export function App() {
     if (index === 3) return <IdeaPanel document={diary} update={updateDiary} tags={tags} onCreateTag={common.onCreateTag} />;
     return <LookupPanel entities={entities} selected={selectedEntity} onSelect={setSelectedEntity} onOpenDate={(next) => { setDate(next); selectTab(0); }} />;
   };
+  const diaryNavigation=<nav className="section-nav" role="tablist" aria-label="日记栏目">{tabs.map((tab,index)=>{const Icon=tab.icon;return <button type="button" key={tab.id} role="tab" aria-selected={activeTab===index} aria-controls={`panel-${tab.id}`} className={activeTab===index?'active':''} onClick={()=>selectTab(index)}><Icon/><span>{tab.label}</span></button>;})}</nav>;
 
   if (authState.checking) {
     return <div className="login-page"><div className="login-card" style={{textAlign:'center'}}>加载中...</div></div>;
@@ -1011,23 +1040,29 @@ export function App() {
         <button aria-label="计划" aria-pressed={showTodos} title="计划" onClick={()=>setShowTodos(true)}><ListTodo size={20}/><small>计划</small></button>
         <button className="compact-browse-context" aria-label={showTodos?'筛选计划':'日期与今日信息'} aria-haspopup="dialog" onClick={()=>showTodos?requestPlanTool('filters'):setDiaryTools(true)}>{showTodos?<SlidersHorizontal size={18}/>:<CalendarDays size={18}/>}<span>{showTodos?'筛选':date.slice(5).replace('-','/')}</span><ChevronDown size={14}/></button>
         <button aria-label={theme==='light'?'切换到深色主题':'切换到浅色主题'} onClick={()=>setTheme(theme==='light'?'dark':'light')}>{theme==='light'?<Moon size={20}/>:<Sun size={20}/>}</button>
-        {!showTodos&&<button className={status==='dirty'?'has-unsaved-change':''} aria-label="保存日记" disabled={status==='saving'||status==='loading'||status==='conflict'} onClick={()=>void saveNow()}><Save size={20}/></button>}
+        {!showTodos&&<button className={status==='dirty'?'has-unsaved-change':''} aria-label="保存日记" disabled={status==='saving'||status==='loading'||status==='conflict'} onClick={()=>void saveNow(diaryRef.current,true)}><Save size={20}/></button>}
         {showTodos&&<button aria-label="新增计划" onClick={()=>requestPlanTool('create')}><Plus size={20}/></button>}
         <button aria-label={`退出登录 ${authState.user?.username || ''}`} title={`退出登录 (${authState.user?.username})`} onClick={()=>void handleLogout()}><UserRound size={20}/></button>
       </nav>
       {diaryTools && <CompactDiaryTools date={date} onDate={setDate} diary={diary} update={updateDiary} onClose={()=>setDiaryTools(false)} onExpand={()=>{setDiaryTools(false);compactBrowse.expand();}} onReceipts={()=>{setDiaryTools(false);setShowReceipts(true);}}/>}
       <nav className="workspace-switch mobile-workspace-switch" aria-label="主要功能"><button aria-pressed={!showTodos} onClick={() => setShowTodos(false)}>日记</button><button aria-pressed={showTodos} onClick={() => setShowTodos(true)}>计划</button></nav>
-      <header className="topbar">{showTodos && <h1 className="plan-page-title">计划</h1>}<div hidden={showTodos} className="date-control"><button type="button" onClick={() => setDate(addDays(date, -1))} aria-label="前一天"><ChevronLeft /></button><label><span className="sr-only">选择日期</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><button type="button" onClick={() => setDate(addDays(date, 1))} aria-label="后一天"><ChevronRight /></button></div><div className="top-actions"><div hidden={showTodos} className="desktop-status"><StatusBadge status={status} /></div><button type="button" className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={theme === "light" ? "切换到深色主题" : "切换到浅色主题"}>{theme === "light" ? <Moon /> : <Sun />}</button><button hidden={showTodos} type="button" className="save-button" onClick={() => void saveNow()} disabled={status === "saving" || status === "loading" || status === "conflict"}><Save />立即保存</button></div></header>
+      <header className="topbar">{showTodos && <h1 className="plan-page-title">计划</h1>}<div hidden={showTodos} className="date-control"><button type="button" onClick={() => setDate(addDays(date, -1))} aria-label="前一天"><ChevronLeft /></button><GlassDate label="日记日期" dateOnly required date={date} onChange={d=>{if(d)setDate(d);}}/><button type="button" onClick={() => setDate(addDays(date, 1))} aria-label="后一天"><ChevronRight /></button></div><div className="top-actions"><div hidden={showTodos} className="desktop-status"><StatusBadge status={status} /></div><button type="button" className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={theme === "light" ? "切换到深色主题" : "切换到浅色主题"}>{theme === "light" ? <Moon /> : <Sun />}</button><button hidden={showTodos} type="button" className="save-button" onClick={() => void saveNow(diaryRef.current,true)} disabled={status === "saving" || status === "loading" || status === "conflict"}><Save />立即保存</button></div></header>
       <div hidden={showTodos} className="mobile-status"><StatusBadge status={status} /></div>
+      {!showTodos&&(saveError||issues.length>0)&&<div className="save-problem" role="alert"><p>{saveError||'内容未通过校验，草稿已保留'}</p>{issues.slice(0,5).map(issue=><button key={issue.path} type="button" className="quiet-button" onClick={()=>focusIssue(issue)}>{issue.message}</button>)}{saveError&&!issues.length&&<button className="quiet-button" onClick={()=>void saveNow(diaryRef.current,true)}>重试保存</button>}</div>}
+      {!showTodos&&refreshWarning&&<div className="refresh-warning" role="status">{refreshWarning}<button className="quiet-button" onClick={()=>void refreshContext(date).then(()=>setRefreshWarning('')).catch(()=>{})}>重试刷新</button></div>}
+      {reauth&&<GlassDialog label="重新登录" onClose={()=>setReauth(false)}><p className="reauth-note">登录已失效，编辑内容已保留。请使用原账号重新登录。</p><Login onAuth={async()=>{const me=await api.auth.me();if(me.id!==authState.user?.id){await api.auth.logout();setSaveError('请登录原账号后继续保存');return;}setReauth(false);await saveNow();}}/></GlassDialog>}
       {actionError && <p role="alert">{actionError}</p>}
-      <UnifiedCapture compactDesktop={showTodos} entityContext={common} hidden={!showTodos && !showReceipts && activeTab === 4} bottomNav={!showTodos && !showReceipts} onSave={saveCapture} onOpen={ref => void openRecord(ref)} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} />
-      <div className="workspace-root plan-workspace" hidden={!showTodos}><TodoPanel onNavigationChange={setPlanNavigation} entityContext={common} toolbarAction={planToolbarAction} onExpand={compactBrowse.expand} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} date={planClock().date} source={actionSource} revision={actionsRevision} focusId={focusRecord?.kind === 'todo' ? focusRecord.id : undefined} prepare={prepareAction} changed={reloadAfterAction} onOpen={ref => void openRecord(ref)} onClose={() => setShowTodos(false)} /></div>
+      <div className="workspace-footer">
+        <UnifiedCapture compactDesktop={showTodos} entityContext={common} hidden={!showTodos && !showReceipts && activeTab === 4} bottomNav={!showTodos && !showReceipts} onSave={saveCapture} onOpen={ref => void openRecord(ref)} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} />
+        {mobileLayout&&!showTodos&&!showReceipts&&diaryNavigation}
+      </div>
+      <div className="workspace-root plan-workspace" hidden={!showTodos}><TodoPanel active={showTodos} onNavigationChange={setPlanNavigation} entityContext={common} toolbarAction={planToolbarAction} onExpand={compactBrowse.expand} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} date={planClock().date} source={actionSource} revision={actionsRevision} focusId={focusRecord?.kind === 'todo' ? focusRecord.id : undefined} prepare={prepareAction} changed={reloadAfterAction} onOpen={ref => void openRecord(ref)} onClose={() => setShowTodos(false)} /></div>
       <div className="workspace-root diary-workspace" hidden={showTodos}>
       <div className="todo-entry-actions"><button type="button" className="quiet-button" onClick={() => setShowReceipts(true)}><BookOpen size={18} />每日小票 · 查看收藏</button></div>
-      {showReceipts ? (status === 'loading' || diary.date !== date ? <p role="status">正在整理这一天的小票…</p> : <ReceiptCollection key={date} diary={diary} saved={status === 'saved'} onClose={() => setShowReceipts(false)} />) : <>
+      {showReceipts ? (status === 'loading' || diary.date !== date ? <p role="status">正在整理这一天的小票…</p> : <ReceiptCollection key={date} diary={diary} saved={status === 'saved'} onClose={() => setShowReceipts(false)} onWrite={()=>{setShowReceipts(false);selectTab(0);requestAnimationFrame(()=>window.document.dispatchEvent(new Event("diary-add-event")));}} />) : <>
       {conflict && <ConflictBanner conflict={conflict} onRemote={() => { updateDiary(conflict.remote); versionRef.current = conflict.remoteVersion; setVersion(conflict.remoteVersion); lastSaved.current = JSON.stringify(conflict.remote); localStorage.removeItem(`diary.draft.${date}`); conflictRef.current = null; setConflict(null); setStatus("saved"); }} onLocal={() => { versionRef.current = conflict.remoteVersion; setVersion(conflict.remoteVersion); updateDiary(conflict.local); conflictRef.current = null; setConflict(null); setStatus("dirty"); }} />}
       <div className="workspace-layout">
-        <nav className="section-nav" role="tablist" aria-label="日记栏目">{tabs.map((tab, index) => { const Icon = tab.icon; return <button type="button" key={tab.id} role="tab" aria-selected={activeTab === index} aria-controls={`panel-${tab.id}`} className={activeTab === index ? "active" : ""} onClick={() => selectTab(index)}><Icon /><span>{tab.label}</span></button>; })}</nav>
+        {!mobileLayout&&diaryNavigation}
         <div className="workspace-track" ref={trackRef} onScroll={onTrackScroll}>{tabs.map((tab, index) => <div id={`panel-${tab.id}`} role="tabpanel" aria-hidden={activeTab !== index} inert={activeTab !== index} tabIndex={activeTab === index ? 0 : -1} data-active={activeTab === index} className={`workspace-panel${index === 4 ? " full-page" : ""}`} key={tab.id}>{panel(index)}</div>)}</div>
       </div>
       </>}

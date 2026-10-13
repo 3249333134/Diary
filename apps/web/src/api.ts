@@ -1,4 +1,8 @@
 import type { PlanCategory, CaptureDraft, CompletionRecord, DiaryDocument, DiaryResponse, EntityRecord, EntityType, PinQuickFactRequest, QuickFact, SentenceSplitResult, TagStore, Todo, RecordRef } from "@diary/contracts";
+import type {FieldIssue} from '@diary/contracts';
+export class ApiError extends Error {
+  constructor(message:string,public status=0,public data:{code?:string;issues?:FieldIssue[];requestId?:string;current?:DiaryResponse}={}) { super(message); this.name='ApiError'; }
+}
 export type ActionRow = { restorePending?: boolean; completionPending?: boolean; pendingRecord?: CaptureDraft; date: string; version: string; task: Todo; sourceExists: boolean; completionExists: boolean; pendingFact?: { date: string; id: string; time: string; note: string; remark: string } };
 export type ActionInput = { automaticRecord?: boolean; completionRecord?: CompletionRecord; mode: 'create' | 'update' | 'delete' | 'complete' | 'restore' | 'purge' | 'status'; date: string; version: string; task: Todo; operationId: string; sourceVersion?: string; fact?: { date: string; version: string; time: string; note: string; remark: string }; nextStatus?: 'todo' | 'doing' | 'done' | 'cancelled' };
 export type ParsedTodo = Pick<Todo, 'entities' | 'category' | 'important' | 'urgent' | 'startDate' | 'startTime'> & { repeat?: Todo['repeat']; description?: string; title: string; dueDate: string; dueTime: string; priority: string; list: string; tags: string[] };
@@ -11,8 +15,15 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const hasBody = init?.body != null;
     const response = await fetch(path, { ...init, credentials: 'include', signal: controller.signal, headers: hasBody ? { "content-type": "application/json", ...init?.headers } : init?.headers });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw Object.assign(new Error(data.error || `请求失败（${response.status}）`), { status: response.status, data });
+    if (!response.ok) {
+      if(response.status===401&&!path.startsWith('/api/auth/')) window.dispatchEvent(new Event('diary-auth-required'));
+      throw new ApiError(response.status===401?'登录已失效，重新登录后可继续保存':data.error||`请求失败（${response.status}）`,response.status,data);
+    }
     return data as T;
+  } catch(error) {
+    if(error instanceof ApiError) throw error;
+    if(controller.signal.aborted) throw new ApiError('请求超时，草稿已保留，请重试',0,{code:'TIMEOUT'});
+    throw new ApiError('网络连接失败，草稿已保留，请检查网络后重试',0,{code:'NETWORK_ERROR'});
   } finally { window.clearTimeout(timer); }
 }
 

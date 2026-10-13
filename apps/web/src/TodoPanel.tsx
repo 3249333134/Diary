@@ -1,3 +1,7 @@
+import {validationMessage} from '@diary/contracts';
+import {FieldHint} from './FieldHint';
+import {GlassDate} from './GlassDate';
+import {GlassDialog} from './GlassUI';
 import { usePlanCategories, AddPlanCategory, categoryStyle } from './PlanCategories';
 import type { PlanToolAction, PlanNavigationState, PlanLayout } from './PlanNavigation';
 import { PlanEntityFields, PlanEntitySummary, type EntityContext } from './PlanEntities';
@@ -32,9 +36,7 @@ function TodoStats({ rows, filter, onFilter }: { rows: ActionRow[]; filter: Plan
 }
 
 function PlanDialog({ children, busy, onClose, label = "计划编辑" }: { children: ReactNode; busy: boolean; onClose: () => void; label?: string }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => { const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null; ref.current?.showModal(); return () => { ref.current?.close(); if(opener?.isConnected) opener.focus({preventScroll:true}); }; }, []);
-  return <dialog ref={ref} aria-label={label} className="plan-edit-dialog" onCancel={e => { e.preventDefault(); if (!busy) onClose(); }}>{children}</dialog>;
+  return <GlassDialog label={label} busy={busy} onClose={onClose}>{children}</GlassDialog>;
 }
 
 /** 优先级标签 */
@@ -191,9 +193,10 @@ function ParsePreviewModal({ text, parsed, busy, error, onConfirm, onEdit, onClo
           <label className="field">
             {error && <span role="alert">{error}</span>}
             <span>标题</span>
-            <input value={parsed.title} maxLength={2000} onChange={e => onEdit({ title: e.target.value })} />
+            <input value={parsed.title} onChange={e => onEdit({ title: e.target.value })} />
+            <FieldHint path="todos.0.title" value={parsed.title}/>
           </label>
-          <label className="field"><span>详情描述</span><textarea rows={2} maxLength={10000} value={parsed.description || ''} onChange={e => onEdit({description: e.target.value})} placeholder="补充说明（可选）" /></label>
+          <label className="field"><span>详情描述</span><textarea rows={2} value={parsed.description || ''} onChange={e => onEdit({description: e.target.value})} placeholder="补充说明（可选）" /><FieldHint path="todos.0.description" value={parsed.description||''}/></label>
           <ClassificationFields value={parsed} onChange={onEdit}/>
           <DateTimeField label="截止时间" date={parsed.dueDate} time={parsed.dueTime} onChange={(dueDate,dueTime)=>onEdit({dueDate,dueTime})}/>
           <RepeatFields value={parsed.repeat||null} onChange={repeat=>onEdit({repeat})}/>
@@ -205,6 +208,7 @@ function ParsePreviewModal({ text, parsed, busy, error, onConfirm, onEdit, onClo
             <label className="field" style={{ flex: 1 }}>
               <span>清单</span>
               <input value={parsed.list} onChange={e => onEdit({ list: e.target.value })} placeholder="工作/生活/学习..." />
+              <FieldHint path="todos.0.list" value={parsed.list}/>
             </label>
           </div>
           <PlanEntityFields context={entityContext} value={parsed.entities || []} onChange={entities=>onEdit({entities})}/>
@@ -276,12 +280,12 @@ function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries 
         </div>
         <div className="todo-modal-body">
           {error && <p role="alert">{error}</p>}
-          <label className="field"><span>标题</span><input value={title} maxLength={2000} onChange={e => setTitle(e.target.value)} /></label>
-          <label className="field"><span>详情描述</span><textarea rows={2} value={description} onChange={e => setDescription(e.target.value)} placeholder="补充说明" /></label>
+          <label className="field"><span>标题</span><input value={title} onChange={e => setTitle(e.target.value)} /><FieldHint path="todos.0.title" value={title}/></label>
+          <label className="field"><span>详情描述</span><textarea rows={2} value={description} onChange={e => setDescription(e.target.value)} placeholder="补充说明" /><FieldHint path="todos.0.description" value={description}/></label>
           <ClassificationFields value={classification} onChange={patch=>setClassification({...classification,...patch})} />
           {(plannedDate || time) && <details><summary>历史日期字段</summary><p>用于兼容旧计划；原定开始与截止分别在上方、下方设置。</p><div style={{ display: 'flex', gap: 12 }}>
-            <label className="field" style={{ flex: 1 }}><span>旧计划日期</span><input type="date" value={plannedDate} onChange={e => setPlannedDate(e.target.value)} /></label>
-            <label className="field" style={{ flex: 1 }}><span>旧计划时间</span><input type="time" value={time} onChange={e => setTime(e.target.value)} /></label>
+            <label className="field" style={{ flex: 1 }}><span>旧计划日期</span><GlassDate label="旧计划日期" dateOnly date={plannedDate} onChange={setPlannedDate}/></label>
+            <label className="field" style={{ flex: 1 }}><span>旧计划时间</span><GlassDate label="旧计划时间" timeOnly date={plannedDate||today()} time={time} onChange={(_,t)=>setTime(t)}/></label>
           </div></details>}
           <DateTimeField label="截止时间" date={dueDate} time={dueTime} onChange={(d,t)=>{setDueDate(d);setDueTime(t);}}/>
           {(row.task.seriesId||row.task.recurrenceAnchor)&&<GlassSelect label="修改范围" value={scope} options={[{value:'one',label:'仅这一期'},{value:'future',label:'这期及后续未完成日程'}]} onChange={setScope}/>}
@@ -295,6 +299,7 @@ function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries 
             <label className="field" style={{ flex: 1 }}>
               <span>清单</span>
               <input value={list} onChange={e => setList(e.target.value)} placeholder="工作/生活/学习..." />
+              <FieldHint path="todos.0.list" value={list}/>
             </label>
           </div>
           <PlanEntityFields context={entityContext} value={planEntities} onChange={setPlanEntities}/>
@@ -328,9 +333,9 @@ function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries 
   );
 }
 
-export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, revision = 0, focusId, toolbarAction, onNavigationChange, onExpand, fullscreen, onToggleFullscreen, entityContext }: {
+export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, revision = 0, focusId, toolbarAction, onNavigationChange, onExpand, fullscreen, onToggleFullscreen, entityContext,active=true }: {
   entityContext: EntityContext;
-  date: string; source?: RecordRef; revision?: number; focusId?: string;
+  date: string; source?: RecordRef; revision?: number; focusId?: string;active?:boolean;
   toolbarAction?: PlanToolAction; onNavigationChange?:(state:PlanNavigationState)=>void; onExpand?: () => void; fullscreen?: boolean; onToggleFullscreen?: () => void;
   prepare: (targetDate?: string) => Promise<string | undefined>;
   changed: () => Promise<void>;
@@ -363,6 +368,7 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
   const [scheduleRange,setScheduleRange]=useState({from:today(),to:shiftDate(today(),90)});
   const [horizon,setHorizon]=useState(90);
   const queryEpoch=useRef(0);
+  const committedVersions=useRef(new Map<string,{before:Set<string>;after:string}>());
   const [categoryFilter,setCategoryFilter] = useState('all');
   const [viewFilter,setViewFilter] = useState('');
   const [views,setViews] = useState<PlanView[]>([]);
@@ -370,6 +376,7 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
   const [batch,setBatch] = useState<Classification>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [refreshWarning,setRefreshWarning]=useState('');
   const [editing, setEditing] = useState<ActionRow | null>(null);
   const [completing, setCompleting] = useState<ActionRow | null>(null);
 
@@ -382,18 +389,28 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
     const projected=await api.schedule(range.from,range.to);
     if(epoch!==queryEpoch.current)return;
     setScheduleRange(range);setRows(data);setScheduleRows(projected.tasks);setNextCursor(projected.nextCursor);
+    setError(previous=>previous==='计划读取失败，请重试。'?'':previous);
   };
   useEffect(() => { void refresh().catch(() => setError('计划读取失败，请重试。')); }, [revision,layout,calendarDate,horizon]);
   useEffect(() => { if (focusId) { setFilter('all'); setSourceFilter('all'); setListFilter(''); } }, [focusId, revision]);
   useEffect(() => { let active = true; if (source) { setQuickText(source.summary); setParsed({title: source.summary, dueDate:planClock().date,dueTime:planClock().time,priority:'medium',list:'',tags:[]}); setCreateId(crypto.randomUUID()); void api.loadDiary(source.date).then(({document}) => { const event = source.kind === 'facts' ? document.facts.events.find(e=>e.id===source.id) : undefined; const entry = source.kind !== 'facts' && source.kind !== 'todo' ? document.entries?.[source.kind].find(e=>e.id===source.id) : undefined; const entities = event ? [...event.people,...event.places,...event.activities,...event.foods] : entry?.sources || []; if(active) setParsed(p=>p && p.entities === undefined ? {...p,entities} : p); }).catch(()=>{}); } return ()=>{active=false}; }, [source]);
 
   const run = async (input: ActionInput) => {
-    setBusy(true); setError('');
+    setBusy(true); setError('');setRefreshWarning('');
     try {
       const ownVersion = await prepare(input.date);
-      await api.changeAction({ ...input, version: ownVersion || input.version });
-      await refresh();
-      await changed();
+      const known=committedVersions.current.get(input.date),expected=ownVersion||input.version;
+      // Advance only a version superseded by our own writes; external changes still conflict.
+      const version=known?.before.has(expected)?known.after:expected;
+      const result=await api.changeAction({ ...input, version });
+      if(result.diary?.version)committedVersions.current.set(input.date,{before:new Set([...(known?.after===version?known.before:[]),version]),after:result.diary.version});
+      if(input.mode==='update'){
+        const savedTask=result.diary?.document.todos.find(t=>t.id===input.task.id)||input.task;
+        const committed=(list:ActionRow[])=>list.map(row=>row.date===input.date&&row.task.id===input.task.id?{...row,task:savedTask,version:result.diary?.version||row.version}:row);
+        setRows(committed);setScheduleRows(committed);
+      }
+      const refreshed=await Promise.allSettled([refresh(),changed()]);
+      if(refreshed.some(result=>result.status==='rejected'))setRefreshWarning('计划已保存，列表或关联信息刷新失败');
       return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : '保存失败，请重试。');
@@ -529,6 +546,7 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
   return (
     <section className="panel-section todo-panel" data-fullscreen={fullscreen ? 'true' : undefined} aria-labelledby="todo-title">
       {confirmation.dialog}
+      {refreshWarning&&<div className="refresh-warning" role="status">{refreshWarning}<button type="button" className="quiet-button" onClick={()=>void Promise.all([refresh(),changed()]).then(()=>setRefreshWarning('')).catch(()=>{})}>重试刷新</button></div>}
       {addingCategory&&<AddPlanCategory onClose={()=>setAddingCategory(false)}/>}
       <div className="section-heading">
         <div>
@@ -588,7 +606,7 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
             onOpenCompletion={r => { if(r.pendingRecord&&!r.completionPending)setCompleting(r);else void act(r,'complete',undefined,{automaticRecord:true}); }}
           />
         ))}
-      </ul>:layout==='week'||layout==='month'?<PlanCalendar view={layout} anchor={calendarDate} onAnchor={setCalendarDate} rows={visible} busy={busy} onEdit={onEdit} onMove={(row,target)=>{const latest=combined.find(r=>r.task.id===row.task.id)||row;return act(latest,'update',{...latest.task,dueDate:target.date,dueTime:target.time});}}/>:layout==='windows'?<PlanWindows rows={visible} categories={categories} busy={busy} render={renderItem} onMove={(r,p)=>void move(r,p)} onCreate={categoryId=>createPlan(categoryId)} onAddCategory={()=>setAddingCategory(true)} onReorder={reorderCategories}/>:<PlanBoard rows={visible} busy={busy} render={renderItem} onMove={(r,p)=>void move(r,p)}/>}
+      </ul>:layout==='week'||layout==='month'?<PlanCalendar active={active} view={layout} anchor={calendarDate} onAnchor={setCalendarDate} rows={visible} busy={busy} onEdit={onEdit} onMove={(row,target)=>{const latest=combined.find(r=>r.date===row.date&&r.task.id===row.task.id)||row;return act(latest,'update',{...latest.task,dueDate:target.date,dueTime:target.time});}}/>:layout==='windows'?<PlanWindows rows={visible} categories={categories} busy={busy} render={renderItem} onMove={(r,p)=>void move(r,p)} onCreate={categoryId=>createPlan(categoryId)} onAddCategory={()=>setAddingCategory(true)} onReorder={reorderCategories}/>:<PlanBoard rows={visible} busy={busy} render={renderItem} onMove={(r,p)=>void move(r,p)}/>}
       {batch&&<PlanDialog busy={busy} onClose={()=>setBatch(undefined)}><div className="todo-modal"><div className="todo-modal-header"><h3>批量归类</h3><p>仅修改当前筛选范围内的待分类事项。</p></div><div className="todo-modal-body"><ClassificationFields value={batch} start={false} onChange={patch=>setBatch({...batch,...patch})}/></div><div className="todo-modal-footer"><button className="quiet-button" disabled={busy} onClick={()=>setBatch(undefined)}>取消</button><button className="save-button" disabled={busy||!batch.category||typeof batch.important!=='boolean'||typeof batch.urgent!=='boolean'} onClick={()=>void batchSave()}>应用分类</button></div></div></PlanDialog>}
 
       {!visible.length && <p className="todo-empty">此范围暂无计划。可以从一条记录创建行动，也可以直接在上方添加。</p>}

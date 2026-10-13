@@ -1,3 +1,4 @@
+import {GlassDate} from './GlassDate';
 import type { TodoRepeat } from '@diary/contracts';
 import { GlassSelect } from './GlassSelect';
 export function RepeatFields({value,onChange}:{value:TodoRepeat;onChange:(value:TodoRepeat)=>void}) {
@@ -7,6 +8,6 @@ export function RepeatFields({value,onChange}:{value:TodoRepeat;onChange:(value:
     {supported&&value&&value.type!=='none'&&<><label>每隔<input aria-label="重复间隔" type="number" min={1} max={365} value={value.interval||1} onChange={e=>patch({interval:Math.max(1,Math.min(365,Number(e.target.value)||1))})}/><span>{value.type==='daily'?'天':value.type==='weekly'?'周':'月'}</span></label>
       {value.type==='weekly'&&<div className="repeat-weekdays" role="group" aria-label="重复星期">{['日','一','二','三','四','五','六'].map((day,i)=><button type="button" key={day} aria-pressed={value.weekdays?.includes(i)||false} onClick={()=>patch({weekdays:value.weekdays?.includes(i)?value.weekdays.filter(d=>d!==i):[...(value.weekdays||[]),i]})}>周{day}</button>)}<small>未选择时沿用首次日期的星期</small></div>}
       {value.type==='monthly'&&<label>每月日期<input aria-label="每月日期" type="number" min={1} max={31} placeholder="沿用首次日期" value={value.monthDay||''} onChange={e=>patch({monthDay:e.target.value?Math.max(1,Math.min(31,Number(e.target.value))):undefined})}/><small>短月使用最后一天</small></label>}
-      <label>结束日期（可选）<input type="date" value={value.until||''} onChange={e=>patch({until:e.target.value})}/></label></>}
+      <label>结束日期（可选）<GlassDate label="结束日期" dateOnly date={value.until||''} onChange={until=>patch({until})}/></label></>}
   </fieldset>;
 }

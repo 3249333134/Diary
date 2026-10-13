@@ -1,0 +1,204 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "editable suggestions show all presets",
+        "passed": true
+      },
+      {
+        "name": "custom values, empty results, and single menu",
+        "passed": true
+      },
+      {
+        "name": "empty input opens composer and type options are unified",
+        "passed": true
+      },
+      {
+        "name": "receipts action remains visible and opens new event",
+        "passed": true
+      },
+      {
+        "name": "modal select, date cancellation, and viewport bounds",
+        "passed": true
+      },
+      {
+        "name": "over-limit paste stays intact and sends no request",
+        "passed": true
+      },
+      {
+        "name": "400 errors preserve drafts and retry successfully",
+        "passed": true
+      },
+      {
+        "name": "post-save refresh failure does not report save failure",
+        "passed": true
+      },
+      {
+        "name": "401 relogin keeps editor mounted",
+        "passed": true
+      },
+      {
+        "name": "late save belongs to snapshot date",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "editable suggestions show all presets",
+        "passed": true
+      },
+      {
+        "name": "custom values, empty results, and single menu",
+        "passed": true
+      },
+      {
+        "name": "empty input opens composer and type options are unified",
+        "passed": true
+      },
+      {
+        "name": "receipts action remains visible and opens new event",
+        "passed": true
+      },
+      {
+        "name": "modal select, date cancellation, and viewport bounds",
+        "passed": true
+      },
+      {
+        "name": "over-limit paste stays intact and sends no request",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "editable suggestions show all presets",
+        "passed": true
+      },
+      {
+        "name": "custom values, empty results, and single menu",
+        "passed": true
+      },
+      {
+        "name": "empty input opens composer and type options are unified",
+        "passed": true
+      },
+      {
+        "name": "receipts action remains visible and opens new event",
+        "passed": true
+      },
+      {
+        "name": "modal select, date cancellation, and viewport bounds",
+        "passed": true
+      },
+      {
+        "name": "over-limit paste stays intact and sends no request",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "editable suggestions show all presets",
+        "passed": true
+      },
+      {
+        "name": "custom values, empty results, and single menu",
+        "passed": true
+      },
+      {
+        "name": "empty input opens composer and type options are unified",
+        "passed": true
+      },
+      {
+        "name": "receipts action remains visible and opens new event",
+        "passed": true
+      },
+      {
+        "name": "modal select, date cancellation, and viewport bounds",
+        "passed": true
+      },
+      {
+        "name": "over-limit paste stays intact and sends no request",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "editable suggestions show all presets",
+        "passed": true
+      },
+      {
+        "name": "custom values, empty results, and single menu",
+        "passed": true
+      },
+      {
+        "name": "empty input opens composer and type options are unified",
+        "passed": true
+      },
+      {
+        "name": "receipts action remains visible and opens new event",
+        "passed": true
+      },
+      {
+        "name": "modal select, date cancellation, and viewport bounds",
+        "passed": true
+      },
+      {
+        "name": "over-limit paste stays intact and sends no request",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "editable suggestions show all presets",
+        "passed": true
+      },
+      {
+        "name": "custom values, empty results, and single menu",
+        "passed": true
+      },
+      {
+        "name": "empty input opens composer and type options are unified",
+        "passed": true
+      },
+      {
+        "name": "receipts action remains visible and opens new event",
+        "passed": true
+      },
+      {
+        "name": "modal select, date cancellation, and viewport bounds",
+        "passed": true
+      },
+      {
+        "name": "over-limit paste stays intact and sends no request",
+        "passed": true
+      }
+    ],
+    "errors": []
+  }
+]

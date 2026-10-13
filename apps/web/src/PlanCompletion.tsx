@@ -1,3 +1,5 @@
+import {validationMessage} from '@diary/contracts';
+import {GlassDialog} from './GlassUI';
 import { useEffect, useRef, useState } from 'react';
 import { captureDraftSchema, type CaptureDraft } from '@diary/contracts';
 import { api, type ActionRow } from './api';
@@ -22,9 +24,7 @@ export function PlanCompletion({ row, busy, onFinish, onClose,entityContext }: {
     finally { setParsing(false); }
   };
   useEffect(() => { if (!started.current) { started.current = true; if (!pending && !row.task.completion) void organize(); } }, []);
-  const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => { dialog.current?.showModal(); return () => dialog.current?.close(); }, []);
-  return <dialog ref={dialog} className="todo-modal completion-dialog" onCancel={e => { e.preventDefault(); if (!busy && !parsing) onClose(); }}>
+  return <GlassDialog className="todo-modal completion-dialog" label="完成计划，留下一条日记" busy={busy||parsing} onClose={onClose}>
     <div className="todo-modal-header"><h3>完成计划，留下一条日记</h3><p>实际发生时间默认为现在，与计划时间分开记录。</p><strong>{row.task.title}</strong>{row.task.description && <p>原计划说明：{row.task.description}</p>}</div>
     <div className="todo-modal-body">
       {!pending && !row.task.completion && <><label className="field">实际做了什么／结果补充<textarea rows={3} value={supplement} disabled={parsing || busy} onChange={e => { setSupplement(e.target.value); setDraft(d => ({ ...d, content: e.target.value || `完成计划：${row.task.title}` })); }} placeholder="只记录实际发生的内容，不把目标当作成果。" /></label><button className="quiet-button" disabled={parsing || busy} onClick={() => void organize()}>{parsing ? '正在整理…' : '重新让 AI 整理'}</button></>}
@@ -33,5 +33,5 @@ export function PlanCompletion({ row, busy, onFinish, onClose,entityContext }: {
       {pending && <p>上次日记已写入，将恢复计划关联，不重复创建。</p>}
     </div>
     <div className="todo-modal-footer"><button className="quiet-button" disabled={busy || parsing} onClick={onClose}>取消</button><button className="quiet-button" disabled={busy || parsing || pending} onClick={() => void onFinish(undefined, draft.id)}>仅完成</button>{!row.task.completion && <button className="save-button" disabled={busy || parsing || !draft.content.trim() || !draft.date || draft.needsReview} onClick={() => void onFinish(draft, draft.id)}>完成并记入日记</button>}</div>
-  </dialog>;
+  </GlassDialog>;
 }

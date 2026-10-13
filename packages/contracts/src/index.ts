@@ -47,6 +47,9 @@ export const planCategorySchema = z.object({ id: z.string().regex(/^(?:work|pers
 export type PlanCategory = z.infer<typeof planCategorySchema>;
 export const defaultPlanCategories: PlanCategory[] = [{id:'work',name:'工作',color:'#7db2df',order:0},{id:'personal',name:'个人生活',color:'#c1a183',order:1}];
 export const planCategoryIdSchema = planCategorySchema.shape.id;
+export const sharedTagSchema=z.string().trim().min(1).max(40);
+export const planViewSchema=z.object({id:z.string().uuid(),name:z.string().trim().min(1).max(40),color:z.string().regex(/^#[0-9a-f]{6}$/i),tags:z.array(sharedTagSchema).min(1).max(30)});
+export const planViewsSchema=z.array(planViewSchema).max(40);
 const baseTodoSchema = z.object({
   category: planCategoryIdSchema.nullable().optional(), important: z.boolean().nullable().optional(), urgent: z.boolean().nullable().optional(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$|^$/).optional(), startTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$|^$/).optional(),
@@ -122,8 +125,57 @@ export const diaryDocumentSchema = z.object({
   idea: z.object({ tags: z.array(z.string().trim().min(1).max(40)).max(100), content: z.string().max(50_000) }),
   unknownFrontmatter: z.record(z.unknown()).default({}),
   unknownSections: z.array(unknownSectionSchema).default([]),
+}).superRefine((document,context)=>{
+  if(!document.entries)return;
+  const projected=projectEntries(document);
+  for(const [kind,key] of [['learn','content'],['input','excerpt'],['idea','content']] as const){
+    const original=kind==='input'?document.input.excerpt:document[kind].content;
+    const combined=kind==='input'?projected.input.excerpt:projected[kind].content;
+    const maximum=fieldLimit(diaryDocumentSchema,`${kind}.${key}`)!;
+    if(original.length<=maximum&&combined.length>maximum)context.addIssue({code:'too_big',type:'string',maximum,inclusive:true,path:[kind,key],message:'合并正文超过上限'});
+  }
 });
 export type DiaryDocument = z.infer<typeof diaryDocumentSchema>;
+
+export type FieldIssue = { path: string; message: string; code: string; maximum?: number; minimum?: number };
+const FIELD_NAMES: Record<string, string> = { facts: '事实', events: '事件', note: '备注', remark: '事件备注', learn: '新知', input: '输入', idea: '灵感', content: '正文', excerpt: '正文', name: '名称', title: '标题', description: '详情描述', tags: '标签', people: '人物', places: '地点', activities: '活动', foods: '食物', sources: '来源', time: '时间', weather: '天气', sleep: '睡眠', mood: '心情', kind: '类型', list: '清单', todos: '计划', entries: '记录', attachments: '附件' };
+export function fieldName(path: string): string {
+  return path.split('.').map(key => /^\d+$/.test(key) ? `第 ${Number(key) + 1} 条` : FIELD_NAMES[key] || key).join(' · ');
+}
+export function validationIssues(issues: z.ZodIssue[]): FieldIssue[] {
+  return issues.map(issue => {
+    const path = issue.path.join('.');
+    const maximum = issue.code === 'too_big' ? Number(issue.maximum) : undefined;
+    const minimum = issue.code === 'too_small' ? Number(issue.minimum) : undefined;
+    const detail = maximum != null ? `最多 ${maximum.toLocaleString('zh-CN')} ${issue.code === 'too_big' && issue.type === 'array' ? '项' : '字符'}` : minimum != null ? '内容不能为空或数量不足' : '格式不正确，请检查';
+    return { path, code: issue.code, maximum, minimum, message: `${fieldName(path)}${issue.message==='合并正文超过上限'?'（合并后）':''}：${detail}` };
+  });
+}
+/** Read the limits from the schema itself so client hints and API checks cannot drift. */
+export function fieldLimit(schema: z.ZodTypeAny, path: string): number | undefined {
+  let current = schema;
+  const unwrap = () => { while (current instanceof z.ZodDefault || current instanceof z.ZodOptional || current instanceof z.ZodNullable || current instanceof z.ZodEffects) current = current instanceof z.ZodDefault ? current.removeDefault() : current instanceof z.ZodEffects?current.innerType():current.unwrap(); };
+  for (const key of path.split('.')) {
+    unwrap();
+    if (current instanceof z.ZodObject) current = current.shape[key];
+    else if (current instanceof z.ZodArray) current = current.element;
+    else return undefined;
+    if (!current) return undefined;
+  }
+  unwrap();
+  return current instanceof z.ZodString ? current._def.checks.find(check => check.kind === 'max')?.value : undefined;
+}
+export const DIARY_BODY_LIMIT = 10_485_760;
+export function validateDiary(document: unknown): FieldIssue[] {
+  const result = diaryDocumentSchema.safeParse(document);
+  const issues = result.success ? [] : validationIssues(result.error.issues);
+  if (new TextEncoder().encode(JSON.stringify(document)).byteLength > DIARY_BODY_LIMIT) issues.push({ path: '', code: 'body_too_large', message: '整份日记超过请求大小限制，请减少附件信息或拆分记录' });
+  return issues;
+}
+export function validationMessage(error: unknown, fallback='内容格式不正确'): string {
+  if(error instanceof z.ZodError) return validationIssues(error.issues)[0]?.message || fallback;
+  return error instanceof Error ? error.message : fallback;
+}
 
 export const textKinds = ['learn', 'input', 'idea'] as const;
 export type TextKind = typeof textKinds[number];
@@ -138,7 +190,7 @@ export function resolveRecord(document: DiaryDocument, ref: RecordRef): string |
   return document.entries?.[ref.kind].find(e => e.id === ref.id)?.content;
 }
 
-export type DiaryResponse = { document: DiaryDocument; version: string; exists: boolean; savedAt?: string };
+export type DiaryResponse = { document: DiaryDocument; version: string; exists: boolean; savedAt?: string; warning?: { code: string; message: string } };
 
 export type EntityRelation = { key: string; type: EntityType; name: string; count: number; dates: string[] };
 export type EntityRecord = {

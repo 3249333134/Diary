@@ -131,7 +131,7 @@ function SkinSwitch({ value, onChange }: { value: Skin; onChange: (s: Skin) => v
 }
 
 /** 收集面板 */
-export function ReceiptCollection({ diary, saved, onClose }: { diary: DiaryDocument; saved: boolean; onClose: () => void }) {
+export function ReceiptCollection({ diary, saved, onClose, onWrite }: { diary: DiaryDocument; saved: boolean; onClose: () => void; onWrite: () => void }) {
   const receipts = receiptsFor(diary);
   const [replayKey, setReplayKey] = useState(0);
   const [exporting, setExporting] = useState(false);
@@ -221,7 +221,7 @@ export function ReceiptCollection({ diary, saved, onClose }: { diary: DiaryDocum
           <Printer size={32} />
           <h3>这一天的纸还是空白的</h3>
           <p>写下并保存一条记录，小票就会从这里打印出来。</p>
-          <button className="quiet-button" onClick={onClose}>去写一条</button>
+          <button className="quiet-button" onClick={onWrite}>去写一条</button>
         </div>
       ) : (
         <div className="receipt-roll" key={`${diary.date}:${replayKey}`}>

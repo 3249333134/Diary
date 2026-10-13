@@ -1,12 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { defaultPlanCategories, planCategorySchema, entityTypes, type PlanCategory, type TagStore } from '@diary/contracts';
+import { defaultPlanCategories, planCategorySchema, planViewsSchema,sharedTagSchema,entityTypes, type PlanCategory, type TagStore } from '@diary/contracts';
 import { listDiaryDates, loadDiary, readJson, writeJson, withVaultLock } from './vault.js';
 import { vaultPaths } from './config.js';
 
-export const sharedTagSchema = z.string().trim().min(1).max(40);
-export const planViewSchema = z.object({ id: z.string().uuid(), name: z.string().trim().min(1).max(40), color: z.string().regex(/^#[0-9a-f]{6}$/i), tags: z.array(sharedTagSchema).min(1).max(30) });
-export const planViewsSchema = z.array(planViewSchema).max(40);
+export {sharedTagSchema,planViewSchema,planViewsSchema} from '@diary/contracts';
 
 export async function tagLibrary(typed: TagStore, userId: number) {
   const saved = await readJson<string[]>(`${vaultPaths.system}/shared-tags.json`, [], userId);

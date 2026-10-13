@@ -1,5 +1,5 @@
 import Fastify from "fastify";
-import { captureRequestSchema } from '@diary/contracts';
+import { captureRequestSchema, validationIssues, DIARY_BODY_LIMIT } from '@diary/contracts';
 import { parseCapture } from './capture.js';
 import cors from "@fastify/cors";
 import { ProxyAgent, request as undiciRequest } from "undici";
@@ -51,7 +51,7 @@ function safeJoin(root: string, ...parts: string[]) {
 }
 
 export async function buildServer() {
-  const app = Fastify({ logger: { redact: ["req.headers.authorization", "req.body", "res.body"] }, bodyLimit: 10_485_760 });
+  const app = Fastify({ genReqId:()=>crypto.randomUUID(), logger: { redact: ["req.headers.authorization", "req.body", "res.body"] }, bodyLimit: DIARY_BODY_LIMIT });
 
   // CORS — 放开 remote 代理和本地
   await app.register(cors, { origin: true, credentials: true });
@@ -139,8 +139,11 @@ export async function buildServer() {
     const expected = String(request.headers["if-match"] || "").replace(/^W\//, "").replace(/^"|"$/g, "");
     if (!expected) return reply.code(428).send({ error: "保存前需要日记版本" });
     const result = await saveDiary(assertDate(request.params.date), request.body, expected, userId);
-    const idx = await getIndex(userId);
-    await idx.rebuild();
+    try { const idx = await getIndex(userId); await idx.rebuild(); }
+    catch (error) {
+      app.log.warn({ requestId: request.id, errorType: error instanceof Error ? error.name : 'Error', code: 'CONTEXT_REFRESH_FAILED' }, 'diary saved; index refresh failed');
+      return { ...result, warning: { code: 'CONTEXT_REFRESH_FAILED', message: '日记已保存，关联信息稍后刷新' } };
+    }
     return result;
   });
 
@@ -497,13 +500,18 @@ export async function buildServer() {
     reply.code(404).send("前端未构建，请先运行 npm run build");
   });
 
-  app.setErrorHandler((error, _request, reply) => {
+  app.setErrorHandler((error, request, reply) => {
     const detail = error as Error & { statusCode?: number; code?: string; current?: unknown };
-    if (detail.statusCode === 409) return reply.code(409).send({ error: detail.message, code: detail.code, current: detail.current });
-    if (error instanceof ZodError) return reply.code(400).send({ error: "请求内容不符合日记数据格式", issues: error.issues.map((issue) => ({ path: issue.path.join("."), message: issue.message })) });
+    if (detail.statusCode === 409) return reply.code(409).send({ error: detail.message, code: detail.code, current: detail.current, requestId: request.id });
+    if (error instanceof ZodError) {
+      const issues = validationIssues(error.issues);
+      app.log.warn({ requestId: request.id, code: 'VALIDATION_FAILED', issues: issues.map(({ path, code, maximum, minimum }) => ({ path, code, maximum, minimum })) }, 'request validation failed');
+      return reply.code(400).send({ error: issues[0]?.message || '请求内容格式不正确', code: 'VALIDATION_FAILED', issues, requestId: request.id });
+    }
     const status = detail.statusCode && detail.statusCode >= 400 && detail.statusCode <= 599 ? detail.statusCode : 500;
-    if (status >= 500) app.log.error({ err: error }, "request failed");
-    return reply.code(status).send({ error: status >= 500 ? "服务暂时无法完成请求" : detail.message });
+    const code = status === 401 ? 'AUTH_REQUIRED' : status === 413 ? 'BODY_TOO_LARGE' : status >= 500 ? 'SERVICE_ERROR' : 'REQUEST_FAILED';
+    if (status >= 500) app.log.error({ requestId: request.id, errorType: detail.name, code: detail.code || code }, 'request failed');
+    return reply.code(status).send({ error: status >= 500 ? '服务暂时无法完成请求，请重试' : status===413?'整份日记超过请求大小限制，请拆分记录':detail.message, code, requestId: request.id, ...(status===413?{limit:{maximum:DIARY_BODY_LIMIT,unit:'bytes'}}:{}) });
   });
   return app;
 }
