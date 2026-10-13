@@ -10,6 +10,7 @@ export const config = {
   vaultRoot: path.resolve(process.env.OBSIDIAN_DIR || "D:/prj/obsidian"),
   dataDir: process.env.DIARY_DATA_DIR ? path.resolve(process.env.DIARY_DATA_DIR) : path.join(projectRoot, "data"),
   timezone: process.env.DIARY_TIMEZONE || "Asia/Shanghai",
+  demoDatabase: process.env.DIARY_DEMO_DB || '',
   db: {
     host: process.env.DB_HOST || "127.0.0.1",
     port: Number(process.env.DB_PORT || 3306),

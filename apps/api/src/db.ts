@@ -1,7 +1,8 @@
 import mysql, { type RowDataPacket } from "mysql2/promise";
 import { config } from "./config.js";
+import { createDemoPool } from './demoDatabase.js';
 
-export const pool = mysql.createPool({
+const mysqlOptions = {
   host: config.db.host,
   port: config.db.port,
   user: config.db.user,
@@ -11,7 +12,8 @@ export const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
   charset: "utf8mb4_unicode_ci",
-});
+};
+export const pool = config.demoDatabase ? createDemoPool(config.demoDatabase) as unknown as mysql.Pool : mysql.createPool(mysqlOptions);
 
 /** 类型安全的查询助手，返回行数组 */
 export async function queryRows<T extends Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {
@@ -63,6 +65,7 @@ const SCHEMA = [
 ];
 
 export async function initDb() {
+  if(config.demoDatabase)return;
   for (const sql of SCHEMA) {
     await pool.query(sql);
   }

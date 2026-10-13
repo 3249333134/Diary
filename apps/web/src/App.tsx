@@ -20,6 +20,7 @@ import { RelationGraph } from "./RelationGraph";
 import { ReceiptCollection, ReceiptNotice } from "./ReceiptCollection";
 import { addedReceipts, type Receipt } from "./receipts";
 import { TodoPanel } from './TodoPanel';
+import { PlanNavigation, type PlanToolAction, type PlanNavigationState } from './PlanNavigation';
 import { Login } from './Login';
 
 type SaveStatus = "loading" | "saved" | "dirty" | "saving" | "offline" | "error" | "conflict";
@@ -783,8 +784,9 @@ export function App() {
   const [showTodos, setShowTodos] = useState(false);
   const browseRef = useRef<HTMLElement>(null);
   const [diaryTools, setDiaryTools] = useState(false);
-  const [planToolbarAction, setPlanToolbarAction] = useState<{kind:'create'|'filters';id:number}>();
-  const requestPlanTool = (kind:'create'|'filters') => setPlanToolbarAction({kind,id:Date.now()});
+  const [planToolbarAction, setPlanToolbarAction] = useState<PlanToolAction>();
+  const [planNavigation,setPlanNavigation]=useState<PlanNavigationState>();
+  const requestPlanTool = (kind:PlanToolAction['kind'],value?:string) => setPlanToolbarAction({kind,value,id:Date.now()});
   const compactBrowse = useCompactBrowse(browseRef, !showReceipts && (showTodos || activeTab !== 4), `${showTodos ? 'plan' : activeTab}:${date}`);
   const [fullscreen, setFullscreen] = useState(false);
   // 全屏时触发全局紧凑导航，退出时恢复
@@ -938,7 +940,7 @@ export function App() {
     await prepareAction(targetDate);
     const target = await api.loadDiary(targetDate);
     if (draft.kind === 'plan') {
-      const task = todoSchema.parse({ id: draft.id, title: draft.content, description: draft.description, category: draft.category, important: draft.important, urgent: draft.urgent, startDate: draft.startDate, startTime: draft.startTime, dueDate: draft.date, dueTime: draft.time, priority: draft.priority, list: draft.list, tags: draft.tags, entities: Object.values(draft.entities).flat() });
+      const task = todoSchema.parse({ id: draft.id, repeat:draft.repeat, title: draft.content, description: draft.description, category: draft.category, important: draft.important, urgent: draft.urgent, startDate: draft.startDate, startTime: draft.startTime, dueDate: draft.date, dueTime: draft.time, priority: draft.priority, list: draft.list, tags: draft.tags, entities: Object.values(draft.entities).flat() });
       await api.changeAction({mode:'create',date:targetDate,version:target.version,task,operationId:draft.id});
     } else {
       const document = appendCapture(target.document, draft);
@@ -1000,7 +1002,7 @@ export function App() {
       <nav className="workspace-switch" aria-label="主要功能"><button aria-pressed={!showTodos} onClick={() => setShowTodos(false)}>日记</button><button aria-pressed={showTodos} onClick={() => setShowTodos(true)}>计划</button></nav><div hidden={showTodos}><div className="rail-today"><CalendarDays /><div><strong>{todayLabel}</strong><span>{date}</span></div></div>
       <div className="week-list">{currentWeekDates.map((item) => <button type="button" key={item} className={item === date ? "active" : ""} onClick={() => setDate(item)}><span>{shortDate(item)}</span>{recordedDates.has(item) && <i aria-label="已有日记" />}</button>)}</div>
       <button type="button" className="today-button" onClick={() => setDate(initialDate)}>回到今天</button>
-      </div><div className="rail-note"><strong>{authState.user?.username}</strong><span>已登录云端</span></div>
+      </div>{showTodos&&<PlanNavigation state={planNavigation} onAction={requestPlanTool}/>}<div className="rail-note"><strong>{authState.user?.username}</strong><span>已登录云端</span></div>
     </aside>
 
     <main ref={browseRef} id="main-content" className="main-content" data-compact={compactBrowse.compact} data-workspace={showTodos ? 'plan' : showReceipts ? 'receipts' : tabs[activeTab].id}>
@@ -1018,8 +1020,8 @@ export function App() {
       <header className="topbar">{showTodos && <h1 className="plan-page-title">计划</h1>}<div hidden={showTodos} className="date-control"><button type="button" onClick={() => setDate(addDays(date, -1))} aria-label="前一天"><ChevronLeft /></button><label><span className="sr-only">选择日期</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><button type="button" onClick={() => setDate(addDays(date, 1))} aria-label="后一天"><ChevronRight /></button></div><div className="top-actions"><div hidden={showTodos} className="desktop-status"><StatusBadge status={status} /></div><button type="button" className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={theme === "light" ? "切换到深色主题" : "切换到浅色主题"}>{theme === "light" ? <Moon /> : <Sun />}</button><button hidden={showTodos} type="button" className="save-button" onClick={() => void saveNow()} disabled={status === "saving" || status === "loading" || status === "conflict"}><Save />立即保存</button></div></header>
       <div hidden={showTodos} className="mobile-status"><StatusBadge status={status} /></div>
       {actionError && <p role="alert">{actionError}</p>}
-      <UnifiedCapture entityContext={common} hidden={!showTodos && !showReceipts && activeTab === 4} bottomNav={!showTodos && !showReceipts} onSave={saveCapture} onOpen={ref => void openRecord(ref)} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} />
-      <div className="workspace-root plan-workspace" hidden={!showTodos}><TodoPanel entityContext={common} toolbarAction={planToolbarAction} onExpand={compactBrowse.expand} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} date={planClock().date} source={actionSource} revision={actionsRevision} focusId={focusRecord?.kind === 'todo' ? focusRecord.id : undefined} prepare={prepareAction} changed={reloadAfterAction} onOpen={ref => void openRecord(ref)} onClose={() => setShowTodos(false)} /></div>
+      <UnifiedCapture compactDesktop={showTodos} entityContext={common} hidden={!showTodos && !showReceipts && activeTab === 4} bottomNav={!showTodos && !showReceipts} onSave={saveCapture} onOpen={ref => void openRecord(ref)} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} />
+      <div className="workspace-root plan-workspace" hidden={!showTodos}><TodoPanel onNavigationChange={setPlanNavigation} entityContext={common} toolbarAction={planToolbarAction} onExpand={compactBrowse.expand} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} date={planClock().date} source={actionSource} revision={actionsRevision} focusId={focusRecord?.kind === 'todo' ? focusRecord.id : undefined} prepare={prepareAction} changed={reloadAfterAction} onOpen={ref => void openRecord(ref)} onClose={() => setShowTodos(false)} /></div>
       <div className="workspace-root diary-workspace" hidden={showTodos}>
       <div className="todo-entry-actions"><button type="button" className="quiet-button" onClick={() => setShowReceipts(true)}><BookOpen size={18} />每日小票 · 查看收藏</button></div>
       {showReceipts ? (status === 'loading' || diary.date !== date ? <p role="status">正在整理这一天的小票…</p> : <ReceiptCollection key={date} diary={diary} saved={status === 'saved'} onClose={() => setShowReceipts(false)} />) : <>

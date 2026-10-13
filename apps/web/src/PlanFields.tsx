@@ -3,6 +3,7 @@ import { GlassSelect } from './GlassSelect';
 import { useEffect, useId, useState } from 'react';
 import type { Todo } from '@diary/contracts';
 import { api } from './api';
+import { DateTimeField } from './DateTimeField';
 
 export type Classification = Pick<Todo, 'category' | 'important' | 'urgent' | 'startDate' | 'startTime'>;
 export const QUADRANTS = [
@@ -20,7 +21,7 @@ export function ClassificationFields({ value, onChange, start = true }: { value:
   return <div className="plan-classification-fields">
     <label>事项类别<GlassSelect label="事项类别" value={value.category||''} options={[{value:'',label:'待分类'},...categories.map(c=>({value:c.id,label:c.name,color:c.color}))]} onChange={category=>onChange({category:category?category as Todo['category']:null})}/></label>
     <label>四象限<GlassSelect label="四象限" value={typeof value.important==='boolean'&&typeof value.urgent==='boolean'?QUADRANTS.find(q=>q.important===value.important&&q.urgent===value.urgent)?.id||'':''} options={[{value:'',label:'待分类'},...QUADRANTS.map((q,i)=>({value:q.id,label:q.label,color:['#c05d56','#7856bd','#258378','#9296a3'][i]}))]} onChange={id=>{const q=QUADRANTS.find(q=>q.id===id);onChange({important:q?.important??null,urgent:q?.urgent??null});}}/></label>
-    {start && <><label>原定开始日期<input type="date" value={value.startDate || ''} onChange={e => onChange({ startDate: e.target.value })} /></label><label>原定开始时间<input type="time" value={value.startTime || ''} onChange={e => onChange({ startTime: e.target.value })} /></label></>}
+    {start && <DateTimeField label="原定开始时间" date={value.startDate||''} time={value.startTime||''} onChange={(startDate,startTime)=>onChange({startDate,startTime})}/>}
   </div>;
 }
 export function SharedTagInput({ value, onChange }: { value: string[]; onChange: (tags: string[]) => void }) {

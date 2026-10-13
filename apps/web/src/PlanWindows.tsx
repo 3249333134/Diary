@@ -402,10 +402,11 @@ export function PlanWindows({
   ];
 
   return (
-    <div ref={scroll} className="plan-windows-scroll" role="region" aria-label="窗口模式看板">
+    <div className="plan-windows">
+      <div className="plan-windows-controls"><span>按类别整理 · 拖动手柄调整分类</span><button type="button" onClick={onAddCategory} disabled={busy}><PlusIcon size={16}/>新建窗口</button></div>
+      <div ref={scroll} className="plan-windows-scroll" role="region" aria-label="窗口模式看板">
       <div className="plan-windows-track">
         {windows.map((w) => {
-          const doneCount = w.items.filter((r) => r.task.done).length;
           const isUnclassified = w.id === '__unclassified__';
           const isWinDropBefore = winTarget?.id === w.id && winTarget.position === 'before' && draggingWinId !== w.id;
           const isWinDropAfter = winTarget?.id === w.id && winTarget.position === 'after' && draggingWinId !== w.id;
@@ -428,10 +429,10 @@ export function PlanWindows({
                 <span className="plan-window-dot" style={{ background: w.color }} />
                 <h3 className="plan-window-name">{w.name}</h3>
                 <span className="plan-window-count">
-                  {doneCount}/{w.items.length}
+                  {w.items.length} 项
                 </span>
               </header>
-              <ul className="plan-window-list">
+              <ul className="todo-list plan-window-list">
                 {w.items.map((row) =>
                   render(
                     row,
@@ -457,10 +458,7 @@ export function PlanWindows({
             </section>
           );
         })}
-        <button className="plan-window plan-window-new" onClick={onAddCategory} disabled={busy}>
-          <PlusIcon size={22} />
-          <span>新建窗口</span>
-        </button>
+      </div>
       </div>
     </div>
   );

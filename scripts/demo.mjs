@@ -28,7 +28,7 @@ if (process.argv.includes('--reset')) {
   } catch (e) { if (e.code !== 'ENOENT') throw e; }
 }
 await mkdir(demo, { recursive: true });
-Object.assign(process.env, { OBSIDIAN_DIR: path.join(demo, 'vault'), DIARY_DATA_DIR: path.join(demo, 'state'), DIARY_TIMEZONE: 'Asia/Shanghai', AI_API_KEY: 'demo-local-only', AI_MODEL: 'demo', AI_PROXY: '', AI_AUTO_SUMMARY: 'false' });
+Object.assign(process.env, { HOST:'127.0.0.1',DIARY_DEMO_DB:path.join(demo,'diary.sqlite'),OBSIDIAN_DIR: path.join(demo, 'vault'), DIARY_DATA_DIR: path.join(demo, 'state'), DIARY_TIMEZONE: 'Asia/Shanghai', AI_API_KEY: 'demo-local-only', AI_MODEL: 'demo', AI_PROXY: '', AI_AUTO_SUMMARY: 'false' });
 const dateAt = (offset=0) => { const d=new Date(); d.setDate(d.getDate()+offset); return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(d); };
 const shift = (date, days) => {const d=new Date(`${date}T00:00:00Z`);d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);};
 const mock = createServer(async (req,res) => {
@@ -37,12 +37,15 @@ const mock = createServer(async (req,res) => {
     const payload=JSON.parse(body), input=JSON.parse(payload.messages.at(-1).content);
     if(input.text.includes('模拟失败')) {res.writeHead(503).end();return;}
     const today=dateAt();
-    const drafts=input.text.split(/[，。；\n]+/).map(t=>t.trim()).filter(Boolean).map(content=>{
-      const kind=/明天|后天|计划|安排|待办|需要/.test(content)?'plan':'facts';
+    const drafts=input.text.split(/[。；\n]+/).map(t=>t.trim()).filter(Boolean).map(content=>{
+      const kind=/明天|后天|计划|安排|待办|需要|每天|每日|每周|每月/.test(content)?'plan':'facts';
       const date=content.includes('后天')?shift(today,2):content.includes('明天')?shift(today,1):content.includes('昨天')?shift(today,-1):kind==='plan'?'':today;
       const category=/工作|会议|开会|客户|项目/.test(content)?'work':/个人|生活|买菜|运动|家/.test(content)?'personal':null;
-      const time=/三点|15:00/.test(content)?'15:00':'';
-      return {kind,content,date:kind==='plan'?'':date,time:kind==='plan'?'':time,startDate:kind==='plan'?date:'',startTime:kind==='plan'?time:'',category,important:content.includes('重要')?true:null,urgent:content.includes('紧急')?true:null,tags:[],entities:{people:content.includes('张三')?[{type:'person',name:'张三',tags:[]}]:[],places:[],activities:[],foods:[]}};
+      const time=content.match(/(?:[01]?\d|2[0-3]):[0-5]\d/)?.[0].padStart(5,'0')||(/三点/.test(content)?'15:00':'');
+      const weekdayText=content.match(/每周([日一二三四五六天、，和]+)/)?.[1]||'';
+      const weekdays=[...new Set([...weekdayText.matchAll(/[日一二三四五六天]/g),...content.matchAll(/(?:周|星期)([日一二三四五六天])/g)].map(m=>'日一二三四五六'.indexOf((m[1]||m[0])==='天'?'日':m[1]||m[0])))];
+      const repeat=/每天|每日/.test(content)?{type:'daily',interval:1}:/每周/.test(content)?{type:'weekly',interval:1,weekdays}:/每月/.test(content)?{type:'monthly',interval:1,monthDay:Number(content.match(/每月(\d+)/)?.[1]||today.slice(-2))}:null;
+      return {kind,content,date:date||today,time,repeat,startDate:kind==='plan'&&/开始/.test(content)?date:'',startTime:kind==='plan'&&/开始/.test(content)?time:'',category,important:content.includes('重要')?true:null,urgent:content.includes('紧急')?true:null,tags:[],entities:{people:content.includes('张三')?[{type:'person',name:'张三',tags:['同事']}]:[],places:content.includes('办公室')?[{type:'place',name:'办公室',tags:[]}]:[],activities:[],foods:[]}};
     });
     res.setHeader('Content-Type','application/json');res.end(JSON.stringify({choices:[{message:{content:JSON.stringify({drafts})}}]}));
   } catch {res.writeHead(400).end();}
@@ -50,10 +53,10 @@ const mock = createServer(async (req,res) => {
 await new Promise(resolve=>mock.listen(0,'127.0.0.1',resolve));
 process.env.AI_API_URL=`http://127.0.0.1:${mock.address().port}/v1`;
 const { emptyDiary, todoSchema, diaryEventSchema } = await import('../packages/contracts/dist/index.js');
-const { loadDiary, saveDiary, writeJson } = await import('../apps/api/dist/vault.js');
+const { loadDiary, saveDiary, writeJson, listDiaryDates, readJson } = await import('../apps/api/dist/vault.js');
 const { vaultPaths } = await import('../apps/api/dist/config.js');
 const marker=path.join(demo,'initialized.json');
-let initialized=false;try{await readFile(marker);initialized=true;}catch(e){if(e.code!=='ENOENT')throw e;}
+let initialized=(await listDiaryDates(1)).length>0;
 if(!initialized){
   const today=dateAt();
   const entity=(type,name,tags=[])=>({type,name,tags});
@@ -70,11 +73,19 @@ if(!initialized){
         Object.assign(task,{done:true,status:'done',completedAt:`${date}T10:20:00+08:00`,completion:{date,kind:'facts',id,summary:`完成计划：${task.title}`}});
       }
     }
-    await saveDiary(date,doc,(await loadDiary(date)).version);
+    await saveDiary(date,doc,(await loadDiary(date,1)).version,1);
   }
-  await writeJson(`${vaultPaths.system}/shared-tags.json`,['项目','同事','生活','阅读','张三']);
-  await writeJson(`${vaultPaths.system}/plan-views.json`,[{id:randomUUID(),name:'项目相关',color:'#7c6cd9',tags:['项目','张三']}]);
+  await writeJson(`${vaultPaths.system}/shared-tags.json`,['项目','同事','生活','阅读','张三'],1);
+  await writeJson(`${vaultPaths.system}/plan-views.json`,[{id:randomUUID(),name:'项目相关',color:'#7c6cd9',tags:['项目','张三']}],1);
   await writeFile(marker,JSON.stringify({createdAt:new Date().toISOString(),plans:26,diaryDays:7}));
+}
+if(!await readJson('demo-schedule-v1',false,1)) {
+  const today=dateAt(),current=await loadDiary(today,1);
+  for(const [type,title,time] of [['daily','每天阅读','20:00'],['weekly','每周项目例会','15:00'],['monthly','每月整理账单','18:00']]){
+    const id=randomUUID(),task=todoSchema.parse({id,title,dueDate:today,dueTime:time,startDate:today,startTime:type==='daily'?'19:30':time,recurrenceAnchor:today,repeat:{type,interval:1,...(type==='weekly'?{weekdays:[1,3]}:type==='monthly'?{monthDay:31}:{})},category:type==='weekly'?'work':'personal',important:true,urgent:false,entities:[{type:'person',name:'张三',tags:['同事']},{type:'place',name:type==='weekly'?'办公室':'家',tags:[]}],description:'重复示例：每一期独立完成，拖动只改这期截止时间。'});
+    task.seriesTemplate=todoSchema.parse(task);current.document.todos.push(task);
+  }
+  await saveDiary(today,current.document,current.version,1);await writeJson('demo-schedule-v1',true,1);
 }
 if(process.argv.includes('--init-only')){mock.close();console.log('演示知识库已初始化（重复运行不会重复生成）');process.exit(0);}
 const { buildServer }=await import('../apps/api/dist/server.js');

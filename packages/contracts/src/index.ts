@@ -31,6 +31,8 @@ export const todoRepeatSchema = z.object({
   interval: z.number().int().positive().optional(),
   weekdays: z.array(z.number().int().min(0).max(6)).optional(),
   afterDays: z.number().int().nonnegative().optional(),
+  monthDay: z.number().int().min(1).max(31).optional(),
+  until: z.string().regex(/^\d{4}-\d{2}-\d{2}$|^$/).optional(),
 }).nullable();
 export type TodoRepeat = z.infer<typeof todoRepeatSchema>;
 
@@ -45,7 +47,7 @@ export const planCategorySchema = z.object({ id: z.string().regex(/^(?:work|pers
 export type PlanCategory = z.infer<typeof planCategorySchema>;
 export const defaultPlanCategories: PlanCategory[] = [{id:'work',name:'工作',color:'#7db2df',order:0},{id:'personal',name:'个人生活',color:'#c1a183',order:1}];
 export const planCategoryIdSchema = planCategorySchema.shape.id;
-export const todoSchema = z.object({
+const baseTodoSchema = z.object({
   category: planCategoryIdSchema.nullable().optional(), important: z.boolean().nullable().optional(), urgent: z.boolean().nullable().optional(),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$|^$/).optional(), startTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$|^$/).optional(),
   id: z.string().regex(/^[a-zA-Z0-9-]+$/).max(80), title: z.string().trim().min(1).max(2000).regex(/^[^\r\n]+$/), done: z.boolean().default(false), time: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$|^$/).default(''),
@@ -64,6 +66,14 @@ export const todoSchema = z.object({
   attachments: z.array(todoAttachmentSchema).max(20).default([]),
   createdAt: z.string().default(''),
   deletedAt: z.string().optional(), // 回收站标记
+});
+export const todoSchema = baseTodoSchema.extend({
+  seriesTemplate: baseTodoSchema.optional(),
+  recurrenceAnchor: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  seriesId: z.string().regex(/^[a-zA-Z0-9-]+$/).max(80).optional(),
+  occurrenceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  occurrenceSuppressed: z.boolean().optional(),
+  seriesChanges: z.array(z.object({ from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), stop: z.boolean().default(false), template: baseTodoSchema })).max(100).optional(),
 });
 export type Todo = z.infer<typeof todoSchema>;
 
@@ -219,6 +229,7 @@ export function entityKey(type: EntityType, name: string): string {
 
 const captureDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$|^$/);
 export const captureDraftSchema = z.object({
+  repeat: todoRepeatSchema.default(null),
   category: planCategoryIdSchema.nullable().optional(), important: z.boolean().nullable().optional(), urgent: z.boolean().nullable().optional(),
   startDate: captureDate.optional(), startTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$|^$/).optional(),
   id: z.string().uuid(), kind: z.enum(['plan', 'facts', 'learn', 'input', 'idea']),

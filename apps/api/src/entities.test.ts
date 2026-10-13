@@ -7,7 +7,7 @@ vi.mock("./vault.js", () => ({
   loadDiary: async (date: string) => ({ document: storage.documents.find(document => document.date === date)! }),
   readJson: async (path: string) => path.endsWith("place-parents.json") ? { ...storage.parents } : {},
   writeJson: async (_path: string, parents: Record<string, string>) => { storage.parents = { ...parents }; },
-  withVaultLock: async (work: () => Promise<unknown>) => work(),
+  withVaultLock: async (_userId:number,work: () => Promise<unknown>) => work(),
 }));
 import { EntityIndex } from "./entities.js";
 

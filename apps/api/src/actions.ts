@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { appendCapture, captureDraftSchema, completionRecordSchema, recordRefSchema, resolveRecord, todoSchema, type RecordRef, type Todo } from '@diary/contracts';
 import { listDiaryDates, loadDiary, readJson, saveDiaryUnlocked, withVaultLock, writeJson } from './vault.js';
 import { assertDate } from './date.js';
+import { deriveOccurrence, firstOccurrence } from './recurrence.js';
 import { vaultPaths } from './config.js';
 import { autoJournalPath, completeAutomatically } from './autoCompletion.js';
 import { readRestoreJournal, restoreCompletion } from './restoreCompletion.js';
@@ -57,7 +58,14 @@ export async function changeAction(input: ActionInput, userId: number) {
     if (input.task.startDate) assertDate(input.task.startDate);
     const current = await loadDiary(input.date, userId);
     const tasks = current.document.todos;
-    const existing = tasks.find(t => t.id === input.task.id);
+    let existing = tasks.find(t => t.id === input.task.id);
+    if (!existing && input.mode !== 'create' && input.task.seriesId && input.task.occurrenceDate) {
+      if(input.version !== current.version) throw conflict('日程已变化，请刷新后重试。');
+      const root=tasks.find(t=>t.id===input.task.seriesId);
+      const occurrence=root && deriveOccurrence(root,input.task.occurrenceDate);
+      if(!occurrence || occurrence.id!==input.task.id) throw conflict('这期日程已变更或停止，请刷新。');
+      existing=occurrence; tasks.push(existing);
+    }
     const restoring = input.mode === 'restore' || (input.mode === 'status' && (input.nextStatus === 'todo' || input.nextStatus === 'doing'));
     const restoreJournal = existing ? await readRestoreJournal(input.date,existing.id,userId) : null;
     if (restoring && restoreJournal?.phase === 'complete' && restoreJournal.operationId === input.operationId) return { diary: current };
@@ -75,6 +83,14 @@ export async function changeAction(input: ActionInput, userId: number) {
       return completeAutomatically(current, existing, userId);
     }
     if (input.mode === 'create') {
+      if (input.task.repeat && ['daily','weekly','monthly'].includes(input.task.repeat.type)) {
+        if(!input.task.dueDate) throw Object.assign(new Error('重复计划需要截止日期'),{statusCode:400});
+        input.task.recurrenceAnchor=input.task.dueDate;
+        if(input.task.repeat.until)assertDate(input.task.repeat.until);
+        const first=firstOccurrence(input.task.dueDate,input.task.repeat);
+        input.task.dueDate=first;input.task.recurrenceAnchor=first;
+        input.task.seriesTemplate=todoSchema.parse(input.task);
+      }
       if (input.task.source) {
         assertDate(input.task.source.date);
         const source = input.task.source.date === input.date ? current : await loadDiary(input.task.source.date, userId);
@@ -93,13 +109,22 @@ export async function changeAction(input: ActionInput, userId: number) {
     } else if (input.mode === 'delete') {
       existing!.deletedAt = new Date().toISOString();
     } else if (input.mode === 'purge') {
-      current.document.todos = tasks.filter(t => t.id !== existing!.id);
+      // Keep an occurrence tombstone so purging it cannot regenerate the same scheduled item.
+      if(existing!.seriesId){existing!.status='cancelled';existing!.deletedAt=new Date().toISOString();existing!.occurrenceSuppressed=true;}
+      else current.document.todos = tasks.filter(t => t.id !== existing!.id && t.seriesId!==existing!.id);
     } else if (input.mode === 'update') {
       const patch: Partial<Todo> = {};
       for (const field of updatableFields) {
         if (input.task[field] !== undefined) patch[field] = input.task[field] as never;
       }
       Object.assign(existing!, patch);
+      if(!existing!.seriesId && !existing!.recurrenceAnchor && ['daily','weekly','monthly'].includes(existing!.repeat?.type||'')) {
+        if(!existing!.dueDate)throw Object.assign(new Error('重复计划需要截止日期'),{statusCode:400});
+        if(existing!.repeat?.until)assertDate(existing!.repeat.until);
+        existing!.dueDate=firstOccurrence(existing!.dueDate,existing!.repeat!);
+        existing!.recurrenceAnchor=existing!.dueDate;
+        existing!.seriesTemplate=todoSchema.parse(existing!);
+      }
     } else if (input.mode === 'status') {
       const next = input.nextStatus || 'todo';
       existing!.status = next;

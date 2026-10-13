@@ -1,7 +1,7 @@
 import type { PlanCategory, CaptureDraft, CompletionRecord, DiaryDocument, DiaryResponse, EntityRecord, EntityType, PinQuickFactRequest, QuickFact, SentenceSplitResult, TagStore, Todo, RecordRef } from "@diary/contracts";
 export type ActionRow = { restorePending?: boolean; completionPending?: boolean; pendingRecord?: CaptureDraft; date: string; version: string; task: Todo; sourceExists: boolean; completionExists: boolean; pendingFact?: { date: string; id: string; time: string; note: string; remark: string } };
 export type ActionInput = { automaticRecord?: boolean; completionRecord?: CompletionRecord; mode: 'create' | 'update' | 'delete' | 'complete' | 'restore' | 'purge' | 'status'; date: string; version: string; task: Todo; operationId: string; sourceVersion?: string; fact?: { date: string; version: string; time: string; note: string; remark: string }; nextStatus?: 'todo' | 'doing' | 'done' | 'cancelled' };
-export type ParsedTodo = Pick<Todo, 'entities' | 'category' | 'important' | 'urgent' | 'startDate' | 'startTime'> & { description?: string; title: string; dueDate: string; dueTime: string; priority: string; list: string; tags: string[] };
+export type ParsedTodo = Pick<Todo, 'entities' | 'category' | 'important' | 'urgent' | 'startDate' | 'startTime'> & { repeat?: Todo['repeat']; description?: string; title: string; dueDate: string; dueTime: string; priority: string; list: string; tags: string[] };
 export type PlanView = { id: string; name: string; color: string; tags: string[] };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -27,6 +27,8 @@ export const api = {
   parseCapture: (text: string, completion?: {title: string; description: string; date: string; time: string}) => request<{drafts: CaptureDraft[]; today: string; timezone: string; mode: 'ai' | 'manual'}>('/api/capture/parse', { method: 'POST', body: JSON.stringify({text, completion}) }),
   setPlaceParent: (key: string, parentKey: string | null) => request<{ entities: EntityRecord[] }>("/api/place-parent", { method: "PUT", body: JSON.stringify({ key, parentKey }) }),
   actions: () => request<{ tasks: ActionRow[]; records: RecordRef[] }>('/api/actions'),
+  schedule: (from:string,to:string,cursor?:string) => request<{tasks:ActionRow[];nextCursor?:string}>(`/api/schedule?${new URLSearchParams({from,to,...(cursor?{cursor}:{})})}`),
+  updateSeries: (input:{date:string;version:string;task:Todo;from:string;stop:boolean}) => request<{diary:DiaryResponse}>('/api/schedule/series',{method:'POST',body:JSON.stringify(input)}),
   changeAction: (input: ActionInput) => request<{ diary: DiaryResponse }>('/api/actions', { method: 'POST', body: JSON.stringify(input) }),
   obsidian: (date: string) => request<{ uri: string }>(`/api/obsidian/${date}`),
   loadDiary: (date: string) => request<DiaryResponse>(`/api/diaries/${date}`),

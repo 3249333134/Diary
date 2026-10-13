@@ -1,5 +1,6 @@
 import type { Todo } from '@diary/contracts';
 export type PlanFilter = 'today' | 'upcoming' | 'all' | 'done' | 'overdue' | 'trash';
+export const planDueTime=(task:Todo)=>task.dueDate?task.dueTime:task.time;
 export function planState(task: Todo, now = planClock()) {
   if (task.deletedAt || task.status === 'cancelled') return 'neutral';
   if (task.done || task.status === 'done') return 'done';
@@ -14,6 +15,7 @@ export function planClock(now = new Date()) {
   return { date: `${get('year')}-${get('month')}-${get('day')}`, time: `${get('hour')}:${get('minute')}` };
 }
 export function matchesPlan(task: Todo, filter: PlanFilter, now = planClock()) {
+  if(task.occurrenceSuppressed)return false;
   if (filter === 'trash') return !!task.deletedAt;
   if (task.deletedAt) return false;
   if (filter === 'all') return true;

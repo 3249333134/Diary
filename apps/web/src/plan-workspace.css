@@ -1,0 +1,49 @@
+/* The desktop plan workspace follows the same fixed content frame as mobile. */
+.plan-rail-navigation { display:grid; gap:16px; margin-top:12px; }
+.plan-rail-navigation nav { display:grid; gap:4px; }
+.plan-rail-navigation button { display:flex; align-items:center; gap:10px; width:100%; min-height:44px; padding:8px 12px; border:0; border-radius:10px; background:transparent; color:var(--text); text-align:left; font:inherit; font-size:13px; cursor:pointer; }
+.plan-rail-navigation button span:not(.plan-rail-dot) { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+.plan-rail-navigation button small { color:var(--muted); font-variant-numeric:tabular-nums; }
+.plan-rail-navigation button:hover { background:var(--glass-item); }
+.plan-rail-navigation button[aria-pressed=true] { background:var(--purple-soft); color:var(--purple-ink); font-weight:600; }
+.plan-rail-navigation .plan-rail-create { background:var(--purple); color:white; justify-content:center; }
+.plan-rail-group h2 { font-size:12px; font-weight:500; color:var(--muted); margin:0 12px 8px; }
+.plan-rail-dot { width:8px; height:8px; flex:none; border-radius:50%; background:var(--purple); }
+.plan-rail-caption { color:var(--muted); font-size:10px; padding:0 12px; }
+.plan-rail-navigation button:focus-visible { outline:2px solid var(--purple); outline-offset:2px; }
+.calendar-drag-ghost { position:fixed; top:0; left:0; z-index:10000; pointer-events:none; display:grid; gap:6px; padding:12px 14px; border:1px solid var(--purple); border-radius:12px; background:color-mix(in srgb,var(--category-color,var(--purple)) 14%,var(--surface)); color:var(--text); box-shadow:0 16px 36px rgba(32,20,55,.22); will-change:transform; }
+.calendar-drag-ghost strong { font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.calendar-drag-ghost small { font-size:11px; color:var(--purple-ink); }
+.calendar-chip[data-dragging=true] { opacity:.3; }
+.calendar-heading nav { flex-wrap:wrap; justify-content:flex-end; }
+.calendar-heading .calendar-hours-toggle { font-size:11px; color:var(--purple-ink); background:var(--purple-soft); padding:6px 10px; }
+@media(min-width:900px) {
+  .app-shell:has(.main-content[data-workspace=plan]) { height:100dvh; min-height:0; overflow:hidden; }
+  .main-content[data-workspace=plan] { display:flex; flex-direction:column; height:100dvh; min-height:0; padding:0 24px 12px; gap:12px; overflow:hidden; }
+  .main-content[data-workspace=plan]>.topbar { position:relative; height:64px; flex:0 0 64px; }
+  .main-content[data-workspace=plan]>.plan-workspace { display:flex; flex:1; min-height:0; overflow:hidden; }
+  .main-content[data-workspace=plan] .todo-panel { display:flex; flex-direction:column; flex:1; min-height:0; height:auto; margin:0; padding:16px; overflow:hidden; }
+  .main-content[data-workspace=plan] .todo-panel>.section-heading { flex-shrink:0; margin-bottom:8px; }
+  .main-content[data-workspace=plan] .todo-panel>.section-heading p { display:none; }
+  .main-content[data-workspace=plan] .todo-panel>.todo-stats { flex-shrink:0; margin:0 0 10px; }
+  .main-content[data-workspace=plan] .todo-panel .todo-stat-chip { min-height:56px; padding:8px; flex-direction:row; align-items:center; gap:8px; }
+  .main-content[data-workspace=plan] .todo-stat-chip strong { font-size:22px; }
+  .main-content[data-workspace=plan] .todo-stat-chip>span { font-size:12px; }
+  .main-content[data-workspace=plan] .plan-browse-tools { flex-shrink:0; margin:0 0 6px; }
+  .main-content[data-workspace=plan] .plan-calendar { min-height:0; }
+  .main-content[data-workspace=plan] .calendar-scroll { max-height:none; min-height:0; }
+  .main-content[data-workspace=plan] .plan-list-view { flex:1; min-height:0; overflow:auto; }
+  .main-content[data-workspace=plan] .plan-board-scroll { flex:1; min-height:0; max-height:none; overflow:auto; }
+  .main-content[data-workspace=plan]>.capture-plan-docked { order:3; flex:0 0 52px; height:52px; position:relative; }
+  .capture-plan-docked .capture-mobile-bar { display:flex; align-items:stretch; gap:8px; height:52px; }
+  .capture-plan-docked .capture-mobile-trigger { display:flex; flex:1; align-items:center; justify-content:center; gap:8px; border:1px solid var(--glass-edge); border-radius:14px; background:var(--glass); color:var(--purple-ink); font:inherit; font-weight:600; cursor:pointer; }
+  .capture-plan-docked .capture-fullscreen-btn { display:grid; place-items:center; width:52px; border:1px solid var(--glass-edge); border-radius:14px; background:var(--glass); color:var(--purple-ink); }
+  .capture-plan-docked .unified-capture { display:none; }
+  .capture-plan-docked.capture-expanded .unified-capture { display:block; position:fixed; inset:50% auto auto 50%; transform:translate(-50%,-50%); z-index:202; width:min(760px,calc(100vw - 48px)); max-height:calc(100dvh - 48px); overflow:auto; margin:0; background:var(--glass); backdrop-filter:var(--glass-blur); }
+  .capture-plan-docked .capture-backdrop { position:fixed; inset:0; z-index:201; border:0; background:rgba(22,15,36,.4); }
+  .capture-plan-docked .capture-mobile-close { display:flex; float:right; min-height:44px; }
+  .main-content[data-workspace=plan]:has(.todo-panel[data-fullscreen=true])>.topbar { display:none; }
+  .app-shell:has(.main-content[data-workspace=plan]) .date-rail { padding-top:24px; }
+  .app-shell:has(.main-content[data-workspace=plan]) .brand { margin-bottom:20px; }
+  .app-shell:has(.main-content[data-workspace=plan]) .rail-note { margin-top:20px; }
+}

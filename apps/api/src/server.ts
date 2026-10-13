@@ -16,6 +16,7 @@ import { listDiaryDates, loadDiary, saveDiary } from "./vault.js";
 import { generateWeeklySummary } from "./weekly.js";
 import { splitSentenceWithAi, parseTodoFromText, suggestTags } from "./split.js";
 import { listActions, changeAction, actionRequestSchema } from './actions.js';
+import { listSchedule, scheduleQuery, updateSeries, seriesRequest } from './schedule.js';
 import { getAllQuickFacts, pinQuickFact, useQuickFact, unpinQuickFact } from "./quickfacts.js";
 import { registerAuth, hashPassword, verifyPassword, createSession, destroySession, verifySession, setSessionCookie, clearSessionCookie, getSessionToken } from "./auth.js";
 import { pool, queryRows } from "./db.js";
@@ -106,6 +107,7 @@ export async function buildServer() {
   });
 
   app.get("/api/auth/me", async (request, reply) => {
+    if(config.demoDatabase&&config.host==='127.0.0.1')return {id:1,username:'本地演示'};
     const token = getSessionToken(request);
     if (!token) return reply.code(401).send({ error: "未登录" });
     const userId = await verifySession(token);
@@ -150,6 +152,11 @@ export async function buildServer() {
   app.get('/api/actions', async (request) => {
     const userId = request.userId!;
     return listActions(userId);
+  });
+  app.get('/api/schedule', async request => listSchedule(scheduleQuery.parse(request.query),request.userId!));
+  app.post('/api/schedule/series', async request => {
+    const result=await updateSeries(seriesRequest.parse(request.body),request.userId!);
+    const idx=await getIndex(request.userId!);await idx.rebuild();return result;
   });
 
   app.post('/api/actions', async request => {
@@ -248,7 +255,7 @@ export async function buildServer() {
   app.post('/api/capture/parse', async (request) => {
     const userId = request.userId!;
     const idx = await getIndex(userId);
-    return parseCapture(captureRequestSchema.parse(request.body), { names: idx.list('', undefined, 500).map(entity => entity.name), tags: await tagLibrary(idx.getTags(), userId) });
+    return parseCapture(captureRequestSchema.parse(request.body), { names: idx.list('', undefined, 500).map(entity => entity.name), tags: await tagLibrary(idx.getTags(), userId),categories:await getPlanCategories(userId) });
   });
 
   app.post("/api/split-sentence", async (request) => {
