@@ -18,6 +18,7 @@ export function PlanCompletion({ row, busy, onFinish, onClose,entityContext }: {
     setParsing(true); setError('');
     try {
       const response = await api.parseCapture(supplement.trim() || `已完成计划：${row.task.title}。未补充实际结果。`, { title: row.task.title, description: row.task.description, date: draft.date, time: draft.time });
+      if(response.mode==='manual')setError('已使用本地规则整理，可继续编辑；未调用 AI。');
       const next = response.drafts[0];
       if (next) setDraft(old => ({ ...next, id: old.id, kind: next.kind === 'plan' ? 'facts' : next.kind, date: old.date, time: old.time, entities: Object.values(next.entities).some(group => group.length) ? next.entities : old.entities }));
     } catch (e) { setError(`${e instanceof Error ? e.message : 'AI 暂不可用'} 可继续手动编辑并保存。`); }

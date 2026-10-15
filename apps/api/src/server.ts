@@ -1,3 +1,5 @@
+import { registerObsidianSync } from "./obsidian-sync.js";
+import { ensureSyncTables } from "./sync-db.js";
 import Fastify from "fastify";
 import { captureRequestSchema, validationIssues, DIARY_BODY_LIMIT } from '@diary/contracts';
 import { parseCapture } from './capture.js';
@@ -51,13 +53,15 @@ function safeJoin(root: string, ...parts: string[]) {
 }
 
 export async function buildServer() {
-  const app = Fastify({ genReqId:()=>crypto.randomUUID(), logger: { redact: ["req.headers.authorization", "req.body", "res.body"] }, bodyLimit: DIARY_BODY_LIMIT });
+  const app = Fastify({ genReqId:()=>crypto.randomUUID(), logger: { redact: ["req.headers.authorization", "req.headers.cookie", "req.body", "res.body"] }, bodyLimit: DIARY_BODY_LIMIT });
 
   // CORS — 放开 remote 代理和本地
   await app.register(cors, { origin: true, credentials: true });
 
   // 注册认证（preHandler 钩子解析 session，未登录返回 401）
+  await ensureSyncTables();
   registerAuth(app);
+  registerObsidianSync(app);
 
   // 按用户隔离的 EntityIndex
   const indexes = new Map<number, EntityIndex>();

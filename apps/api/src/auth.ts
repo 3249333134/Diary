@@ -1,3 +1,4 @@
+import { syncIdentity } from "./obsidian-sync.js";
 import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
@@ -81,6 +82,12 @@ export function registerAuth(server: FastifyInstance) {
     if (!url.startsWith("/api/")) return;
     if(config.demoDatabase && config.host==='127.0.0.1'){request.userId=1;return;}
 
+    if(url.startsWith('/api/obsidian-sync/v1/')) {
+      const token=request.headers.authorization?.match(/^Bearer (.+)$/)?.[1]||'';
+      const userId=await syncIdentity(token);
+      if(!userId){reply.code(401).send({error:'设备授权无效或已撤销',code:'AUTH_REQUIRED'});return;}
+      request.userId=userId;return;
+    }
     const token = getSessionToken(request);
     if (!token) {
       reply.code(401).send({ error: "未登录",code:'AUTH_REQUIRED',requestId:request.id });

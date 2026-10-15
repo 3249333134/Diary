@@ -13,7 +13,10 @@ const mysqlOptions = {
   queueLimit: 0,
   charset: "utf8mb4_unicode_ci",
 };
-export const pool = config.demoDatabase ? createDemoPool(config.demoDatabase) as unknown as mysql.Pool : mysql.createPool(mysqlOptions);
+import { databaseContext } from "./db-context.js";
+const originalPool = config.demoDatabase ? createDemoPool(config.demoDatabase) as unknown as mysql.Pool : mysql.createPool(mysqlOptions);
+
+export const pool = new Proxy(originalPool, { get(target, key) { const connection = databaseContext.getStore(); const owner = key === "query" && connection && connection !== pool ? connection : target; const value = (owner as any)[key]; return typeof value === "function" ? value.bind(owner) : value; } });
 
 /** 类型安全的查询助手，返回行数组 */
 export async function queryRows<T extends Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {

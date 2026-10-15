@@ -2,6 +2,7 @@ import type { DiaryResponse, RecordRef, Todo } from '@diary/contracts';
 import { vaultPaths } from './config.js';
 import { autoJournalPath } from './autoCompletion.js';
 import { loadDiary, readJson, saveDiaryUnlocked, writeJson } from './vault.js';
+import { syncSeriesCheckins } from './recurrence.js';
 
 type RestoreJournal = { phase: 'prepared' | 'complete'; operationId: string; fact: RecordRef };
 export const restoreJournalPath = (date: string, id: string) => `${vaultPaths.system}/actions/restore-${date}-${id}.json`;
@@ -24,6 +25,7 @@ export async function restoreCompletion(current: DiaryResponse, task: Todo, oper
       if (fact.date !== current.document.date) await saveDiaryUnlocked(fact.date,target.document,target.version,userId);
     }
     Object.assign(task,{done:false,status:nextStatus,deletedAt:undefined,completedAt:undefined,completion:undefined,operationId:undefined});
+    syncSeriesCheckins(current.document);
     const diary = await saveDiaryUnlocked(current.document.date,current.document,current.version,userId);
     await writeJson(autoJournalPath(current.document.date,task.id),null,userId);
     await writeJson(path,{...journal,phase:'complete'},userId);

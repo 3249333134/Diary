@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { appendCapture, captureDraftSchema, completionRecordSchema, recordRefSchema, resolveRecord, todoSchema, type RecordRef, type Todo } from '@diary/contracts';
 import { listDiaryDates, loadDiary, readJson, saveDiaryUnlocked, withVaultLock, writeJson } from './vault.js';
 import { assertDate } from './date.js';
-import { deriveOccurrence, firstOccurrence } from './recurrence.js';
+import { deriveOccurrence, firstOccurrence, syncSeriesCheckins } from './recurrence.js';
 import { vaultPaths } from './config.js';
 import { autoJournalPath, completeAutomatically } from './autoCompletion.js';
 import { readRestoreJournal, restoreCompletion } from './restoreCompletion.js';
@@ -160,6 +160,7 @@ export async function changeAction(input: ActionInput, userId: number) {
       Object.assign(existing!, { done: true, status: 'done', completedAt: new Date().toISOString(), operationId: input.operationId });
     }
     try {
+      syncSeriesCheckins(current.document);
       const diary = await saveDiaryUnlocked(input.date, current.document, current.version, userId);
       if (input.mode === 'complete' && completion) await writeJson(`${vaultPaths.system}/actions/${input.operationId}.json`, { date: input.date, taskId: input.task.id, target: completion!.date, kind: completion!.kind, phase: 'complete' }, userId);
       return { diary };

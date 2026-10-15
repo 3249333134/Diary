@@ -1,6 +1,16 @@
 import { createHash } from 'node:crypto';
-import { todoSchema, type Todo, type TodoRepeat } from '@diary/contracts';
+import { todoSchema, type DiaryDocument, type Todo, type TodoRepeat } from '@diary/contracts';
 import { addDays, assertDate, weekStart } from './date.js';
+
+/** 在日记文档内按已完成期次重算每个重复系列的打卡数（幂等，完成/取消/删除期次都安全） */
+export function syncSeriesCheckins(document: DiaryDocument) {
+  const todos = document.todos;
+  for (const root of todos) {
+    if (!root.recurrenceAnchor || root.deletedAt) continue;
+    const count = todos.filter(t => t.seriesId === root.id && t.done && !t.deletedAt).length + (root.done ? 1 : 0);
+    if (count > 0 || root.checkins) root.checkins = count;
+  }
+}
 
 export const isSeries = (task: Todo) => !!task.recurrenceAnchor && ['daily','weekly','monthly'].includes(task.seriesTemplate?.repeat?.type || task.repeat?.type || '');
 export function firstOccurrence(date:string,repeat:TodoRepeat) {
@@ -50,6 +60,6 @@ export function deriveOccurrence(root: Todo, date: string): Todo | null {
   const offset=template.startDate ? (Date.parse(template.startDate+'T00:00:00Z')-Date.parse(anchor+'T00:00:00Z'))/86400000 : null;
   return todoSchema.parse({...template,id:occurrenceId(root.id,date),seriesId:root.id,occurrenceDate:date,
     recurrenceAnchor:undefined,seriesTemplate:undefined,seriesChanges:undefined,repeat:template.repeat,
-    dueDate:date,plannedDate:'',time:'',startDate:offset===null?'':addDays(date,offset),
+    dueDate:date,plannedDate:'',time:'',startDate:offset===null?'':addDays(date,offset),checkins:root.checkins,
     done:false,status:'todo',completion:undefined,completedAt:undefined,operationId:undefined,deletedAt:undefined});
 }

@@ -1,3 +1,4 @@
+import { ensureSyncTables, recordSyncChange, syncTransaction } from "./sync-db.js";
 import { createHash } from "node:crypto";
 import { diaryDocumentSchema, emptyDiary, type DiaryDocument, type DiaryResponse } from "@diary/contracts";
 import { assertDate } from "./date.js";
@@ -42,6 +43,7 @@ export async function saveDiaryUnlocked(
   expectedVersion: string,
   userId: number
 ): Promise<DiaryResponse> {
+  await ensureSyncTables(); return syncTransaction(async () => {
   assertDate(date);
   const document = diaryDocumentSchema.parse(input);
   if (document.date !== date) throw Object.assign(new Error("路径日期与日记日期不一致"), { statusCode: 400 });
@@ -55,8 +57,10 @@ export async function saveDiaryUnlocked(
     "INSERT INTO diaries (user_id, date, content, version) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE content = VALUES(content), version = VALUES(version)",
     [userId, date, content, version]
   );
+  await recordSyncChange(userId,"diary",date,version);
   const saved = await loadDiary(date, userId);
   return { ...saved, savedAt: new Date().toISOString() };
+  });
 }
 
 export async function listDiaryDates(userId: number, from?: string, to?: string): Promise<string[]> {
@@ -82,9 +86,12 @@ export async function readJson<T>(key: string, fallback: T, userId: number): Pro
 }
 
 export async function writeJson(key: string, value: unknown, userId: number): Promise<void> {
+  await ensureSyncTables(); return syncTransaction(async () => {
   const json = JSON.stringify(value, null, 2);
   await pool.query(
     "INSERT INTO settings (user_id, `key`, value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)",
     [userId, key, json]
   );
+  await recordSyncChange(userId,"setting",key,versionOf(json));
+  });
 }

@@ -66,6 +66,8 @@ const baseTodoSchema = z.object({
   tags: z.array(z.string().trim().min(1).max(40)).max(50).default([]),
   status: z.enum(['todo', 'doing', 'done', 'cancelled']).default('todo'),
   repeat: todoRepeatSchema.default(null),
+  // 重复系列打卡计数：由服务端按已完成期次自动维护，客户端只读
+  checkins: z.number().int().min(0).max(99999).optional(),
   attachments: z.array(todoAttachmentSchema).max(20).default([]),
   createdAt: z.string().default(''),
   deletedAt: z.string().optional(), // 回收站标记

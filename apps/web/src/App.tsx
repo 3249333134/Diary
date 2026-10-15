@@ -1,3 +1,4 @@
+import {ObsidianDevices} from "./ObsidianDevices";
 import {useGlassConfirm} from './GlassConfirm';
 import {GlassDialog,GlassComboBox} from './GlassUI';
 import {diaryPresets} from './diaryPresets';
@@ -1031,7 +1032,7 @@ export function App() {
       <nav className="workspace-switch" aria-label="主要功能"><button aria-pressed={!showTodos} onClick={() => setShowTodos(false)}>日记</button><button aria-pressed={showTodos} onClick={() => setShowTodos(true)}>计划</button></nav><div hidden={showTodos}><div className="rail-today"><CalendarDays /><div><strong>{todayLabel}</strong><span>{date}</span></div></div>
       <div className="week-list">{currentWeekDates.map((item) => <button type="button" key={item} className={item === date ? "active" : ""} onClick={() => setDate(item)}><span>{shortDate(item)}</span>{recordedDates.has(item) && <i aria-label="已有日记" />}</button>)}</div>
       <button type="button" className="today-button" onClick={() => setDate(initialDate)}>回到今天</button>
-      </div>{showTodos&&<PlanNavigation state={planNavigation} onAction={requestPlanTool}/>}<div className="rail-note"><strong>{authState.user?.username}</strong><span>已登录云端</span></div>
+      </div>{showTodos&&<PlanNavigation state={planNavigation} onAction={requestPlanTool}/>}<ObsidianDevices/><div className="rail-note"><strong>{authState.user?.username}</strong><span>已登录云端</span></div>
     </aside>
 
     <main ref={browseRef} id="main-content" className="main-content" data-compact={compactBrowse.compact} data-workspace={showTodos ? 'plan' : showReceipts ? 'receipts' : tabs[activeTab].id}>

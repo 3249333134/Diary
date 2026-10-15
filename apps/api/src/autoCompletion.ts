@@ -3,6 +3,7 @@ import { diaryEventSchema, type DiaryResponse, type Todo } from '@diary/contract
 import { config, vaultPaths } from './config.js';
 import { readJson, writeJson, loadDiary, saveDiaryUnlocked } from './vault.js';
 import { todayInTimezone } from './date.js';
+import { syncSeriesCheckins } from './recurrence.js';
 
 type Journal = { phase: 'prepared' | 'complete'; completedAt: string; event: ReturnType<typeof diaryEventSchema.parse>; target: string };
 export const autoJournalPath = (date: string, id: string) => `${vaultPaths.system}/actions/auto-${date}-${id}.json`;
@@ -14,6 +15,7 @@ export async function completeAutomatically(current: DiaryResponse, task: Todo, 
   let journal = await readJson<Journal | null>(journalPath, null, userId);
   if (task.completion) {
     Object.assign(task, { done: true, status: 'done', completedAt: journal?.completedAt || task.completedAt || now.toISOString() });
+    syncSeriesCheckins(current.document);
     return { diary: await saveDiaryUnlocked(current.document.date, current.document, current.version, userId) };
   }
   if (!journal) {
@@ -39,6 +41,7 @@ export async function completeAutomatically(current: DiaryResponse, task: Todo, 
   }
   Object.assign(task, { done: true, status: 'done', completedAt: journal.completedAt,
     completion: { date: journal.target, kind: 'facts', id: journal.event.id, summary: journal.event.note }, operationId: journal.event.id });
+    syncSeriesCheckins(current.document);
     const diary = await saveDiaryUnlocked(current.document.date, current.document, current.version, userId);
     await writeJson(journalPath, { ...journal, phase: 'complete' }, userId);
     return { diary };
