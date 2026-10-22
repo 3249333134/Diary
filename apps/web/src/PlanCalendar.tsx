@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type PointerEvent, type CSSProperties } from 'react';
-import { GripVertical } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { visibleWeekHours } from './calendarHours';
 import { HOUR_WIDTH, DEADLINE_WIDTH, LANE_HEIGHT, timelineMarkers, timelineOffset, timelineTime } from './calendarTimeline';
@@ -15,7 +14,11 @@ import './schedule.css';
 import './schedule-refinements.css';
 
 type Target=CalendarTarget;
-export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,active=true,showAllHours=false,onInteractionChange}:{view:CalendarView;anchor:string;showAllHours?:boolean;onInteractionChange?:(state:{dragging:boolean;pending:boolean;saving:boolean})=>void;rows:ActionRow[];busy:boolean;onEdit:(row:ActionRow)=>void;onMove:(row:ActionRow,target:Target)=>Promise<boolean>;active?:boolean}) {
+type GestureMode='decide'|'drag'|'scrub'|'scroll';
+type Gesture={row:ActionRow;x:number;y:number;startX:number;startY:number;lastX:number;lastY:number;offsetX:number;offsetY:number;width:number;mode:GestureMode;timer?:number;pointer:number;el:HTMLElement;target?:Target;date:string;startMinutes:number;minutes:number;edgeTick:number};
+const minutesOf=(time:string)=>{const[h,m]=time.split(':').map(Number);return(h||0)*60+(m||0);};
+const formatMinutes=(minutes:number)=>`${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;
+export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,active=true,showAllHours=false,onInteractionChange}:{view:CalendarView;anchor:string;showAllHours?:boolean;onInteractionChange?:(state:{dragging:boolean;pending:boolean;saving:boolean})=>void;rows:ActionRow[];busy:boolean;onEdit:(row:ActionRow)=>void;onMove:(row:ActionRow,target:Target)=>Promise<boolean>;onToggle:(row:ActionRow)=>void;active?:boolean}) {
   const range=calendarRange(anchor,view),days=Array.from({length:view==='month'?42:view==='fortnight'?14:7},(_,i)=>shiftDate(range.from,i));
   const {categories}=usePlanCategories();const scroll=useRef<HTMLDivElement>(null);
   const ghost=useRef<HTMLDivElement>(null);
@@ -42,9 +45,20 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,active=true,sh
   const axisWidth=Math.max(hours.length*HOUR_WIDTH,...[...markersByDate.values()].flatMap(markers=>[...markers.values()].map(marker=>marker.anchor+DEADLINE_WIDTH+12)));
   const freeze=(row:ActionRow)=>setFrozen(old=>old||{hours:hours.length?hours:planDueTime(row.task)?[Number(planDueTime(row.task)!.slice(0,2))]:[],heights:Object.fromEntries(days.map(date=>[date,contentHeight(date)])),allDay:allDay||!planDueTime(row.task)});
   useEffect(()=>{const box=scroll.current;if(!box)return;const observer=new ResizeObserver(()=>setViewportWidth(box.clientWidth));observer.observe(box);return()=>observer.disconnect();},[]);
-  const gesture=useRef<{row:ActionRow;x:number;y:number;offsetX:number;offsetY:number;width:number;active:boolean;timer?:number;pointer:number;button:HTMLButtonElement;target?:Target}|undefined>(undefined);
+  const gesture=useRef<Gesture|undefined>(undefined);
+  const hoursRef=useRef<number[]>([]);hoursRef.current=hours;
   const initialScroll=useRef('');
-  const end=(retainHours=false)=>{const g=gesture.current;if(g){window.clearTimeout(g.timer);if(g.button.hasPointerCapture(g.pointer))g.button.releasePointerCapture(g.pointer);}gesture.current=undefined;setDrag(undefined);if(!retainHours)setFrozen(undefined);};
+  const end=(retainHours=false)=>{const g=gesture.current;if(g){window.clearTimeout(g.timer);if(g.el.hasPointerCapture(g.pointer))g.el.releasePointerCapture(g.pointer);}gesture.current=undefined;setDrag(undefined);if(!retainHours)setFrozen(undefined);};
+  /** Dragging near the timeline edge grows the frozen hour axis so deadlines can pass the visible range. */
+  const extendHoursTo=(hour:number)=>{
+    if(hour<0||hour>23)return;
+    setFrozen(old=>old&&!old.hours.includes(hour)?{...old,hours:[...old.hours,hour].sort((a,b)=>a-b)}:old);
+  };
+  const applyScrub=(g:Gesture)=>{
+    g.target={date:g.date,time:formatMinutes(g.minutes)};
+    extendHoursTo(Math.floor(g.minutes/60));
+    setDrag({row:g.row,target:g.target});
+  };
   const cancel=()=>{if(saving.current)return;setPending([]);setBatchMessage('');end();};
   useEffect(()=>{setExpanded(undefined);setPending([]);setBatchMessage('');end();},[view,anchor,active]);
   useEffect(()=>{
@@ -65,31 +79,84 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,active=true,sh
     return()=>cancelAnimationFrame(frame);
   },[view,anchor,showAllHours]);
   useEffect(()=>{const key=(e:KeyboardEvent)=>{if(e.key==='Escape')cancel();};window.addEventListener('keydown',key);return()=>{window.removeEventListener('keydown',key);window.clearTimeout(gesture.current?.timer);};},[]);
-  useEffect(()=>{if(!drag)return;const timer=window.setInterval(()=>{const g=gesture.current,box=scroll.current;if(!g||!box)return;const r=box.getBoundingClientRect();if(g.y<r.top+50)box.scrollTop-=14;else if(g.y>r.bottom-50)box.scrollTop+=14;if(g.x<r.left+35)box.scrollLeft-=14;else if(g.x>r.right-35)box.scrollLeft+=14;updateTarget();},35);return()=>window.clearInterval(timer);},[!!drag]);
-  const begin=(e:PointerEvent<HTMLButtonElement>,row:ActionRow)=>{
-    if(blocked||saving.current||!active||row.task.done||row.task.status==='done'||row.task.status==='cancelled'||row.task.deletedAt)return;
+  useEffect(()=>{
+    if(!drag)return;
+    const timer=window.setInterval(()=>{
+      const g=gesture.current,box=scroll.current;
+      if(!g||!box)return;
+      const r=box.getBoundingClientRect();
+      g.edgeTick++;
+      if(g.mode==='scrub'){
+        // Keep pushing the deadline while the pointer hugs the screen edge.
+        if(g.x<r.left+28){box.scrollLeft-=10;if(g.edgeTick%2===0&&g.minutes>0){g.minutes=Math.max(0,g.minutes-15);applyScrub(g);}}
+        else if(g.x>r.right-28){box.scrollLeft+=10;if(g.edgeTick%2===0&&g.minutes<1435){g.minutes=Math.min(1435,g.minutes+15);applyScrub(g);}}
+        return;
+      }
+      if(g.mode!=='drag')return;
+      if(g.y<r.top+50)box.scrollTop-=14;else if(g.y>r.bottom-50)box.scrollTop+=14;
+      if(g.x<r.left+35){box.scrollLeft-=14;if(g.edgeTick%4===0){const hs=hoursRef.current;extendHoursTo((hs.length?hs[0]:1)-1);}}
+      else if(g.x>r.right-35){box.scrollLeft+=14;if(g.edgeTick%4===0){const hs=hoursRef.current;extendHoursTo((hs.length?hs[hs.length-1]:22)+1);}}
+      updateTarget();
+    },35);
+    return()=>window.clearInterval(timer);
+  },[!!drag]);
+  const begin=(e:PointerEvent<HTMLDivElement>,row:ActionRow)=>{
+    if(gesture.current)end(!!pending.length);
+    if(blocked||saving.current||!active)return;
+    if(row.task.done||row.task.status==='done'||row.task.status==='cancelled'||row.task.deletedAt)return;
+    if(e.pointerType==='mouse'&&e.button!==0)return;
     setBatchMessage('');
-    const rect=e.currentTarget.closest('.calendar-chip')!.getBoundingClientRect();
-    const g={row,x:e.clientX,y:e.clientY,offsetX:Math.min(e.clientX-rect.left,240),offsetY:e.clientY-rect.top,width:Math.max(160,Math.min(rect.width,280)),active:e.pointerType==='mouse',pointer:e.pointerId,button:e.currentTarget} as NonNullable<typeof gesture.current>;
-    gesture.current=g;e.currentTarget.setPointerCapture(e.pointerId);
-    if(g.active){freeze(row);setDrag({row});}else g.timer=window.setTimeout(()=>{g.active=true;freeze(row);setDrag({row});},350);
+    const el=e.currentTarget,rect=el.getBoundingClientRect(),minutes=minutesOf(planDueTime(row.task)||'12:00');
+    const g:Gesture={row,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,offsetX:Math.min(e.clientX-rect.left,240),offsetY:e.clientY-rect.top,width:Math.max(160,Math.min(rect.width,280)),mode:'decide',pointer:e.pointerId,el,date:row.task.dueDate||row.task.plannedDate||'',startMinutes:minutes,minutes,edgeTick:0};
+    gesture.current=g;
+    el.setPointerCapture(e.pointerId);
+    if(e.pointerType!=='mouse')g.timer=window.setTimeout(()=>{if(gesture.current!==g||g.mode!=='decide')return;g.mode='drag';freeze(row);setDrag({row});},350);
   };
-  const move=(e:PointerEvent<HTMLButtonElement>)=>{
-    const g=gesture.current;if(!g)return;if(!g.active){if(Math.hypot(e.clientX-g.x,e.clientY-g.y)>10)end(!!pending.length);return;}
+  const move=(e:PointerEvent<HTMLDivElement>)=>{
+    const g=gesture.current;if(!g||e.pointerId!==g.pointer)return;
+    if(g.mode==='decide'){
+      const dx=e.clientX-g.startX,dy=e.clientY-g.startY;
+      if(e.pointerType==='mouse'){
+        if(Math.hypot(dx,dy)<=6)return;
+        g.mode='drag';freeze(g.row);setDrag({row:g.row});
+      }else if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){
+        // Vertical intent: hand the gesture to manual container scrolling.
+        g.mode='scroll';window.clearTimeout(g.timer);g.lastX=e.clientX;g.lastY=e.clientY;return;
+      }else if(Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)){
+        window.clearTimeout(g.timer);
+        if(view!=='month'){g.mode='scrub';freeze(g.row);}else{g.mode='scroll';g.lastX=e.clientX;g.lastY=e.clientY;return;}
+      }else return;
+    }
+    if(g.mode==='scroll'){
+      const box=scroll.current;
+      if(box){box.scrollLeft-=e.clientX-g.lastX;box.scrollTop-=e.clientY-g.lastY;}
+      g.lastX=e.clientX;g.lastY=e.clientY;return;
+    }
     e.preventDefault();g.x=e.clientX;g.y=e.clientY;
-    updateTarget();
+    if(g.mode==='scrub'){
+      g.minutes=Math.max(0,Math.min(1435,g.startMinutes+Math.round((g.x-g.startX)/HOUR_WIDTH*60/15)*15));
+      applyScrub(g);
+    }else updateTarget();
   };
   const updateTarget=()=>{
-    const g=gesture.current;if(!g?.active)return;
+    const g=gesture.current;if(!g||g.mode!=='drag')return;
     if(ghost.current)ghost.current.style.transform=`translate3d(${g.x-g.offsetX}px,${g.y-g.offsetY}px,0)`;
     const el=document.elementFromPoint(g.x,g.y)?.closest<HTMLElement>('[data-calendar-date]');
     if(!el||!scroll.current?.contains(el)){g.target=undefined;setDrag({row:g.row});return;}
     let time=planDueTime(g.row.task)||'';
-    if(view!=='month'&&el.dataset.timed==='true'){const rect=el.getBoundingClientRect();time=timelineTime(g.x-rect.left,hours);}
+    if(view!=='month'&&el.dataset.timed==='true'){const rect=el.getBoundingClientRect();time=timelineTime(g.x-rect.left,hoursRef.current);}
     else if(view!=='month')time='';
     g.target={date:el.dataset.calendarDate!,time};setDrag({row:g.row,target:g.target});
   };
-  const release=()=>{const g=gesture.current;if(!g?.active){end(!!pending.length);return;}const next=updateCalendarPreviews(pending,g.row,g.target);lastPreview.current=calendarRowKey(g.row);setPending(next);if(g.target&&view==='month'&&window.matchMedia('(max-width:599px)').matches)setExpanded(g.target.date);end(!!next.length);};
+  const release=(e:PointerEvent<HTMLDivElement>)=>{
+    const g=gesture.current;if(!g||e.pointerId!==g.pointer)return;
+    if(g.mode==='decide'){const row=g.row;end(!!pending.length);cancel();onEdit(rows.find(r=>calendarRowKey(r)===calendarRowKey(row))||row);return;}
+    if(g.mode==='scroll'){end(!!pending.length);return;}
+    const next=updateCalendarPreviews(pending,g.row,g.target);
+    lastPreview.current=calendarRowKey(g.row);setPending(next);
+    if(g.target&&view==='month'&&window.matchMedia('(max-width:599px)').matches)setExpanded(g.target.date);
+    end(!!next.length);
+  };
   const confirm=async()=>{
     if(!pending.length||blocked||saving.current)return;
     const batch=[...pending];saving.current=true;setSubmitting(true);setBatchMessage('');
@@ -105,10 +172,21 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,active=true,sh
       if(saved===batch.length&&saved>1)setBatchMessage(`已保存 ${saved} 项改期`);
     }finally{saving.current=false;setSubmitting(false);if(saved===batch.length||saved===batch.length-1)setFrozen(undefined);}
   };
-  const chip=(row:ActionRow,timed=false)=>{const marker=timed?markersFor(row.task.dueDate||row.task.plannedDate||'').get(calendarRowKey(row)):undefined;const c=categories.find(c=>c.id===row.task.category),t=planDueTime(row.task),isPending=pendingKeys.has(calendarRowKey(row));return <div key={calendarRowKey(row)} data-record-id={row.task.id} data-preview-key={calendarRowKey(row)} data-pending={isPending||undefined} data-dragging={drag&&calendarRowKey(drag.row)===calendarRowKey(row)||undefined} data-urgency={urgency(row.task)?.id||'unclassified'} title={`${row.task.title} · 截止 ${row.task.dueDate||row.task.plannedDate||'未安排'} ${t||'全天'} · ${c?.name||'待分类'} · ${urgency(row.task)?.label||'象限待分类'}`} className={`calendar-chip state-${planState(row.task)}`} style={{...urgencyStyle(row.task),...(timed?{left:marker?.anchor??timelineOffset(t||'00:00',hours),top:(marker?.lane||0)*LANE_HEIGHT+4,width:DEADLINE_WIDTH}: {})}}>
-    <button type="button" className="calendar-chip-copy" disabled={blocked} onClick={()=>{cancel();onEdit(rows.find(r=>calendarRowKey(r)===calendarRowKey(row))||row);}}><small>截止 {t||'全天'} · {c?.name||'待分类'}{row.task.seriesId||row.task.recurrenceAnchor?' · 重复':''}{row.task.checkins?` · 打卡${row.task.checkins}次`:''}{isPending?' · 待确认':''}</small><strong>{row.task.title}</strong>{planState(row.task)!=='neutral'&&<span className={'calendar-state-badge badge-'+planState(row.task)}>{({done:'已完成',overdue:'已超期',soon:'即将到期',neutral:''})[planState(row.task)]}</span>}</button>
-    <button type="button" className="calendar-drag-handle" aria-label={'拖动截止时间：'+row.task.title} title="长按拖动截止时间；点击卡片编辑" disabled={blocked||row.task.done||row.task.status==='done'||row.task.status==='cancelled'||!!row.task.deletedAt} onPointerDown={e=>begin(e,row)} onPointerMove={move} onPointerUp={release} onPointerCancel={()=>end(!!pending.length)}><GripVertical size={17}/></button>
-  </div>;};
+  const chip=(row:ActionRow,timed=false)=>{
+    const key=calendarRowKey(row);
+    const marker=timed?markersFor(row.task.dueDate||row.task.plannedDate||'').get(key):undefined;
+    const c=categories.find(c=>c.id===row.task.category),t=planDueTime(row.task),isPending=pendingKeys.has(key);
+    const previewing=!!drag&&calendarRowKey(drag.row)===key;
+    const scrubbing=previewing&&gesture.current?.mode==='scrub';
+    const shownTime=previewing&&drag!.target?drag!.target.time:t;
+    const done=row.task.done||row.task.status==='done';
+    return <div key={key} data-record-id={row.task.id} data-preview-key={key} data-pending={isPending||undefined} data-dragging={previewing||undefined} data-scrubbing={scrubbing||undefined} data-urgency={urgency(row.task)?.id||'unclassified'} title={`${row.task.title} · 截止 ${row.task.dueDate||row.task.plannedDate||'未安排'} ${shownTime||'全天'} · ${c?.name||'待分类'} · ${urgency(row.task)?.label||'象限待分类'}`} className={`calendar-chip state-${planState(row.task)}`} style={{...urgencyStyle(row.task),...(timed?{left:scrubbing&&drag!.target?.time?timelineOffset(drag!.target.time,hours):marker?.anchor??timelineOffset(t||'00:00',hours),top:(marker?.lane||0)*LANE_HEIGHT+4,width:DEADLINE_WIDTH}: {})}} onPointerDown={e=>begin(e,row)} onPointerMove={move} onPointerUp={release} onPointerCancel={()=>end(!!pending.length)}>
+      <label className="calendar-chip-check" data-done={done||undefined} onPointerDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()}>
+        <input type="checkbox" checked={done} disabled={busy} aria-label={`完成：${row.task.title}`} onChange={()=>onToggle(row)}/>
+      </label>
+      <button type="button" className="calendar-chip-copy" disabled={blocked} onClick={()=>{cancel();onEdit(rows.find(r=>calendarRowKey(r)===key)||row);}}><small>截止 {shownTime||'全天'} · {c?.name||'待分类'}{row.task.seriesId||row.task.recurrenceAnchor?' · 重复':''}{row.task.checkins?` · 打卡${row.task.checkins}次`:''}{isPending?' · 待确认':''}</small><strong>{row.task.title}</strong>{planState(row.task)!=='neutral'&&<span className={'calendar-state-badge badge-'+planState(row.task)}>{({done:'已完成',overdue:'已超期',soon:'即将到期',neutral:''})[planState(row.task)]}</span>}</button>
+    </div>;
+  };
   const dayRows=(date:string)=>displayRows.filter(r=>(r.task.dueDate||r.task.plannedDate)===date);
   const monthRows=(date:string)=>dayRows(date).sort((a,b)=>Number(pendingKeys.has(calendarRowKey(b)))-Number(pendingKeys.has(calendarRowKey(a)))).slice(0,3);
   const unarranged=displayRows.filter(row=>!row.task.dueDate&&!row.task.plannedDate);
@@ -126,8 +204,8 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,active=true,sh
     {!!unarranged.length&&<div className="timeline-unarranged-wrap"><details className="calendar-unarranged" style={{width:viewportWidth||'100%'}}><summary>未安排 · {unarranged.length}项</summary><div>{unarranged.map(row=>chip(row))}</div></details></div>}
   </div>;
   return <div className="plan-calendar" data-dragging={!!drag||undefined}>
-    {drag&&gesture.current&&createPortal(<div ref={ghost} className="calendar-drag-ghost" aria-hidden="true" style={{...urgencyStyle(drag.row.task),width:gesture.current.width,transform:`translate3d(${gesture.current.x-gesture.current.offsetX}px,${gesture.current.y-gesture.current.offsetY}px,0)`}}><strong>{drag.row.task.title}</strong><small>截止 {drag.target?`${drag.target.date} ${drag.target.time||'全天'}`:'拖动到目标日期'}</small></div>,document.body)}
-    {drag&&<p className="calendar-feedback" role="status">拖动「{drag.row.task.title}」{drag.target?` → ${drag.target.date} ${drag.target.time||'全天'}`:'到目标日期'} · Escape 取消</p>}
+    {drag&&gesture.current?.mode==='drag'&&createPortal(<div ref={ghost} className="calendar-drag-ghost" aria-hidden="true" style={{...urgencyStyle(drag.row.task),width:gesture.current.width,transform:`translate3d(${gesture.current.x-gesture.current.offsetX}px,${gesture.current.y-gesture.current.offsetY}px,0)`}}><strong>{drag.row.task.title}</strong><small>截止 {drag.target?`${drag.target.date} ${drag.target.time||'全天'}`:'拖动到目标日期'}</small></div>,document.body)}
+    {drag&&<p className="calendar-feedback" role="status">{gesture.current?.mode==='scrub'?'左右滑动调整':'拖动'}「{drag.row.task.title}」{drag.target?` → ${drag.target.date} ${drag.target.time||'全天'}`:'到目标日期'} · Escape 取消</p>}
 
     {batchMessage&&<p className="calendar-batch-message" role="status">{batchMessage}</p>}
     <div ref={scroll} className="calendar-scroll" data-view={view}>
