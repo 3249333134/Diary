@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { visibleWeekHours } from './calendarHours';
 import { HOUR_WIDTH, DEADLINE_WIDTH, LANE_HEIGHT, timelineMarkers, timelineOffset, timelineTime } from './calendarTimeline';
 import type { ActionRow } from './api';
-import { planState, planDueTime } from './planFilters';
+import { planState, planDueTime, planClock } from './planFilters';
 import { usePlanCategories } from './PlanCategories';
 import { urgency, urgencyStyle } from './planUrgency';
 import { PlanActionDock } from './PlanActionDock';
@@ -25,6 +25,8 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   const {categories}=usePlanCategories();const scroll=useRef<HTMLDivElement>(null);
   const ghost=useRef<HTMLDivElement>(null);
   const [expanded,setExpanded]=useState<string>(),[drag,setDrag]=useState<{row:ActionRow;target?:Target}>(),[pending,setPending]=useState<CalendarPreview[]>([]);
+  /** 月视图底部日程表默认展示今天（若在本月网格内）或当前选中日期 */
+  const agendaDate=view==='month'?(expanded&&days.includes(expanded)?expanded:days.includes(planClock().date)?planClock().date:''):'';
   const [submitting,setSubmitting]=useState(false),[progress,setProgress]=useState({current:0,total:0}),[batchMessage,setBatchMessage]=useState('');
   const [frozen,setFrozen]=useState<{hours:number[];heights:Record<string,number>;allDay:boolean}>();
   const [viewportWidth,setViewportWidth]=useState(0);
@@ -220,9 +222,10 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
 
     {batchMessage&&<p className="calendar-batch-message" role="status">{batchMessage}</p>}
     <div ref={scroll} className="calendar-scroll" data-view={view}>
-      {expanded&&<section className="calendar-expanded calendar-selected-day"><header><h3>{expanded} · {dayRows(expanded).length} 项</h3><button type="button" onClick={()=>setExpanded(undefined)}>收起</button></header>{dayRows(expanded).map(r=>chip(r))}</section>}
-      {view==='month'?<div className="calendar-month">{['一','二','三','四','五','六','日'].map(d=><div className="calendar-weekday" key={d}>周{d}</div>)}{days.map(date=><section key={date} data-calendar-date={date} data-drop-active={drag?.target?.date===date} data-other-month={date.slice(0,7)!==anchor.slice(0,7)} className="calendar-day"><button type="button" className="calendar-date" aria-label={`查看 ${date} 的日程`} onClick={()=>setExpanded(expanded===date?undefined:date)} aria-expanded={expanded===date}>{Number(date.slice(-2))}<small>{dayRows(date).length||''}</small></button>{monthRows(date).map(r=>chip(r))}{dayRows(date).length>3&&<button type="button" className="calendar-more" onClick={()=>setExpanded(date)}>查看全部 {dayRows(date).length} 项</button>}</section>)}</div>:renderTimeline()}
+      {expanded&&view!=='month'&&<section className="calendar-expanded calendar-selected-day"><header><h3>{expanded} · {dayRows(expanded).length} 项</h3><button type="button" onClick={()=>setExpanded(undefined)}>收起</button></header>{dayRows(expanded).map(r=>chip(r))}</section>}
+      {view==='month'?<div className="calendar-month">{['一','二','三','四','五','六','日'].map(d=><div className="calendar-weekday" key={d}>周{d}</div>)}{days.map(date=><section key={date} data-calendar-date={date} data-drop-active={drag?.target?.date===date} data-other-month={date.slice(0,7)!==anchor.slice(0,7)} data-selected={agendaDate===date||undefined} className="calendar-day"><button type="button" className="calendar-date" aria-label={`查看 ${date} 的日程`} onClick={()=>setExpanded(expanded===date?undefined:date)} aria-expanded={expanded===date}>{Number(date.slice(-2))}<small>{dayRows(date).length||''}</small></button>{monthRows(date).map(r=>chip(r))}{dayRows(date).length>3&&<button type="button" className="calendar-more" onClick={()=>setExpanded(date)}>查看全部 {dayRows(date).length} 项</button>}</section>)}</div>:renderTimeline()}
       {view==='month'&&!!unarranged.length&&<section className="calendar-expanded"><h3>未安排</h3>{unarranged.map(row=>chip(row))}</section>}
+      {!!agendaDate&&<section className="calendar-day-agenda" aria-label={`${agendaDate} 的日程表`}><header><h3>{agendaDate} · 周{['日','一','二','三','四','五','六'][new Date(agendaDate+'T00:00:00Z').getUTCDay()]}</h3><small>{dayRows(agendaDate).length} 项日程</small>{expanded===agendaDate&&<button type="button" onClick={()=>setExpanded(undefined)}>收起</button>}</header>{dayRows(agendaDate).length?dayRows(agendaDate).map(r=>chip(r)):<p className="calendar-day-agenda-empty">这天暂无日程</p>}</section>}
     </div>
     <div className="calendar-action-slot" hidden={!pending.length&&!submitting}>
       <PlanActionDock className="calendar-drop-review" busy={blocked} onCancel={cancel} onConfirm={()=>void confirm()} label={pending.length>1?`确认改期（${pending.length}项）`:'确认改期'} status={submitting?`正在保存 ${progress.current}/${progress.total} 项改期`:pending.length===1?`待确认：截止 ${pending[0].target.date} ${pending[0].target.time||'全天'}，仅修改这一期`:`待确认：${pending.length} 项日程 · 仅修改截止时间`}/>
