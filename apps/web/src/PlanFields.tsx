@@ -2,19 +2,15 @@ import {fieldLimit,diaryDocumentSchema} from '@diary/contracts';
 import {GlassComboBox} from './GlassUI';
 import {FieldHint} from './FieldHint';
 import { usePlanCategories } from './PlanCategories';
-import { GlassSelect } from './GlassSelect';
+import { GlassChoices } from './GlassChoices';
+import { QUADRANTS } from './planUrgency';
+export { QUADRANTS } from './planUrgency';
 import { useEffect, useId, useState } from 'react';
 import type { Todo } from '@diary/contracts';
 import { api } from './api';
 import { DateTimeField } from './DateTimeField';
 
 export type Classification = Pick<Todo, 'category' | 'important' | 'urgent' | 'startDate' | 'startTime'>;
-export const QUADRANTS = [
-  { id: 'q1', label: '重要紧急', important: true, urgent: true },
-  { id: 'q2', label: '重要不紧急', important: true, urgent: false },
-  { id: 'q3', label: '不重要紧急', important: false, urgent: true },
-  { id: 'q4', label: '不重要不紧急', important: false, urgent: false },
-];
 export function quadrant(task: Classification) {
   return task.category && typeof task.important === 'boolean' && typeof task.urgent === 'boolean'
     ? QUADRANTS.find(q => q.important === task.important && q.urgent === task.urgent)?.id : 'unclassified';
@@ -22,8 +18,8 @@ export function quadrant(task: Classification) {
 export function ClassificationFields({ value, onChange, start = true }: { value: Classification; onChange: (patch: Classification) => void; start?: boolean }) {
   const {categories}=usePlanCategories();
   return <div className="plan-classification-fields">
-    <label>事项类别<GlassSelect label="事项类别" value={value.category||''} options={[{value:'',label:'待分类'},...categories.map(c=>({value:c.id,label:c.name,color:c.color}))]} onChange={category=>onChange({category:category?category as Todo['category']:null})}/></label>
-    <label>四象限<GlassSelect label="四象限" value={typeof value.important==='boolean'&&typeof value.urgent==='boolean'?QUADRANTS.find(q=>q.important===value.important&&q.urgent===value.urgent)?.id||'':''} options={[{value:'',label:'待分类'},...QUADRANTS.map((q,i)=>({value:q.id,label:q.label,color:['#c05d56','#7856bd','#258378','#9296a3'][i]}))]} onChange={id=>{const q=QUADRANTS.find(q=>q.id===id);onChange({important:q?.important??null,urgent:q?.urgent??null});}}/></label>
+    <div className="plan-choice-field"><span>事项类别</span><GlassChoices label="事项类别" value={value.category||''} options={[{value:'',label:'待分类'},...categories.map(c=>({value:c.id,label:c.name,color:c.color}))]} onChange={category=>onChange({category:category?category as Todo['category']:null})}/></div>
+    <div className="plan-choice-field"><span>四象限</span><GlassChoices label="四象限" value={typeof value.important==='boolean'&&typeof value.urgent==='boolean'?QUADRANTS.find(q=>q.important===value.important&&q.urgent===value.urgent)?.id||'':''} options={[{value:'',label:'待分类'},...QUADRANTS.map(q=>({value:q.id,label:q.label,color:q.color}))]} onChange={id=>{const q=QUADRANTS.find(q=>q.id===id);onChange({important:q?.important??null,urgent:q?.urgent??null});}}/></div>
     {start && <DateTimeField label="原定开始时间" date={value.startDate||''} time={value.startTime||''} onChange={(startDate,startTime)=>onChange({startDate,startTime})}/>}
   </div>;
 }

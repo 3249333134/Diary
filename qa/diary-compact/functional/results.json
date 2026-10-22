@@ -1,0 +1,163 @@
+[
+  {
+    "width": 1440,
+    "theme": "light",
+    "measurements": [
+      {
+        "key": "facts",
+        "body": {
+          "top": 77,
+          "bottom": 819,
+          "height": 742,
+          "width": 948
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 966
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 77,
+          "height": 60,
+          "width": 948
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 966
+        },
+        "overflow": false
+      },
+      {
+        "key": "learn",
+        "body": {
+          "top": 77,
+          "bottom": 819,
+          "height": 742,
+          "width": 948
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 966
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 77,
+          "height": 60,
+          "width": 948
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 966
+        },
+        "overflow": false
+      },
+      {
+        "key": "input",
+        "body": {
+          "top": 77,
+          "bottom": 819,
+          "height": 742,
+          "width": 948
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 966
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 77,
+          "height": 60,
+          "width": 948
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 966
+        },
+        "overflow": false
+      },
+      {
+        "key": "idea",
+        "body": {
+          "top": 77,
+          "bottom": 819,
+          "height": 742,
+          "width": 948
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 966
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 77,
+          "height": 60,
+          "width": 948
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 966
+        },
+        "overflow": false
+      }
+    ],
+    "checks": [
+      {
+        "name": "matching compact panels, content starts early and footer gap is 8px",
+        "passed": true
+      },
+      {
+        "name": "each information action edits its own metadata and restores focus",
+        "passed": true
+      },
+      {
+        "name": "empty receipt returns to facts and creates an expanded event",
+        "passed": true
+      },
+      {
+        "name": "top add opens and focuses facts; text drafts survive tabs, workspace and receipts",
+        "passed": true
+      },
+      {
+        "name": "quick facts create a real entry",
+        "passed": true
+      },
+      {
+        "name": "populated columns default collapsed, keep scroll and match the compact shell",
+        "passed": true
+      },
+      {
+        "name": "date navigation, calendar cancellation and today return work",
+        "passed": true
+      },
+      {
+        "name": "fullscreen and return keep the new toolbar and column operations",
+        "passed": true
+      },
+      {
+        "name": "validation and 400 errors open the metadata field without losing the text",
+        "passed": true
+      },
+      {
+        "name": "short visible viewport keeps record editors and footer reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  }
+]

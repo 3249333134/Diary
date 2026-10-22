@@ -8,13 +8,14 @@ import {FieldHint} from './FieldHint';
 import {validateDiary,fieldLimit,diaryDocumentSchema,type FieldIssue} from '@diary/contracts';
 import { EntityField, type EntityFieldProps } from './EntityField';
 import { CompactDiaryTools } from './CompactDiaryTools';
-import { DiaryPanel, DiaryInformation } from './DiaryPanel';
+import { DiaryPanel, DiaryInformation, DiaryControlsContext, type DiaryControls } from './DiaryPanel';
+import { DiaryToolbar, WorkspaceNavigation, type SaveStatus } from './WorkspaceTools';
 import { UnifiedCapture } from './Capture';
 import { planClock } from './planFilters';
 import { SharedTagInput } from './PlanFields';
 import { useCompactBrowse } from './useCompactBrowse';
 import { appendCapture, todoSchema, type CaptureDraft } from '@diary/contracts';
-import { createContext, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useId, useMemo, useRef, useState, useCallback, type RefObject } from "react";
 import {
   BookOpen, Brain, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, Clock,
   CloudOff, Feather, Lightbulb, Link2, Loader2, Moon, Plus, Save, Sparkles,
@@ -31,7 +32,6 @@ import { TodoPanel } from './TodoPanel';
 import { PlanNavigation, type PlanToolAction, type PlanNavigationState } from './PlanNavigation';
 import { Login } from './Login';
 
-type SaveStatus = "loading" | "saved" | "dirty" | "saving" | "offline" | "error" | "conflict";
 type Conflict = { local: DiaryDocument; remote: DiaryDocument; remoteVersion: string };
 const RecordContext = createContext<{ create: (ref: RecordRef) => void; open: (ref: RecordRef) => void; focus?: RecordRef }>({ create: () => {}, open: () => {} });
 function RecordActions({ reference, task }: { reference: RecordRef; task?: RecordRef }) {
@@ -353,20 +353,8 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
   const [locatingEventId, setLocatingEventId] = useState<string | null>(null);
   const confirmation=useGlassConfirm();
   const [quickFacts, setQuickFacts] = useState<QuickFact[]>([]);
-  const [showQuickMenu, setShowQuickMenu] = useState(false);
   const [showInformation, setShowInformation] = useState(false);
-  const quickMenuRef = useRef<HTMLDivElement>(null);
   useEffect(() => { if (focus?.date === document.date && focus.kind === 'facts') setExpanded(current => new Set(current).add(focus.id)); }, [focus, document.date]);
-
-  // 点击下拉菜单外部关闭
-  useEffect(() => {
-    if (!showQuickMenu) return;
-    const handler = (e: MouseEvent) => {
-      if (quickMenuRef.current && !quickMenuRef.current.contains(e.target as Node)) setShowQuickMenu(false);
-    };
-    window.document.addEventListener("mousedown", handler);
-    return () => window.document.removeEventListener("mousedown", handler);
-  }, [showQuickMenu]);
 
   const refreshQuickFacts = async () => {
     try {
@@ -387,7 +375,7 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
     };
     setExpanded((current) => new Set(current).add(event.id));
     update({ ...document, facts: { ...document.facts, events: [...events, event] } });
-    setShowQuickMenu(false);
+    setShowInformation(false);
     if (fact.source === "pinned" && fact.id) {
       try { await api.useQuickFact(fact.id); } catch { /* 忽略 */ }
       void refreshQuickFacts();
@@ -441,6 +429,7 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
     const event = newEvent();
     setExpanded((current) => new Set(current).add(event.id));
     update({ ...document, facts: { ...document.facts, events: [...events, event] } });
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{const field=window.document.querySelector<HTMLTextAreaElement>(`[data-record-id="${event.id}"] textarea`);field?.focus({preventScroll:true});field?.scrollIntoView({block:'nearest'});}));
   };
   useEffect(()=>{const add=()=>addEvent();window.document.addEventListener('diary-add-event',add);return()=>window.document.removeEventListener('diary-add-event',add);},[document]);
 
@@ -464,30 +453,12 @@ function FactsPanel({ document, update, common }: { document: DiaryDocument; upd
 
   const compactMeta = (event: DiaryEvent) => [event.location?.name, ...event.people, ...event.places, ...event.activities, ...event.foods].filter(Boolean).map((item) => typeof item === "string" ? item : (item as { name: string }).name).slice(0, 4).join(" · ");
 
-  const informationSummary = [document.weather,document.sleep,document.mood,document.facts.note ? '有今日备注' : ''].filter(Boolean).join(' · ') || '天气、睡眠、心情与备注';
-  return <DiaryPanel id="facts-title" title="今日事实" icon={Feather} count={events.length} className="facts-panel" informationLabel="今日信息" summary={informationSummary} onInformation={()=>setShowInformation(true)} onCreate={addEvent} actions={
-        <div className="quick-facts-dropdown" ref={quickMenuRef}>
-          <button type="button" aria-label="快捷事实" title="快捷事实" className={`quiet-button quick-facts-toggle ${showQuickMenu ? "active" : ""}`} onClick={() => setShowQuickMenu(s => !s)} aria-expanded={showQuickMenu}><Zap size={17} /><span>快捷</span></button>
-          {showQuickMenu && (
-            <div className="quick-facts-menu" role="menu">
-              {quickFacts.length === 0 ? (
-                <div className="quick-facts-empty">暂无快捷事实，可在事件中点「存为快捷」添加</div>
-              ) : quickFacts.map((fact) => (
-                <button key={`${fact.source}-${fact.id || fact.label}`} type="button" className="quick-facts-item" role="menuitem" onClick={() => void addEventFromQuickFact(fact)} title={fact.note || fact.label}>
-                  <span className="quick-facts-item-prefix">{fact.source === "pinned" ? <Pin size={13} /> : <Activity size={13} />}</span>
-                  <span className="quick-facts-item-label">{fact.shortLabel || fact.label}</span>
-                  <span className="quick-facts-item-count">{fact.count}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      }>
+  return <DiaryPanel id="facts-title" title="今日事实" className="facts-panel" onInformation={()=>setShowInformation(true)} onCreate={addEvent}>
     {confirmation.dialog}
     {showInformation && <DiaryInformation title="今日信息" onClose={()=>setShowInformation(false)}><div className="diary-day-information">
       {(['weather','sleep','mood'] as const).map((key,index)=><label className="field" key={key}><span>{['天气','睡眠','心情'][index]}</span><GlassComboBox label={['天气','睡眠','心情'][index]} fieldPath={key} value={document[key]} options={diaryPresets[key]} onChange={value=>update({...document,[key]:value})}/><FieldHint path={key} value={document[key]}/></label>)}
       <label className="field diary-day-note"><span>今日备注</span><textarea id="compact-day-note" data-field="facts.note" rows={4} value={document.facts.note} onChange={event=>update({...document,facts:{...document.facts,note:event.target.value}})} placeholder="补充今天的感受或背景（可选）"/><FieldHint path="facts.note" value={document.facts.note}/></label>
-    </div></DiaryInformation>}
+    </div><section className="diary-quick-facts" aria-label="快捷事实"><h3><Zap size={17}/>快捷事实</h3>{quickFacts.length?quickFacts.map(fact=><button type="button" key={`${fact.source}-${fact.id||fact.label}`} className="quiet-button" onClick={()=>void addEventFromQuickFact(fact)} title={fact.note||fact.label}>{fact.source==='pinned'?<Pin size={14}/>:<Activity size={14}/>}<span>{fact.shortLabel||fact.label}</span><small>{fact.count}</small></button>):<p>暂无快捷事实，可在事件中点「存为快捷」添加。</p>}</section></DiaryInformation>}
     {!events.length && <button type="button" className="diary-empty" onClick={addEvent}><Plus size={17}/>还没有事件，添加第一条记录</button>}
     {events.length > 0 && <div className="event-stack" role="region" aria-label="今日事件列表" tabIndex={0}>{events.map((event, index) => {
       const isExpanded = expanded.has(event.id);
@@ -703,8 +674,7 @@ function TextEntries({ label, kind, document, update,createRequest }: { label: s
 function TextPanel({ kind, document, update, common }: { kind: "learn" | "input"; document: DiaryDocument; update: (document: DiaryDocument) => void; common: Pick<EntityFieldProps, "entities" | "tags" | "onCreateTag"> }) {
   const [information,setInformation]=useState(false),[createRequest,setCreateRequest]=useState(0);
   const learn=kind==='learn',label=learn?'新知':'输入';
-  const summary=learn?(document.learn.sources.map(s=>s.name).join('、')||'添加来源'):[document.input.kind,document.input.names.map(s=>s.name).join('、')||'添加名称'].filter(Boolean).join(' · ');
-  return <DiaryPanel id={`${kind}-title`} title={learn?'今日新知':'输入记录'} icon={learn?Lightbulb:BookOpen} count={document.entries?.[kind].length||0} summary={summary} informationLabel={learn?'来源':'输入信息'} onInformation={()=>setInformation(true)} onCreate={()=>setCreateRequest(n=>n+1)}>
+  return <DiaryPanel id={`${kind}-title`} title={learn?'今日新知':'输入记录'} onInformation={()=>setInformation(true)} onCreate={()=>setCreateRequest(n=>n+1)}>
     {information&&<DiaryInformation title={learn?'新知来源':'输入信息'} onClose={()=>setInformation(false)}>
       {learn?<EntityField label="来源" type="thing" values={document.learn.sources} onChange={sources=>update({...document,learn:{...document.learn,sources}})} {...common}/>:<>
         <label className="field"><span>类型</span><GlassSelect label="类型" value={document.input.kind} onChange={kind=>update({...document,input:{...document.input,kind}})} options={INPUT_KINDS.map(value=>({value,label:value}))}/></label>
@@ -720,7 +690,7 @@ function IdeaPanel({ document, update, tags, onCreateTag }: { document: DiaryDoc
   const [information,setInformation]=useState(false),[createRequest,setCreateRequest]=useState(0);
   const options = [...new Set(Object.values(tags).flat())].filter((tag) => !document.idea.tags.includes(tag)).slice(0, 16);
   const add = async () => { const value = input.trim(); if (!value) return; update({ ...document, idea: { ...document.idea, tags: [...new Set([...document.idea.tags, value])] } }); await onCreateTag("thing", value); setInput(""); };
-  return <DiaryPanel id="idea-title" title="灵感碎片" icon={Brain} count={document.entries?.idea.length||0} summary={document.idea.tags.join(' · ')||'选择或新建标签'} informationLabel="标签" onInformation={()=>setInformation(true)} onCreate={()=>setCreateRequest(n=>n+1)}>
+  return <DiaryPanel id="idea-title" title="灵感碎片" onInformation={()=>setInformation(true)} onCreate={()=>setCreateRequest(n=>n+1)}>
     {information&&<DiaryInformation title="灵感标签" onClose={()=>setInformation(false)}>
     <div className="field"><span>标签</span><div className="idea-tags">{document.idea.tags.map((tag) => <span key={tag}>{tag}<button type="button" onClick={() => update({ ...document, idea: { ...document.idea, tags: document.idea.tags.filter((item) => item !== tag) } })} aria-label={`移除标签${tag}`}><X size={13} /></button></span>)}</div>
       <div className="tag-options suggestions">{options.map((tag) => <button type="button" key={tag} onClick={() => update({ ...document, idea: { ...document.idea, tags: [...document.idea.tags, tag] } })}>{tag}</button>)}</div>
@@ -742,6 +712,10 @@ function ConflictBanner({ conflict, onRemote, onLocal }: { conflict: Conflict; o
 }
 
 export function App() {
+  const diaryControls=useRef(new Map<string,RefObject<DiaryControls>>());
+  const registerDiaryControls=useCallback((id:string,controls:RefObject<DiaryControls>)=>{diaryControls.current.set(id,controls);return()=>{if(diaryControls.current.get(id)===controls)diaryControls.current.delete(id);};},[]);
+  const invokeDiary=(tab:number,action:keyof DiaryControls)=>diaryControls.current.get(tabs[tab].id+'-title')?.current[action]();
+
   const initialDate = today();
   const [date, setDate] = useState(initialDate);
   const [diary, setDiary] = useState<DiaryDocument>(() => emptyDiary(initialDate));
@@ -762,10 +736,22 @@ export function App() {
     requestAnimationFrame(()=>{
       let el=window.document.querySelector<HTMLElement>('[data-field="'+CSS.escape(issue.path)+'"]');
       const metadata=issue.path==='facts.note'||['weather','sleep','mood'].includes(issue.path)||/^(learn\.sources|input\.(kind|names)|idea\.tags)/.test(issue.path);
-      if(metadata&&!el)window.document.querySelector<HTMLButtonElement>('#panel-'+tabs[tab].id+' .diary-information')?.click();
+      if(metadata&&!el)invokeDiary(tab,'information');
       const toggle=el?.closest('article')?.querySelector<HTMLButtonElement>('[aria-expanded=false]');
       toggle?.click();
-      requestAnimationFrame(()=>{el=window.document.querySelector<HTMLElement>('[data-field="'+CSS.escape(issue.path)+'"]')||window.document.querySelector<HTMLElement>('#panel-'+tabs[tab].id+' textarea')||window.document.querySelector('#compact-day-note');el?.scrollIntoView({block:'center'});el?.focus();});
+      const started=performance.now(),targetDate=activeDate.current;
+      const focus=()=>{
+        if(activeDate.current!==targetDate)return;
+        const dialog=window.document.querySelector<HTMLElement>('.diary-information-dialog');
+        el=window.document.querySelector<HTMLElement>('[data-field="'+CSS.escape(issue.path)+'"]')||(metadata?dialog?.querySelector<HTMLElement>('textarea,input,button.glass-select-trigger'):window.document.querySelector<HTMLElement>('#panel-'+tabs[tab].id+' textarea'))||null;
+        const overlay=el?.closest('.glass-modal-overlay');
+        if(!el||!el.checkVisibility()||overlay&&getComputedStyle(overlay).opacity!=='1'){
+          if(performance.now()-started<1000)requestAnimationFrame(focus);
+          return;
+        }
+        el.scrollIntoView({block:'nearest'});el.focus({preventScroll:true});
+      };
+      requestAnimationFrame(focus);
     });
   };
   const [activeTab, setActiveTab] = useState(0);
@@ -790,14 +776,14 @@ export function App() {
   };
   useEffect(() => {
     const viewport = window.visualViewport;
-    const update = () => { window.document.documentElement.style.setProperty('--app-height', `${viewport?.height || window.innerHeight}px`); };
-    update(); viewport?.addEventListener('resize', update); window.addEventListener('resize', update);
-    return () => { viewport?.removeEventListener('resize', update); window.removeEventListener('resize', update); window.document.documentElement.style.removeProperty('--app-height'); };
+    const update = () => { const style=window.document.documentElement.style;style.setProperty('--app-height', `${viewport?.height || window.innerHeight}px`);style.setProperty('--viewport-top', `${viewport?.offsetTop || 0}px`); };
+    update(); viewport?.addEventListener('resize', update); viewport?.addEventListener('scroll', update); window.addEventListener('resize', update);
+    return () => { viewport?.removeEventListener('resize', update); viewport?.removeEventListener('scroll', update); window.removeEventListener('resize', update); window.document.documentElement.style.removeProperty('--app-height');window.document.documentElement.style.removeProperty('--viewport-top'); };
   }, []);
   const [mobileLayout,setMobileLayout]=useState(()=>window.matchMedia('(max-width:899px)').matches);
   useEffect(()=>{const media=window.matchMedia('(max-width:899px)'),update=()=>setMobileLayout(media.matches);media.addEventListener('change',update);return()=>media.removeEventListener('change',update);},[]);
   const [showReceipts, setShowReceipts] = useState(false);
-  const [showTodos, setShowTodos] = useState(false);
+  const [showTodos, setShowTodos] = useState(true);
   const browseRef = useRef<HTMLElement>(null);
   const [diaryTools, setDiaryTools] = useState(false);
   const [planToolbarAction, setPlanToolbarAction] = useState<PlanToolAction>();
@@ -1016,7 +1002,7 @@ export function App() {
     if (index === 3) return <IdeaPanel document={diary} update={updateDiary} tags={tags} onCreateTag={common.onCreateTag} />;
     return <LookupPanel entities={entities} selected={selectedEntity} onSelect={setSelectedEntity} onOpenDate={(next) => { setDate(next); selectTab(0); }} />;
   };
-  const diaryNavigation=<nav className="section-nav" role="tablist" aria-label="日记栏目">{tabs.map((tab,index)=>{const Icon=tab.icon;return <button type="button" key={tab.id} role="tab" aria-selected={activeTab===index} aria-controls={`panel-${tab.id}`} className={activeTab===index?'active':''} onClick={()=>selectTab(index)}><Icon/><span>{tab.label}</span></button>;})}</nav>;
+  const diaryNavigation=<nav className={`section-nav${!mobileLayout&&activeTab!==4?' diary-rail-navigation':''}`} role="tablist" aria-label="日记栏目">{tabs.map((tab,index)=>{const Icon=tab.icon;return <button type="button" key={tab.id} role="tab" aria-selected={activeTab===index} aria-controls={`panel-${tab.id}`} className={activeTab===index?'active':''} onClick={()=>selectTab(index)}><Icon/><span>{tab.label}</span></button>;})}</nav>;
 
   if (authState.checking) {
     return <div className="login-page"><div className="login-card" style={{textAlign:'center'}}>加载中...</div></div>;
@@ -1025,48 +1011,47 @@ export function App() {
     return <Login onAuth={async () => { try { const me = await api.auth.me(); setAuthState({ checking: false, user: me }); } catch { setAuthState({ checking: false, user: null }); } }} />;
   }
 
-  return <RecordContext.Provider value={{ create: ref => void createFromRecord(ref), open: ref => void openRecord(ref), focus: focusRecord }}><div className="app-shell">
+  const recordWorkspace=!showTodos&&!showReceipts&&activeTab<4;
+  const diaryLabel=tabs[Math.min(activeTab,3)].label;
+  const informationLabel=['编辑今日信息','编辑来源','编辑输入信息','编辑标签'][Math.min(activeTab,3)];
+  const diaryCount=diary.date!==date?0:activeTab===0?diary.facts.events.length:activeTab<4?(diary.entries?.[tabs[activeTab].id as TextKind]?.length||0):0;
+  const openDiaryInformation=()=>invokeDiary(Math.min(activeTab,3),'information');
+  const createDiaryEntry=()=>invokeDiary(Math.min(activeTab,3),'create');
+  const toggleTheme=()=>setTheme(theme==='light'?'dark':'light');
+  return <DiaryControlsContext.Provider value={{register:registerDiaryControls,onReceipts:()=>setShowReceipts(true)}}><RecordContext.Provider value={{ create: ref => void createFromRecord(ref), open: ref => void openRecord(ref), focus: focusRecord }}><div className="app-shell">
     <a className="skip-link" href="#main-content">跳到日记内容</a>
     <aside className="date-rail" aria-label="日期导航">
       <div className="brand"><span><Feather /></span><div><strong>独立日记</strong><small>云端存储</small></div></div>
       <nav className="workspace-switch" aria-label="主要功能"><button aria-pressed={!showTodos} onClick={() => setShowTodos(false)}>日记</button><button aria-pressed={showTodos} onClick={() => setShowTodos(true)}>计划</button></nav><div hidden={showTodos}><div className="rail-today"><CalendarDays /><div><strong>{todayLabel}</strong><span>{date}</span></div></div>
       <div className="week-list">{currentWeekDates.map((item) => <button type="button" key={item} className={item === date ? "active" : ""} onClick={() => setDate(item)}><span>{shortDate(item)}</span>{recordedDates.has(item) && <i aria-label="已有日记" />}</button>)}</div>
       <button type="button" className="today-button" onClick={() => setDate(initialDate)}>回到今天</button>
-      </div>{showTodos&&<PlanNavigation state={planNavigation} onAction={requestPlanTool}/>}<ObsidianDevices/><div className="rail-note"><strong>{authState.user?.username}</strong><span>已登录云端</span></div>
+      </div>{!mobileLayout&&!showTodos&&!showReceipts&&activeTab<4&&diaryNavigation}{showTodos&&<PlanNavigation state={planNavigation} onAction={requestPlanTool}/>}<ObsidianDevices/><div className="rail-note"><strong>{authState.user?.username}</strong><span>已登录云端</span></div>
     </aside>
 
-    <main ref={browseRef} id="main-content" className="main-content" data-compact={compactBrowse.compact} data-workspace={showTodos ? 'plan' : showReceipts ? 'receipts' : tabs[activeTab].id}>
-      <nav className="compact-browse-bar" aria-label="紧凑浏览工具栏">
-        <button aria-label="日记" aria-pressed={!showTodos} title="日记" onClick={()=>setShowTodos(false)}><Feather size={20}/><small>日记</small></button>
-        <button aria-label="计划" aria-pressed={showTodos} title="计划" onClick={()=>setShowTodos(true)}><ListTodo size={20}/><small>计划</small></button>
-        <button className="compact-browse-context" aria-label={showTodos?'筛选计划':'日期与今日信息'} aria-haspopup="dialog" onClick={()=>showTodos?requestPlanTool('filters'):setDiaryTools(true)}>{showTodos?<SlidersHorizontal size={18}/>:<CalendarDays size={18}/>}<span>{showTodos?'筛选':date.slice(5).replace('-','/')}</span><ChevronDown size={14}/></button>
-        <button aria-label={theme==='light'?'切换到深色主题':'切换到浅色主题'} onClick={()=>setTheme(theme==='light'?'dark':'light')}>{theme==='light'?<Moon size={20}/>:<Sun size={20}/>}</button>
-        {!showTodos&&<button className={status==='dirty'?'has-unsaved-change':''} aria-label="保存日记" disabled={status==='saving'||status==='loading'||status==='conflict'} onClick={()=>void saveNow(diaryRef.current,true)}><Save size={20}/></button>}
-        {showTodos&&<button aria-label="新增计划" onClick={()=>requestPlanTool('create')}><Plus size={20}/></button>}
-        <button aria-label={`退出登录 ${authState.user?.username || ''}`} title={`退出登录 (${authState.user?.username})`} onClick={()=>void handleLogout()}><UserRound size={20}/></button>
-      </nav>
+    <main ref={browseRef} id="main-content" className="main-content" data-record-workspace={recordWorkspace||undefined} data-fullscreen={fullscreen||undefined} data-compact={compactBrowse.compact} data-workspace={showTodos ? 'plan' : showReceipts ? 'receipts' : tabs[activeTab].id}>
+      <WorkspaceNavigation plan={showTodos} onWorkspace={setShowTodos} informationLabel={showTodos?'筛选计划':recordWorkspace?informationLabel:'日期与今日信息'} restricted={showTodos&&planNavigation?.restricted} onInformation={()=>showTodos?requestPlanTool('filters'):recordWorkspace?openDiaryInformation():setDiaryTools(true)} theme={theme} onTheme={toggleTheme} createLabel={showTodos?'新增计划':`新增${diaryLabel}`} createDisabled={!showTodos&&(status==='loading'||diary.date!==date)} onCreate={()=>showTodos?requestPlanTool('create'):createDiaryEntry()} onLogout={()=>void handleLogout()} username={authState.user?.username}/>
       {diaryTools && <CompactDiaryTools date={date} onDate={setDate} diary={diary} update={updateDiary} onClose={()=>setDiaryTools(false)} onExpand={()=>{setDiaryTools(false);compactBrowse.expand();}} onReceipts={()=>{setDiaryTools(false);setShowReceipts(true);}}/>}
-      <nav className="workspace-switch mobile-workspace-switch" aria-label="主要功能"><button aria-pressed={!showTodos} onClick={() => setShowTodos(false)}>日记</button><button aria-pressed={showTodos} onClick={() => setShowTodos(true)}>计划</button></nav>
-      <header className="topbar">{showTodos && <h1 className="plan-page-title">计划</h1>}<div hidden={showTodos} className="date-control"><button type="button" onClick={() => setDate(addDays(date, -1))} aria-label="前一天"><ChevronLeft /></button><GlassDate label="日记日期" dateOnly required date={date} onChange={d=>{if(d)setDate(d);}}/><button type="button" onClick={() => setDate(addDays(date, 1))} aria-label="后一天"><ChevronRight /></button></div><div className="top-actions"><div hidden={showTodos} className="desktop-status"><StatusBadge status={status} /></div><button type="button" className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={theme === "light" ? "切换到深色主题" : "切换到浅色主题"}>{theme === "light" ? <Moon /> : <Sun />}</button><button hidden={showTodos} type="button" className="save-button" onClick={() => void saveNow(diaryRef.current,true)} disabled={status === "saving" || status === "loading" || status === "conflict"}><Save />立即保存</button></div></header>
-      <div hidden={showTodos} className="mobile-status"><StatusBadge status={status} /></div>
+      <nav hidden={recordWorkspace} className="workspace-switch mobile-workspace-switch" aria-label="主要功能"><button aria-pressed={!showTodos} onClick={() => setShowTodos(false)}>日记</button><button aria-pressed={showTodos} onClick={() => setShowTodos(true)}>计划</button></nav>
+      <header className="topbar" hidden={showTodos||recordWorkspace}><div hidden={showTodos} className="date-control"><button type="button" onClick={() => setDate(addDays(date, -1))} aria-label="前一天"><ChevronLeft /></button><GlassDate label="日记日期" dateOnly required date={date} onChange={d=>{if(d)setDate(d);}}/><button type="button" onClick={() => setDate(addDays(date, 1))} aria-label="后一天"><ChevronRight /></button></div><div className="top-actions"><div hidden={showTodos} className="desktop-status"><StatusBadge status={status} /></div><button type="button" className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={theme === "light" ? "切换到深色主题" : "切换到浅色主题"}>{theme === "light" ? <Moon /> : <Sun />}</button><button hidden={showTodos} type="button" className="save-button" onClick={() => void saveNow(diaryRef.current,true)} disabled={status === "saving" || status === "loading" || status === "conflict"}><Save />立即保存</button></div></header>
+      <div hidden={showTodos||recordWorkspace} className="mobile-status"><StatusBadge status={status} /></div>
       {!showTodos&&(saveError||issues.length>0)&&<div className="save-problem" role="alert"><p>{saveError||'内容未通过校验，草稿已保留'}</p>{issues.slice(0,5).map(issue=><button key={issue.path} type="button" className="quiet-button" onClick={()=>focusIssue(issue)}>{issue.message}</button>)}{saveError&&!issues.length&&<button className="quiet-button" onClick={()=>void saveNow(diaryRef.current,true)}>重试保存</button>}</div>}
       {!showTodos&&refreshWarning&&<div className="refresh-warning" role="status">{refreshWarning}<button className="quiet-button" onClick={()=>void refreshContext(date).then(()=>setRefreshWarning('')).catch(()=>{})}>重试刷新</button></div>}
       {reauth&&<GlassDialog label="重新登录" onClose={()=>setReauth(false)}><p className="reauth-note">登录已失效，编辑内容已保留。请使用原账号重新登录。</p><Login onAuth={async()=>{const me=await api.auth.me();if(me.id!==authState.user?.id){await api.auth.logout();setSaveError('请登录原账号后继续保存');return;}setReauth(false);await saveNow();}}/></GlassDialog>}
       {actionError && <p role="alert">{actionError}</p>}
       <div className="workspace-footer">
-        <UnifiedCapture compactDesktop={showTodos} entityContext={common} hidden={!showTodos && !showReceipts && activeTab === 4} bottomNav={!showTodos && !showReceipts} onSave={saveCapture} onOpen={ref => void openRecord(ref)} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} />
+        <UnifiedCapture compactDesktop={showTodos||recordWorkspace} entityContext={common} hidden={!showTodos && !showReceipts && activeTab === 4} bottomNav={!showTodos && !showReceipts} onSave={saveCapture} onOpen={ref => void openRecord(ref)} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} />
         {mobileLayout&&!showTodos&&!showReceipts&&diaryNavigation}
       </div>
-      <div className="workspace-root plan-workspace" hidden={!showTodos}><TodoPanel active={showTodos} onNavigationChange={setPlanNavigation} entityContext={common} toolbarAction={planToolbarAction} onExpand={compactBrowse.expand} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} date={planClock().date} source={actionSource} revision={actionsRevision} focusId={focusRecord?.kind === 'todo' ? focusRecord.id : undefined} prepare={prepareAction} changed={reloadAfterAction} onOpen={ref => void openRecord(ref)} onClose={() => setShowTodos(false)} /></div>
-      <div className="workspace-root diary-workspace" hidden={showTodos}>
-      <div className="todo-entry-actions"><button type="button" className="quiet-button" onClick={() => setShowReceipts(true)}><BookOpen size={18} />每日小票 · 查看收藏</button></div>
-      {showReceipts ? (status === 'loading' || diary.date !== date ? <p role="status">正在整理这一天的小票…</p> : <ReceiptCollection key={date} diary={diary} saved={status === 'saved'} onClose={() => setShowReceipts(false)} onWrite={()=>{setShowReceipts(false);selectTab(0);requestAnimationFrame(()=>window.document.dispatchEvent(new Event("diary-add-event")));}} />) : <>
-      {conflict && <ConflictBanner conflict={conflict} onRemote={() => { updateDiary(conflict.remote); versionRef.current = conflict.remoteVersion; setVersion(conflict.remoteVersion); lastSaved.current = JSON.stringify(conflict.remote); localStorage.removeItem(`diary.draft.${date}`); conflictRef.current = null; setConflict(null); setStatus("saved"); }} onLocal={() => { versionRef.current = conflict.remoteVersion; setVersion(conflict.remoteVersion); updateDiary(conflict.local); conflictRef.current = null; setConflict(null); setStatus("dirty"); }} />}
-      <div className="workspace-layout">
-        {!mobileLayout&&diaryNavigation}
+      <div className="workspace-root plan-workspace" hidden={!showTodos}><TodoPanel theme={theme==='dark'?'dark':'light'} onTheme={()=>setTheme(theme==='light'?'dark':'light')} active={showTodos} onNavigationChange={setPlanNavigation} entityContext={common} toolbarAction={planToolbarAction} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} date={planClock().date} source={actionSource} revision={actionsRevision} focusId={focusRecord?.kind === 'todo' ? focusRecord.id : undefined} prepare={prepareAction} changed={reloadAfterAction} onOpen={ref => void openRecord(ref)} onClose={() => setShowTodos(false)} /></div>
+      <div className="workspace-root diary-workspace" data-record-workspace={recordWorkspace||undefined} hidden={showTodos}>
+      {recordWorkspace&&<DiaryToolbar date={date} onDate={setDate} label={diaryLabel} count={diaryCount} status={status} onSave={()=>void saveNow(diaryRef.current,true)} onInformation={openDiaryInformation} informationLabel={informationLabel} onCreate={createDiaryEntry} theme={theme} onTheme={toggleTheme} disabled={status==='loading'||diary.date!==date} navigation={!mobileLayout&&fullscreen?diaryNavigation:undefined}/>}
+
+      {showReceipts && (status === 'loading' || diary.date !== date ? <p role="status">正在整理这一天的小票…</p> : <ReceiptCollection key={date} diary={diary} saved={status === 'saved'} onClose={() => setShowReceipts(false)} onWrite={()=>{setShowReceipts(false);selectTab(0);requestAnimationFrame(()=>window.document.dispatchEvent(new Event("diary-add-event")));}} />)}
+      {!showReceipts&&conflict && <ConflictBanner conflict={conflict} onRemote={() => { updateDiary(conflict.remote); versionRef.current = conflict.remoteVersion; setVersion(conflict.remoteVersion); lastSaved.current = JSON.stringify(conflict.remote); localStorage.removeItem(`diary.draft.${date}`); conflictRef.current = null; setConflict(null); setStatus("saved"); }} onLocal={() => { versionRef.current = conflict.remoteVersion; setVersion(conflict.remoteVersion); updateDiary(conflict.local); conflictRef.current = null; setConflict(null); setStatus("dirty"); }} />}
+      <div className="workspace-layout" hidden={showReceipts}>
+        {!mobileLayout&&activeTab===4&&diaryNavigation}
         <div className="workspace-track" ref={trackRef} onScroll={onTrackScroll}>{tabs.map((tab, index) => <div id={`panel-${tab.id}`} role="tabpanel" aria-hidden={activeTab !== index} inert={activeTab !== index} tabIndex={activeTab === index ? 0 : -1} data-active={activeTab === index} className={`workspace-panel${index === 4 ? " full-page" : ""}`} key={tab.id}>{panel(index)}</div>)}</div>
       </div>
-      </>}
       </div>
     </main>
 
@@ -1076,5 +1061,5 @@ export function App() {
       <section><div className="context-title"><Link2 /><h2>线索库</h2></div><p><strong>{entities.length}</strong> 个实体已经可以反查。</p><div className="type-counts">{entityTypes.map((type) => <span key={type}>{TYPE_LABEL[type]} <b>{entities.filter((entity) => entity.type === type).length}</b></span>)}</div></section>
     </aside>
     {printedReceipts.length > 0 && <ReceiptNotice key={`${printedReceipts[0].date}:${printedReceipts[0].id}`} receipts={printedReceipts} onClose={() => setPrintedReceipts([])} onOpen={() => { setDate(printedReceipts[0].date); setShowReceipts(true); setPrintedReceipts([]); }} />}
-  </div></RecordContext.Provider>;
+  </div></RecordContext.Provider></DiaryControlsContext.Provider>;
 }

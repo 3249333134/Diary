@@ -1,0 +1,412 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "geometry": {
+      "calendarTop": 181,
+      "calendarHeight": 650,
+      "footerGap": 8,
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "continuous date rows, one shared axis, compact empty days and exact dense anchors",
+        "passed": true
+      },
+      {
+        "name": "fixed date and hour headings; unscheduled collapsed, 24px separation and horizontal independence",
+        "passed": true
+      },
+      {
+        "name": "unscheduled preview enters date, counts update and cancel restores without writes",
+        "passed": true
+      },
+      {
+        "name": "cross-date multi-preview freezes row sizes and hours; repeated adjustment and conflict rollback",
+        "passed": true
+      },
+      {
+        "name": "week has seven rows; date targets set all-day and ranges cancel previews",
+        "passed": true
+      },
+      {
+        "name": "empty all-day column omitted; zero unscheduled section hidden; short viewport and full screen",
+        "passed": true
+      },
+      {
+        "name": "month layout retained and diary uses compact toolbar",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "geometry": {
+      "calendarTop": 181,
+      "calendarHeight": 650,
+      "footerGap": 8,
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "continuous date rows, one shared axis, compact empty days and exact dense anchors",
+        "passed": true
+      },
+      {
+        "name": "fixed date and hour headings; unscheduled collapsed, 24px separation and horizontal independence",
+        "passed": true
+      },
+      {
+        "name": "unscheduled preview enters date, counts update and cancel restores without writes",
+        "passed": true
+      },
+      {
+        "name": "cross-date multi-preview freezes row sizes and hours; repeated adjustment and conflict rollback",
+        "passed": true
+      },
+      {
+        "name": "week has seven rows; date targets set all-day and ranges cancel previews",
+        "passed": true
+      },
+      {
+        "name": "empty all-day column omitted; zero unscheduled section hidden; short viewport and full screen",
+        "passed": true
+      },
+      {
+        "name": "month layout retained and diary uses compact toolbar",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 624,
+    "theme": "light",
+    "geometry": {
+      "calendarTop": 181,
+      "calendarHeight": 945,
+      "footerGap": 8,
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "continuous date rows, one shared axis, compact empty days and exact dense anchors",
+        "passed": true
+      },
+      {
+        "name": "fixed date and hour headings; unscheduled collapsed, 24px separation and horizontal independence",
+        "passed": true
+      },
+      {
+        "name": "unscheduled preview enters date, counts update and cancel restores without writes",
+        "passed": true
+      },
+      {
+        "name": "cross-date multi-preview freezes row sizes and hours; repeated adjustment and conflict rollback",
+        "passed": true
+      },
+      {
+        "name": "week has seven rows; date targets set all-day and ranges cancel previews",
+        "passed": true
+      },
+      {
+        "name": "empty all-day column omitted; zero unscheduled section hidden; short viewport and full screen",
+        "passed": true
+      },
+      {
+        "name": "month layout retained and diary uses compact toolbar",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 624,
+    "theme": "dark",
+    "geometry": {
+      "calendarTop": 181,
+      "calendarHeight": 945,
+      "footerGap": 8,
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "continuous date rows, one shared axis, compact empty days and exact dense anchors",
+        "passed": true
+      },
+      {
+        "name": "fixed date and hour headings; unscheduled collapsed, 24px separation and horizontal independence",
+        "passed": true
+      },
+      {
+        "name": "unscheduled preview enters date, counts update and cancel restores without writes",
+        "passed": true
+      },
+      {
+        "name": "cross-date multi-preview freezes row sizes and hours; repeated adjustment and conflict rollback",
+        "passed": true
+      },
+      {
+        "name": "week has seven rows; date targets set all-day and ranges cancel previews",
+        "passed": true
+      },
+      {
+        "name": "empty all-day column omitted; zero unscheduled section hidden; short viewport and full screen",
+        "passed": true
+      },
+      {
+        "name": "month layout retained and diary uses compact toolbar",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "geometry": {
+      "calendarTop": 181,
+      "calendarHeight": 650,
+      "footerGap": 8,
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "continuous date rows, one shared axis, compact empty days and exact dense anchors",
+        "passed": true
+      },
+      {
+        "name": "fixed date and hour headings; unscheduled collapsed, 24px separation and horizontal independence",
+        "passed": true
+      },
+      {
+        "name": "unscheduled preview enters date, counts update and cancel restores without writes",
+        "passed": true
+      },
+      {
+        "name": "cross-date multi-preview freezes row sizes and hours; repeated adjustment and conflict rollback",
+        "passed": true
+      },
+      {
+        "name": "week has seven rows; date targets set all-day and ranges cancel previews",
+        "passed": true
+      },
+      {
+        "name": "empty all-day column omitted; zero unscheduled section hidden; short viewport and full screen",
+        "passed": true
+      },
+      {
+        "name": "month layout retained and diary uses compact toolbar",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "geometry": {
+      "calendarTop": 181,
+      "calendarHeight": 650,
+      "footerGap": 8,
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "continuous date rows, one shared axis, compact empty days and exact dense anchors",
+        "passed": true
+      },
+      {
+        "name": "fixed date and hour headings; unscheduled collapsed, 24px separation and horizontal independence",
+        "passed": true
+      },
+      {
+        "name": "unscheduled preview enters date, counts update and cancel restores without writes",
+        "passed": true
+      },
+      {
+        "name": "cross-date multi-preview freezes row sizes and hours; repeated adjustment and conflict rollback",
+        "passed": true
+      },
+      {
+        "name": "week has seven rows; date targets set all-day and ranges cancel previews",
+        "passed": true
+      },
+      {
+        "name": "empty all-day column omitted; zero unscheduled section hidden; short viewport and full screen",
+        "passed": true
+      },
+      {
+        "name": "month layout retained and diary uses compact toolbar",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1280,
+    "theme": "light",
+    "geometry": {
+      "calendarTop": 77,
+      "calendarHeight": 742,
+      "footerGap": 8,
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "continuous date rows, one shared axis, compact empty days and exact dense anchors",
+        "passed": true
+      },
+      {
+        "name": "fixed date and hour headings; unscheduled collapsed, 24px separation and horizontal independence",
+        "passed": true
+      },
+      {
+        "name": "unscheduled preview enters date, counts update and cancel restores without writes",
+        "passed": true
+      },
+      {
+        "name": "cross-date multi-preview freezes row sizes and hours; repeated adjustment and conflict rollback",
+        "passed": true
+      },
+      {
+        "name": "week has seven rows; date targets set all-day and ranges cancel previews",
+        "passed": true
+      },
+      {
+        "name": "empty all-day column omitted; zero unscheduled section hidden; short viewport and full screen",
+        "passed": true
+      },
+      {
+        "name": "month layout retained and diary uses compact toolbar",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1280,
+    "theme": "dark",
+    "geometry": {
+      "calendarTop": 77,
+      "calendarHeight": 742,
+      "footerGap": 8,
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "continuous date rows, one shared axis, compact empty days and exact dense anchors",
+        "passed": true
+      },
+      {
+        "name": "fixed date and hour headings; unscheduled collapsed, 24px separation and horizontal independence",
+        "passed": true
+      },
+      {
+        "name": "unscheduled preview enters date, counts update and cancel restores without writes",
+        "passed": true
+      },
+      {
+        "name": "cross-date multi-preview freezes row sizes and hours; repeated adjustment and conflict rollback",
+        "passed": true
+      },
+      {
+        "name": "week has seven rows; date targets set all-day and ranges cancel previews",
+        "passed": true
+      },
+      {
+        "name": "empty all-day column omitted; zero unscheduled section hidden; short viewport and full screen",
+        "passed": true
+      },
+      {
+        "name": "month layout retained and diary uses compact toolbar",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "geometry": {
+      "calendarTop": 77,
+      "calendarHeight": 742,
+      "footerGap": 8,
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "continuous date rows, one shared axis, compact empty days and exact dense anchors",
+        "passed": true
+      },
+      {
+        "name": "fixed date and hour headings; unscheduled collapsed, 24px separation and horizontal independence",
+        "passed": true
+      },
+      {
+        "name": "unscheduled preview enters date, counts update and cancel restores without writes",
+        "passed": true
+      },
+      {
+        "name": "cross-date multi-preview freezes row sizes and hours; repeated adjustment and conflict rollback",
+        "passed": true
+      },
+      {
+        "name": "week has seven rows; date targets set all-day and ranges cancel previews",
+        "passed": true
+      },
+      {
+        "name": "empty all-day column omitted; zero unscheduled section hidden; short viewport and full screen",
+        "passed": true
+      },
+      {
+        "name": "month layout retained and diary uses compact toolbar",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "geometry": {
+      "calendarTop": 77,
+      "calendarHeight": 742,
+      "footerGap": 8,
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "continuous date rows, one shared axis, compact empty days and exact dense anchors",
+        "passed": true
+      },
+      {
+        "name": "fixed date and hour headings; unscheduled collapsed, 24px separation and horizontal independence",
+        "passed": true
+      },
+      {
+        "name": "unscheduled preview enters date, counts update and cancel restores without writes",
+        "passed": true
+      },
+      {
+        "name": "cross-date multi-preview freezes row sizes and hours; repeated adjustment and conflict rollback",
+        "passed": true
+      },
+      {
+        "name": "week has seven rows; date targets set all-day and ranges cancel previews",
+        "passed": true
+      },
+      {
+        "name": "empty all-day column omitted; zero unscheduled section hidden; short viewport and full screen",
+        "passed": true
+      },
+      {
+        "name": "month layout retained and diary uses compact toolbar",
+        "passed": true
+      }
+    ],
+    "errors": []
+  }
+]

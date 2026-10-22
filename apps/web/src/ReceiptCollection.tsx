@@ -265,13 +265,21 @@ export function ReceiptCollection({ diary, saved, onClose, onWrite }: { diary: D
 
 /** 右下角新小票出纸通知 */
 export function ReceiptNotice({ receipts, onOpen, onClose }: { receipts: Receipt[]; onOpen: () => void; onClose: () => void }) {
+  const [bottom,setBottom]=useState(16),close=useRef(onClose);close.current=onClose;
   useEffect(() => {
-    const timer = window.setTimeout(onClose, 6500);
+    const timer = window.setTimeout(()=>close.current(), 6500);
     return () => window.clearTimeout(timer);
-  }, [receipts, onClose]);
+  }, [receipts]);
+  useEffect(()=>{
+    const footer=document.querySelector('.workspace-footer');
+    const update=()=>{if(footer){const box=footer.getBoundingClientRect();setBottom(box.height?Math.max(16,window.innerHeight-box.top+8):16);}};
+    const observer=new ResizeObserver(update);if(footer)observer.observe(footer);update();
+    window.addEventListener('resize',update);window.visualViewport?.addEventListener('resize',update);window.visualViewport?.addEventListener('scroll',update);
+    return()=>{observer.disconnect();window.removeEventListener('resize',update);window.visualViewport?.removeEventListener('resize',update);window.visualViewport?.removeEventListener('scroll',update);};
+  },[]);
 
   return (
-    <aside className="receipt-notice" aria-label="新小票已生成">
+    <aside className="receipt-notice" style={{bottom}} aria-label="新小票已生成">
       <div className="receipt-printer is-printing">
         <Printer size={18} />
         <strong>打印完成 · {receipts.length} 张</strong>

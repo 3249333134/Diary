@@ -1,0 +1,1577 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "measurements": [
+      {
+        "key": "facts",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 333
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 351
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 333
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 351
+        },
+        "overflow": false
+      },
+      {
+        "key": "learn",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 333
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 351
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 333
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 351
+        },
+        "overflow": false
+      },
+      {
+        "key": "input",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 333
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 351
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 333
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 351
+        },
+        "overflow": false
+      },
+      {
+        "key": "idea",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 333
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 351
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 333
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 351
+        },
+        "overflow": false
+      }
+    ],
+    "checks": [
+      {
+        "name": "matching compact panels, content starts early and footer gap is 8px",
+        "passed": true
+      },
+      {
+        "name": "each information action edits its own metadata and restores focus",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.diary-information-dialog').getByRole('combobox', { name: '类型', exact: true })\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:55:111\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:52:2"
+      },
+      {
+        "name": "top add opens and focuses facts; text drafts survive tabs, workspace and receipts",
+        "passed": true
+      },
+      {
+        "name": "quick facts create a real entry and the receipt empty action opens facts",
+        "passed": true
+      },
+      {
+        "name": "populated columns default collapsed, keep scroll and match the compact shell",
+        "passed": true
+      },
+      {
+        "name": "date navigation, calendar cancellation and today return work",
+        "passed": true
+      },
+      {
+        "name": "fullscreen and return keep the new toolbar and column operations",
+        "passed": false,
+        "error": "page.waitForFunction: Timeout 6000ms exceeded.\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:80:503\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:79:2"
+      },
+      {
+        "name": "validation and 400 errors open the metadata field without losing the text",
+        "passed": false,
+        "error": "page.waitForFunction: Timeout 6000ms exceeded.\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:83:282\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:82:65"
+      },
+      {
+        "name": "short visible viewport keeps record editors and footer reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "measurements": [
+      {
+        "key": "facts",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 333
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 351
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 333
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 351
+        },
+        "overflow": false
+      },
+      {
+        "key": "learn",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 333
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 351
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 333
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 351
+        },
+        "overflow": false
+      },
+      {
+        "key": "input",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 333
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 351
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 333
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 351
+        },
+        "overflow": false
+      },
+      {
+        "key": "idea",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 333
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 351
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 333
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 351
+        },
+        "overflow": false
+      }
+    ],
+    "checks": [
+      {
+        "name": "matching compact panels, content starts early and footer gap is 8px",
+        "passed": true
+      },
+      {
+        "name": "each information action edits its own metadata and restores focus",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.diary-information-dialog').getByRole('combobox', { name: '类型', exact: true })\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:55:111\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:52:2"
+      },
+      {
+        "name": "top add opens and focuses facts; text drafts survive tabs, workspace and receipts",
+        "passed": true
+      },
+      {
+        "name": "quick facts create a real entry and the receipt empty action opens facts",
+        "passed": true
+      },
+      {
+        "name": "populated columns default collapsed, keep scroll and match the compact shell",
+        "passed": true
+      },
+      {
+        "name": "date navigation, calendar cancellation and today return work",
+        "passed": true
+      },
+      {
+        "name": "fullscreen and return keep the new toolbar and column operations",
+        "passed": false,
+        "error": "page.waitForFunction: Timeout 6000ms exceeded.\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:80:503\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:79:2"
+      },
+      {
+        "name": "short visible viewport keeps record editors and footer reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 624,
+    "theme": "light",
+    "measurements": [
+      {
+        "key": "facts",
+        "body": {
+          "top": 133,
+          "bottom": 1058,
+          "height": 925,
+          "width": 582
+        },
+        "root": {
+          "top": 66,
+          "bottom": 1065,
+          "height": 999,
+          "width": 600
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 582
+        },
+        "footer": {
+          "top": 1073,
+          "bottom": 1195,
+          "height": 122,
+          "width": 600
+        },
+        "overflow": false
+      },
+      {
+        "key": "learn",
+        "body": {
+          "top": 133,
+          "bottom": 1058,
+          "height": 925,
+          "width": 582
+        },
+        "root": {
+          "top": 66,
+          "bottom": 1065,
+          "height": 999,
+          "width": 600
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 582
+        },
+        "footer": {
+          "top": 1073,
+          "bottom": 1195,
+          "height": 122,
+          "width": 600
+        },
+        "overflow": false
+      },
+      {
+        "key": "input",
+        "body": {
+          "top": 133,
+          "bottom": 1058,
+          "height": 925,
+          "width": 582
+        },
+        "root": {
+          "top": 66,
+          "bottom": 1065,
+          "height": 999,
+          "width": 600
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 582
+        },
+        "footer": {
+          "top": 1073,
+          "bottom": 1195,
+          "height": 122,
+          "width": 600
+        },
+        "overflow": false
+      },
+      {
+        "key": "idea",
+        "body": {
+          "top": 133,
+          "bottom": 1058,
+          "height": 925,
+          "width": 582
+        },
+        "root": {
+          "top": 66,
+          "bottom": 1065,
+          "height": 999,
+          "width": 600
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 582
+        },
+        "footer": {
+          "top": 1073,
+          "bottom": 1195,
+          "height": 122,
+          "width": 600
+        },
+        "overflow": false
+      }
+    ],
+    "checks": [
+      {
+        "name": "matching compact panels, content starts early and footer gap is 8px",
+        "passed": true
+      },
+      {
+        "name": "each information action edits its own metadata and restores focus",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.diary-information-dialog').getByRole('combobox', { name: '类型', exact: true })\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:55:111\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:52:2"
+      },
+      {
+        "name": "top add opens and focuses facts; text drafts survive tabs, workspace and receipts",
+        "passed": true
+      },
+      {
+        "name": "quick facts create a real entry and the receipt empty action opens facts",
+        "passed": true
+      },
+      {
+        "name": "populated columns default collapsed, keep scroll and match the compact shell",
+        "passed": true
+      },
+      {
+        "name": "date navigation, calendar cancellation and today return work",
+        "passed": true
+      },
+      {
+        "name": "fullscreen and return keep the new toolbar and column operations",
+        "passed": false,
+        "error": "page.waitForFunction: Timeout 6000ms exceeded.\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:80:503\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:79:2"
+      },
+      {
+        "name": "short visible viewport keeps record editors and footer reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 624,
+    "theme": "dark",
+    "measurements": [
+      {
+        "key": "facts",
+        "body": {
+          "top": 133,
+          "bottom": 1058,
+          "height": 925,
+          "width": 582
+        },
+        "root": {
+          "top": 66,
+          "bottom": 1065,
+          "height": 999,
+          "width": 600
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 582
+        },
+        "footer": {
+          "top": 1073,
+          "bottom": 1195,
+          "height": 122,
+          "width": 600
+        },
+        "overflow": false
+      },
+      {
+        "key": "learn",
+        "body": {
+          "top": 133,
+          "bottom": 1058,
+          "height": 925,
+          "width": 582
+        },
+        "root": {
+          "top": 66,
+          "bottom": 1065,
+          "height": 999,
+          "width": 600
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 582
+        },
+        "footer": {
+          "top": 1073,
+          "bottom": 1195,
+          "height": 122,
+          "width": 600
+        },
+        "overflow": false
+      },
+      {
+        "key": "input",
+        "body": {
+          "top": 133,
+          "bottom": 1058,
+          "height": 925,
+          "width": 582
+        },
+        "root": {
+          "top": 66,
+          "bottom": 1065,
+          "height": 999,
+          "width": 600
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 582
+        },
+        "footer": {
+          "top": 1073,
+          "bottom": 1195,
+          "height": 122,
+          "width": 600
+        },
+        "overflow": false
+      },
+      {
+        "key": "idea",
+        "body": {
+          "top": 133,
+          "bottom": 1058,
+          "height": 925,
+          "width": 582
+        },
+        "root": {
+          "top": 66,
+          "bottom": 1065,
+          "height": 999,
+          "width": 600
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 582
+        },
+        "footer": {
+          "top": 1073,
+          "bottom": 1195,
+          "height": 122,
+          "width": 600
+        },
+        "overflow": false
+      }
+    ],
+    "checks": [
+      {
+        "name": "matching compact panels, content starts early and footer gap is 8px",
+        "passed": true
+      },
+      {
+        "name": "each information action edits its own metadata and restores focus",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.diary-information-dialog').getByRole('combobox', { name: '类型', exact: true })\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:55:111\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:52:2"
+      },
+      {
+        "name": "top add opens and focuses facts; text drafts survive tabs, workspace and receipts",
+        "passed": true
+      },
+      {
+        "name": "quick facts create a real entry and the receipt empty action opens facts",
+        "passed": true
+      },
+      {
+        "name": "populated columns default collapsed, keep scroll and match the compact shell",
+        "passed": true
+      },
+      {
+        "name": "date navigation, calendar cancellation and today return work",
+        "passed": true
+      },
+      {
+        "name": "fullscreen and return keep the new toolbar and column operations",
+        "passed": false,
+        "error": "page.waitForFunction: Timeout 6000ms exceeded.\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:80:503\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:79:2"
+      },
+      {
+        "name": "short visible viewport keeps record editors and footer reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "measurements": [
+      {
+        "key": "facts",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 726
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 744
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 726
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 744
+        },
+        "overflow": false
+      },
+      {
+        "key": "learn",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 726
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 744
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 726
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 744
+        },
+        "overflow": false
+      },
+      {
+        "key": "input",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 726
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 744
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 726
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 744
+        },
+        "overflow": false
+      },
+      {
+        "key": "idea",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 726
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 744
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 726
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 744
+        },
+        "overflow": false
+      }
+    ],
+    "checks": [
+      {
+        "name": "matching compact panels, content starts early and footer gap is 8px",
+        "passed": true
+      },
+      {
+        "name": "each information action edits its own metadata and restores focus",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.diary-information-dialog').getByRole('combobox', { name: '类型', exact: true })\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:55:111\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:52:2"
+      },
+      {
+        "name": "top add opens and focuses facts; text drafts survive tabs, workspace and receipts",
+        "passed": true
+      },
+      {
+        "name": "quick facts create a real entry and the receipt empty action opens facts",
+        "passed": true
+      },
+      {
+        "name": "populated columns default collapsed, keep scroll and match the compact shell",
+        "passed": true
+      },
+      {
+        "name": "date navigation, calendar cancellation and today return work",
+        "passed": true
+      },
+      {
+        "name": "fullscreen and return keep the new toolbar and column operations",
+        "passed": false,
+        "error": "page.waitForFunction: Timeout 6000ms exceeded.\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:80:503\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:79:2"
+      },
+      {
+        "name": "short visible viewport keeps record editors and footer reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "measurements": [
+      {
+        "key": "facts",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 726
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 744
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 726
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 744
+        },
+        "overflow": false
+      },
+      {
+        "key": "learn",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 726
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 744
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 726
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 744
+        },
+        "overflow": false
+      },
+      {
+        "key": "input",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 726
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 744
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 726
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 744
+        },
+        "overflow": false
+      },
+      {
+        "key": "idea",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 726
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 744
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 726
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 744
+        },
+        "overflow": false
+      }
+    ],
+    "checks": [
+      {
+        "name": "matching compact panels, content starts early and footer gap is 8px",
+        "passed": true
+      },
+      {
+        "name": "each information action edits its own metadata and restores focus",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.diary-information-dialog').getByRole('combobox', { name: '类型', exact: true })\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:55:111\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:52:2"
+      },
+      {
+        "name": "top add opens and focuses facts; text drafts survive tabs, workspace and receipts",
+        "passed": true
+      },
+      {
+        "name": "quick facts create a real entry and the receipt empty action opens facts",
+        "passed": true
+      },
+      {
+        "name": "populated columns default collapsed, keep scroll and match the compact shell",
+        "passed": true
+      },
+      {
+        "name": "date navigation, calendar cancellation and today return work",
+        "passed": true
+      },
+      {
+        "name": "fullscreen and return keep the new toolbar and column operations",
+        "passed": false,
+        "error": "page.waitForFunction: Timeout 6000ms exceeded.\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:80:503\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:79:2"
+      },
+      {
+        "name": "short visible viewport keeps record editors and footer reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1280,
+    "theme": "light",
+    "measurements": [
+      {
+        "key": "facts",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 782
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 860
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 860
+        },
+        "overflow": false
+      },
+      {
+        "key": "learn",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 782
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 860
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 860
+        },
+        "overflow": false
+      },
+      {
+        "key": "input",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 782
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 860
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 860
+        },
+        "overflow": false
+      },
+      {
+        "key": "idea",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 782
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 860
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 860
+        },
+        "overflow": false
+      }
+    ],
+    "checks": [
+      {
+        "name": "matching compact panels, content starts early and footer gap is 8px",
+        "passed": true
+      },
+      {
+        "name": "each information action edits its own metadata and restores focus",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '编辑今日信息', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" title=\"编辑今日信息\" aria-label=\"编辑今日信息\" aria-haspopup=\"dialog\" class=\"diary-desktop-action\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at openInfo (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:39:94)\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:53:39\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:52:2"
+      },
+      {
+        "name": "top add opens and focuses facts; text drafts survive tabs, workspace and receipts",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '新增事实', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button title=\"新增事实\" type=\"button\" aria-label=\"新增事实\" class=\"diary-desktop-action diary-create\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\u001b[2m    - waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m    - element is visible, enabled and stable\u001b[22m\n\u001b[2m    - scrolling into view if needed\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:59:78\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:58:2"
+      },
+      {
+        "name": "quick facts create a real entry and the receipt empty action opens facts",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '编辑今日信息', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" title=\"编辑今日信息\" aria-label=\"编辑今日信息\" aria-haspopup=\"dialog\" class=\"diary-desktop-action\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at openInfo (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:39:94)\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:66:39\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:65:2"
+      },
+      {
+        "name": "populated columns default collapsed, keep scroll and match the compact shell",
+        "passed": true
+      },
+      {
+        "name": "date navigation, calendar cancellation and today return work",
+        "passed": false,
+        "error": "locator.click: Error: strict mode violation: getByRole('button', { name: '回到今天', exact: true }) resolved to 2 elements:\n    1) <button type=\"button\" class=\"today-button\">回到今天</button> aka getByText('回到今天')\n    2) <button title=\"回到今天\" type=\"button\" aria-label=\"回到今天\">今天</button> aka getByRole('button', { name: '回到今天', description: '回到今天' })\n\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '回到今天', exact: true })\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:77:248\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:76:2"
+      },
+      {
+        "name": "fullscreen and return keep the new toolbar and column operations",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '新增新知', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button title=\"新增新知\" type=\"button\" aria-label=\"新增新知\" class=\"diary-desktop-action diary-create\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:80:344\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:79:2"
+      },
+      {
+        "name": "short visible viewport keeps record editors and footer reachable",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '新增输入', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button title=\"新增输入\" type=\"button\" aria-label=\"新增输入\" class=\"diary-desktop-action diary-create\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:86:243\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:86:79"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1280,
+    "theme": "dark",
+    "measurements": [
+      {
+        "key": "facts",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 782
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 860
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 860
+        },
+        "overflow": false
+      },
+      {
+        "key": "learn",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 782
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 860
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 860
+        },
+        "overflow": false
+      },
+      {
+        "key": "input",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 782
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 860
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 860
+        },
+        "overflow": false
+      },
+      {
+        "key": "idea",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 782
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 860
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 860
+        },
+        "overflow": false
+      }
+    ],
+    "checks": [
+      {
+        "name": "matching compact panels, content starts early and footer gap is 8px",
+        "passed": true
+      },
+      {
+        "name": "each information action edits its own metadata and restores focus",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '编辑今日信息', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" title=\"编辑今日信息\" aria-label=\"编辑今日信息\" aria-haspopup=\"dialog\" class=\"diary-desktop-action\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at openInfo (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:39:94)\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:53:39\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:52:2"
+      },
+      {
+        "name": "top add opens and focuses facts; text drafts survive tabs, workspace and receipts",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '新增事实', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button title=\"新增事实\" type=\"button\" aria-label=\"新增事实\" class=\"diary-desktop-action diary-create\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:59:78\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:58:2"
+      },
+      {
+        "name": "quick facts create a real entry and the receipt empty action opens facts",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '编辑今日信息', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" title=\"编辑今日信息\" aria-label=\"编辑今日信息\" aria-haspopup=\"dialog\" class=\"diary-desktop-action\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at openInfo (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:39:94)\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:66:39\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:65:2"
+      },
+      {
+        "name": "populated columns default collapsed, keep scroll and match the compact shell",
+        "passed": true
+      },
+      {
+        "name": "date navigation, calendar cancellation and today return work",
+        "passed": false,
+        "error": "locator.click: Error: strict mode violation: getByRole('button', { name: '回到今天', exact: true }) resolved to 2 elements:\n    1) <button type=\"button\" class=\"today-button\">回到今天</button> aka getByText('回到今天')\n    2) <button title=\"回到今天\" type=\"button\" aria-label=\"回到今天\">今天</button> aka getByRole('button', { name: '回到今天', description: '回到今天' })\n\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '回到今天', exact: true })\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:77:248\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:76:2"
+      },
+      {
+        "name": "fullscreen and return keep the new toolbar and column operations",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '新增新知', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button title=\"新增新知\" type=\"button\" aria-label=\"新增新知\" class=\"diary-desktop-action diary-create\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:80:344\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:79:2"
+      },
+      {
+        "name": "short visible viewport keeps record editors and footer reachable",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '新增输入', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button title=\"新增输入\" type=\"button\" aria-label=\"新增输入\" class=\"diary-desktop-action diary-create\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:86:243\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:86:79"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "measurements": [
+      {
+        "key": "facts",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 888
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 966
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 966
+        },
+        "overflow": false
+      },
+      {
+        "key": "learn",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 888
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 966
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 966
+        },
+        "overflow": false
+      },
+      {
+        "key": "input",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 888
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 966
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 966
+        },
+        "overflow": false
+      },
+      {
+        "key": "idea",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 888
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 966
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 966
+        },
+        "overflow": false
+      }
+    ],
+    "checks": [
+      {
+        "name": "matching compact panels, content starts early and footer gap is 8px",
+        "passed": true
+      },
+      {
+        "name": "each information action edits its own metadata and restores focus",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '编辑今日信息', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" title=\"编辑今日信息\" aria-label=\"编辑今日信息\" aria-haspopup=\"dialog\" class=\"diary-desktop-action\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at openInfo (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:39:94)\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:53:39\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:52:2"
+      },
+      {
+        "name": "top add opens and focuses facts; text drafts survive tabs, workspace and receipts",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '新增事实', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button title=\"新增事实\" type=\"button\" aria-label=\"新增事实\" class=\"diary-desktop-action diary-create\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:59:78\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:58:2"
+      },
+      {
+        "name": "quick facts create a real entry and the receipt empty action opens facts",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '编辑今日信息', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" title=\"编辑今日信息\" aria-label=\"编辑今日信息\" aria-haspopup=\"dialog\" class=\"diary-desktop-action\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at openInfo (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:39:94)\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:66:39\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:65:2"
+      },
+      {
+        "name": "populated columns default collapsed, keep scroll and match the compact shell",
+        "passed": true
+      },
+      {
+        "name": "date navigation, calendar cancellation and today return work",
+        "passed": false,
+        "error": "locator.click: Error: strict mode violation: getByRole('button', { name: '回到今天', exact: true }) resolved to 2 elements:\n    1) <button type=\"button\" class=\"today-button\">回到今天</button> aka getByText('回到今天')\n    2) <button title=\"回到今天\" type=\"button\" aria-label=\"回到今天\">今天</button> aka getByRole('button', { name: '回到今天', description: '回到今天' })\n\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '回到今天', exact: true })\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:77:248\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:76:2"
+      },
+      {
+        "name": "fullscreen and return keep the new toolbar and column operations",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '新增新知', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button title=\"新增新知\" type=\"button\" aria-label=\"新增新知\" class=\"diary-desktop-action diary-create\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:80:344\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:79:2"
+      },
+      {
+        "name": "validation and 400 errors open the metadata field without losing the text",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('tab', { name: '事实', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button class=\"\" role=\"tab\" type=\"button\" aria-selected=\"false\" aria-controls=\"panel-facts\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - element is outside of the viewport\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - element is outside of the viewport\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - element is outside of the viewport\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at choose (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:38:81)\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:83:9\n    at check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:41)\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:82:71"
+      },
+      {
+        "name": "short visible viewport keeps record editors and footer reachable",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '新增输入', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button title=\"新增输入\" type=\"button\" aria-label=\"新增输入\" class=\"diary-desktop-action diary-create\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:86:243\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:86:79"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "measurements": [
+      {
+        "key": "facts",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 888
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 966
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 966
+        },
+        "overflow": false
+      },
+      {
+        "key": "learn",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 888
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 966
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 966
+        },
+        "overflow": false
+      },
+      {
+        "key": "input",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 888
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 966
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 966
+        },
+        "overflow": false
+      },
+      {
+        "key": "idea",
+        "body": {
+          "top": 17,
+          "bottom": 819,
+          "height": 802,
+          "width": 888
+        },
+        "root": {
+          "top": 8,
+          "bottom": 828,
+          "height": 820,
+          "width": 966
+        },
+        "toolbar": {
+          "top": 17,
+          "bottom": 81,
+          "height": 64,
+          "width": 60
+        },
+        "footer": {
+          "top": 836,
+          "bottom": 888,
+          "height": 52,
+          "width": 966
+        },
+        "overflow": false
+      }
+    ],
+    "checks": [
+      {
+        "name": "matching compact panels, content starts early and footer gap is 8px",
+        "passed": true
+      },
+      {
+        "name": "each information action edits its own metadata and restores focus",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '编辑今日信息', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" title=\"编辑今日信息\" aria-label=\"编辑今日信息\" aria-haspopup=\"dialog\" class=\"diary-desktop-action\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at openInfo (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:39:94)\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:53:39\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:52:2"
+      },
+      {
+        "name": "top add opens and focuses facts; text drafts survive tabs, workspace and receipts",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '新增事实', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button title=\"新增事实\" type=\"button\" aria-label=\"新增事实\" class=\"diary-desktop-action diary-create\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:59:78\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:58:2"
+      },
+      {
+        "name": "quick facts create a real entry and the receipt empty action opens facts",
+        "passed": false,
+        "error": "locator.click: Timeout 6000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '编辑今日信息', exact: true })\u001b[22m\n\u001b[2m    - locator resolved to <button type=\"button\" title=\"编辑今日信息\" aria-label=\"编辑今日信息\" aria-haspopup=\"dialog\" class=\"diary-desktop-action\">…</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    11 × waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m       - element is visible, enabled and stable\u001b[22m\n\u001b[2m       - scrolling into view if needed\u001b[22m\n\u001b[2m       - done scrolling\u001b[22m\n\u001b[2m       - <button type=\"button\" class=\"diary-empty\">…</button> from <div class=\"workspace-layout\">…</div> subtree intercepts pointer events\u001b[22m\n\u001b[2m     - retrying click action\u001b[22m\n\u001b[2m       - waiting 500ms\u001b[22m\n\n    at openInfo (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:39:94)\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:66:39\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:65:2"
+      },
+      {
+        "name": "populated columns default collapsed, keep scroll and match the compact shell",
+        "passed": true
+      },
+      {
+        "name": "date navigation, calendar cancellation and today return work",
+        "passed": false,
+        "error": "locator.click: Error: strict mode violation: getByRole('button', { name: '回到今天', exact: true }) resolved to 2 elements:\n    1) <button type=\"button\" class=\"today-button\">回到今天</button> aka getByText('回到今天')\n    2) <button title=\"回到今天\" type=\"button\" aria-label=\"回到今天\">今天</button> aka getByRole('button', { name: '回到今天', description: '回到今天' })\n\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '回到今天', exact: true })\u001b[22m\n\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:77:248\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:76:2"
+      },
+      {
+        "name": "fullscreen and return keep the new toolbar and column operations",
+        "passed": false,
+        "error": "page.waitForFunction: Timeout 6000ms exceeded.\n    at D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:80:503\n    at async check (D:\\prj\\user\\Diary\\scripts\\qa-diary-compact.mjs:34:35)\n    at async file:///D:/prj/user/Diary/scripts/qa-diary-compact.mjs:79:2"
+      },
+      {
+        "name": "short visible viewport keeps record editors and footer reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  }
+]

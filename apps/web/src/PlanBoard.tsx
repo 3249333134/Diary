@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode, type PointerEvent } from 'react';
 import { GripVertical } from 'lucide-react';
 import type { ActionRow } from './api';
+import { urgencyStyle } from './planUrgency';
+import type { CSSProperties } from 'react';
 import { QUADRANTS, quadrant, type Classification } from './PlanFields';
 
 export function PlanBoard({ rows, busy, render, onMove }: { rows: ActionRow[]; busy: boolean; render: (row: ActionRow, handle?: ReactNode) => ReactNode; onMove: (row: ActionRow, patch: Classification) => void }) {
-  const [drag, setDrag] = useState<{ title: string; x: number; y: number; target?: string }>();
+  const [drag, setDrag] = useState<{ title: string; x: number; y: number; target?: string; style: CSSProperties }>();
   const press = useRef<{ row: ActionRow; x: number; y: number; active: boolean; pointer: number } | undefined>(undefined);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined), scroll = useRef<HTMLDivElement>(null);
   const finish = useRef(onMove); finish.current = onMove;
@@ -14,7 +16,7 @@ export function PlanBoard({ rows, busy, render, onMove }: { rows: ActionRow[]; b
       const p = press.current; if (!p || p.pointer !== e.pointerId) return;
       if (!p.active) { if (Math.hypot(e.clientX-p.x,e.clientY-p.y)>8) { clearTimeout(timer.current); press.current = undefined; } return; }
       e.preventDefault(); p.x=e.clientX;p.y=e.clientY;
-      setDrag({ title: p.row.task.title, x: p.x, y: p.y, target: target(p.x,p.y) });
+      setDrag({ style:urgencyStyle(p.row.task), title: p.row.task.title, x: p.x, y: p.y, target: target(p.x,p.y) });
     };
     const end = (e: globalThis.PointerEvent) => {
       const p = press.current; if (!p || p.pointer !== e.pointerId) return;
@@ -38,7 +40,7 @@ export function PlanBoard({ rows, busy, render, onMove }: { rows: ActionRow[]; b
     if(busy||row.task.deletedAt||e.button!==0)return;
     const p={row,x:e.clientX,y:e.clientY,active:false,pointer:e.pointerId};press.current=p;
     e.currentTarget.setPointerCapture(e.pointerId);
-    const activate=()=>{if(press.current===p){p.active=true;setDrag({title:row.task.title,x:p.x,y:p.y});}};
+    const activate=()=>{if(press.current===p){p.active=true;setDrag({style:urgencyStyle(row.task),title:row.task.title,x:p.x,y:p.y});}};
     if(e.pointerType==='touch')timer.current=setTimeout(activate,350);else activate();
   };
   const sections=[...QUADRANTS,{id:'unclassified',label:'待分类',important:false,urgent:false}];
@@ -49,6 +51,6 @@ export function PlanBoard({ rows, busy, render, onMove }: { rows: ActionRow[]; b
       <ul className="todo-list quadrant-list">{items.map(row=>render(row,<button className="plan-drag-handle" disabled={busy||!!row.task.deletedAt} aria-label={`拖动归类：${row.task.title}`} onPointerDown={e=>begin(e,row)}><GripVertical size={18}/></button>))}</ul>
       {!items.length&&<p className="quadrant-empty">{q.id==='unclassified'?'所有事项已分类':'暂无事项，可拖入或使用“移动到”'}</p>}
     </section>;
-  })}</div>{drag&&<div className="plan-drag-preview" style={{left:drag.x+12,top:drag.y+12}}>{drag.title}<small>松手移动 · Esc 取消</small></div>}</div>;
+  })}</div>{drag&&<div className="plan-drag-preview" style={{...drag.style,left:drag.x+12,top:drag.y+12}}>{drag.title}<small>松手移动 · Esc 取消</small></div>}</div>;
 }
 

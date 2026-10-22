@@ -6,9 +6,12 @@ import { usePlanCategories, AddPlanCategory, categoryStyle } from './PlanCategor
 import type { PlanToolAction, PlanNavigationState, PlanLayout } from './PlanNavigation';
 import { PlanEntityFields, PlanEntitySummary, type EntityContext } from './PlanEntities';
 import { GlassSelect } from './GlassSelect';
+import { GlassChoices } from './GlassChoices';
+import { PlanActionDock } from './PlanActionDock';
+import { urgency, urgencyStyle } from './planUrgency';
 import { useGlassConfirm } from './GlassConfirm';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import { ListTodo, Plus, Trash2, X, Clock, Calendar, Check, Pencil, RotateCcw, Link2, CheckCircle2, Sparkles, Flag, SlidersHorizontal, ChevronDown, Flame } from 'lucide-react';
+import { ListTodo, Plus, Trash2, X, Clock, Calendar, Check, Pencil, RotateCcw, Link2, CheckCircle2, Sparkles, Flag, ChevronDown, Flame } from 'lucide-react';
 import type { RecordRef, Todo } from '@diary/contracts';
 import { api, type ActionRow, type ActionInput, type ParsedTodo } from './api';
 import { planClock, matchesPlan, planState, planDueTime, type PlanFilter } from './planFilters';
@@ -22,6 +25,7 @@ import './plan-windows.css';
 import { PlanCompletion } from './PlanCompletion';
 import { DateTimeField } from './DateTimeField';
 import { RepeatFields } from './RepeatFields';
+import { PlanToolbar } from './PlanToolbar';
 import { PlanCalendar, calendarRange, shiftDate } from './PlanCalendar';
 import type { CaptureDraft } from '@diary/contracts';
 const today = () => planClock().date;
@@ -35,8 +39,8 @@ function TodoStats({ rows, filter, onFilter }: { rows: ActionRow[]; filter: Plan
   return <div className="todo-stats">{([['all','全部'],['overdue','逾期'],['today','今日'],['upcoming','即将开始'],['done','已完成']] as const).map(([key,label]) => { const count=rows.filter(r=>matchesPlan(r.task,key)).length;const Icon=key==='all'?ListTodo:key==='overdue'?Flag:key==='today'?Calendar:key==='upcoming'?Clock:CheckCircle2;return <button key={key} className={`todo-stat-chip ${key} ${filter === key ? 'active' : ''}`} aria-label={`${label} ${count} 项`} title={label} aria-pressed={filter === key} onClick={() => onFilter(key)}><Icon className="compact-stat-icon" size={16}/><strong>{count}</strong><span>{label}</span></button>;})}</div>;
 }
 
-function PlanDialog({ children, busy, onClose, label = "计划编辑" }: { children: ReactNode; busy: boolean; onClose: () => void; label?: string }) {
-  return <GlassDialog label={label} busy={busy} onClose={onClose}>{children}</GlassDialog>;
+function PlanDialog({ children, busy, onClose, label = "计划编辑", taskForm = false }: { children: ReactNode; busy: boolean; onClose: () => void; label?: string; taskForm?: boolean }) {
+  return <GlassDialog className={taskForm?'plan-edit-dialog plan-task-dialog':'plan-edit-dialog'} label={label} busy={busy} onClose={onClose}>{children}</GlassDialog>;
 }
 
 /** 优先级标签 */
@@ -72,12 +76,12 @@ function TodoItem({ row, busy, onCheck, onEdit, onDelete, onStatus, onOpenSource
   return (
     <li
       key={`${row.date}:${row.task.id}`}
-      style={categoryStyle(category?.color)}
-      data-custom-category={!!row.task.category&&!'work personal'.split(' ').includes(row.task.category)}
+      style={urgencyStyle(row.task)}
+      data-urgency={urgency(row.task)?.id || 'unclassified'}
       data-record-id={row.task.id}
       data-plan-id={row.task.id}
       data-expanded={expanded}
-      className={['plan-card', `category-${row.task.category || 'unset'}`, `state-${planState(row.task)}`,
+      className={['plan-card', `state-${planState(row.task)}`,
         `quadrant-${quadrant(row.task)}`,
         row.task.done || row.task.status === 'done' ? 'todo-done' : '',
         overdue ? 'todo-overdue' : '',
@@ -95,10 +99,10 @@ function TodoItem({ row, busy, onCheck, onEdit, onDelete, onStatus, onOpenSource
 
       <button type="button" className="plan-card-summary" aria-label={'计划详情：'+row.task.title} aria-expanded={expanded} aria-controls={detailsId} onClick={()=>{setExpanded(value=>!value);}}>
         <span className="plan-summary-heading"><strong className="todo-title">{row.task.title}</strong><ChevronDown size={18} className="plan-expand-icon"/></span>
-        <span className="plan-summary-meta"><span className="plan-category-label">{categoryLabel}</span><span className="plan-summary-due"><Calendar size={13}/>{due ? due+(dueTime?' '+dueTime:'') : '未安排日期'}</span>{(row.task.seriesId||row.task.recurrenceAnchor)&&!!row.task.checkins&&<span className="plan-checkin-badge" title={`重复日程已打卡 ${row.task.checkins} 次`}><Flame size={12}/>{row.task.checkins}</span>}{state!=='neutral'&&<strong className={'plan-state-badge badge-'+state}>{({done:'已完成',overdue:'已超期',soon:'即将到期',neutral:''})[state]}</strong>}</span>
+        <span className="plan-summary-meta"><span className="plan-category-label">{categoryLabel}</span><span>{urgency(row.task)?.label || '象限待分类'}</span><span className="plan-summary-due"><Calendar size={13}/>{due ? due+(dueTime?' '+dueTime:'') : '未安排日期'}</span>{(row.task.seriesId||row.task.recurrenceAnchor)&&!!row.task.checkins&&<span className="plan-checkin-badge" title={`重复日程已打卡 ${row.task.checkins} 次`}><Flame size={12}/>{row.task.checkins}</span>}{state!=='neutral'&&<strong className={'plan-state-badge badge-'+state}>{({done:'已完成',overdue:'已超期',soon:'即将到期',neutral:''})[state]}</strong>}</span>
       </button>
       <div id={detailsId} hidden={!expanded} className="todo-copy plan-card-details">
-        <div className="plan-detail-classification"><PriorityBadge priority={row.task.priority}/><span>{QUADRANTS.find(q=>q.id===quadrant(row.task))?.label || '象限待分类'}</span><span>{STATUS_LABEL[status]}</span></div>
+        <div className="plan-detail-classification"><PriorityBadge priority={row.task.priority}/><span>{urgency(row.task)?.label || '象限待分类'}</span><span>{STATUS_LABEL[status]}</span></div>
         {row.task.description && <p className="todo-desc">{row.task.description}</p>}
 
         <PlanEntitySummary value={row.task.entities || []}/>
@@ -133,7 +137,7 @@ function TodoItem({ row, busy, onCheck, onEdit, onDelete, onStatus, onOpenSource
         {/* 操作按钮：左侧次要操作，右侧主要操作（完成+删除） */}
         <div className="todo-actions">
           <div className="plan-actions-left">
-            <div className="plan-move-menu"><GlassSelect action placeholder="移动到…" label={'移动到：'+row.task.title} disabled={busy||!!row.task.deletedAt} value={row.task.category||''} options={[...categories.map(c=>({value:c.id,label:c.name,group:'事项类别',color:c.color,selected:row.task.category===c.id})),...QUADRANTS.map((q,i)=>({value:q.id,label:q.label,group:'四象限',selected:q.id===quadrant(row.task),color:['#c05d56','#7856bd','#258378','#9296a3'][i]}))]} onChange={id=>{const q=QUADRANTS.find(q=>q.id===id);onMove(row,q?{important:q.important,urgent:q.urgent}:{category:id});}}/></div>
+            <div className="plan-move-menu"><GlassSelect action placeholder="移动到…" label={'移动到：'+row.task.title} disabled={busy||!!row.task.deletedAt} value={row.task.category||''} options={[...categories.map(c=>({value:c.id,label:c.name,group:'事项类别',color:c.color,selected:row.task.category===c.id})),...QUADRANTS.map(q=>({value:q.id,label:q.label,group:'四象限',selected:q.id===urgency(row.task)?.id,color:q.color}))]} onChange={id=>{const q=QUADRANTS.find(q=>q.id===id);onMove(row,q?{important:q.important,urgent:q.urgent}:{category:id});}}/></div>
             <GlassSelect label={'计划状态：'+row.task.title} value={status} disabled={busy||!!row.task.deletedAt} options={Object.entries(STATUS_LABEL).map(([value,label])=>({value,label,color:({todo:'#9296a3',doing:'#7856bd',done:'#258378',cancelled:'#a36b76'} as Record<string,string>)[value]}))} onChange={status=>onStatus(row,status as 'todo'|'doing'|'done'|'cancelled')}/>
             <button className="quiet-button" disabled={busy || !!row.task.deletedAt} onClick={() => onEdit(row)}>
               <Pencil size={15} />修改
@@ -183,7 +187,7 @@ function ParsePreviewModal({ text, parsed, busy, error, onConfirm, onEdit, onClo
 }) {
   if (!parsed) return null;
   return (
-    <PlanDialog busy={busy} onClose={onClose}>
+    <PlanDialog taskForm busy={busy} onClose={onClose}>
       <div className="todo-modal" onClick={e => e.stopPropagation()}>
         <div className="todo-modal-header">
           <h3><Sparkles size={18} style={{ color: 'var(--purple)' }} /> 新建计划</h3>
@@ -200,11 +204,11 @@ function ParsePreviewModal({ text, parsed, busy, error, onConfirm, onEdit, onClo
           <ClassificationFields value={parsed} onChange={onEdit}/>
           <DateTimeField label="截止时间" date={parsed.dueDate} time={parsed.dueTime} onChange={(dueDate,dueTime)=>onEdit({dueDate,dueTime})}/>
           <RepeatFields value={parsed.repeat||null} onChange={repeat=>onEdit({repeat})}/>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <label className="field" style={{ flex: 1 }}>
+          <div className="plan-form-pair" style={{ display: 'flex', gap: 12 }}>
+            <div className="plan-choice-field">
               <span>优先级</span>
-              <GlassSelect label="优先级" value={parsed.priority} options={Object.entries(PRIORITY_LABEL).map(([value,label])=>({value,label}))} onChange={priority=>onEdit({priority})}/>
-            </label>
+              <GlassChoices label="优先级" value={parsed.priority} options={Object.entries(PRIORITY_LABEL).map(([value,label])=>({value,label}))} onChange={priority=>onEdit({priority})}/>
+            </div>
             <label className="field" style={{ flex: 1 }}>
               <span>清单</span>
               <input value={parsed.list} onChange={e => onEdit({ list: e.target.value })} placeholder="工作/生活/学习..." />
@@ -213,12 +217,7 @@ function ParsePreviewModal({ text, parsed, busy, error, onConfirm, onEdit, onClo
           </div>
           <PlanEntityFields context={entityContext} value={parsed.entities || []} onChange={entities=>onEdit({entities})}/>
         </div>
-        <div className="todo-modal-footer">
-          <button className="quiet-button" disabled={busy} onClick={onClose}>取消</button>
-          <button className="quiet-button" disabled={busy || !parsed.title.trim()} onClick={onConfirm}>
-            <Check size={15} />确认创建
-          </button>
-        </div>
+        <PlanActionDock busy={busy} disabled={!parsed.title.trim()} onCancel={onClose} onConfirm={onConfirm} label="确认创建"/>
       </div>
     </PlanDialog>
   );
@@ -272,7 +271,7 @@ function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries 
   const addSubtask = () => setSubtasks([...subtasks, { id: crypto.randomUUID(), title: '', done: false }]);
 
   return (
-    <PlanDialog busy={busy} onClose={onClose}>
+    <PlanDialog taskForm busy={busy} onClose={onClose}>
       <div className="todo-modal todo-modal-large" onClick={e => e.stopPropagation()}>
         <div className="todo-modal-header">
           <h3>编辑计划</h3>
@@ -283,19 +282,19 @@ function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries 
           <label className="field"><span>标题</span><input value={title} onChange={e => setTitle(e.target.value)} /><FieldHint path="todos.0.title" value={title}/></label>
           <label className="field"><span>详情描述</span><textarea rows={2} value={description} onChange={e => setDescription(e.target.value)} placeholder="补充说明" /><FieldHint path="todos.0.description" value={description}/></label>
           <ClassificationFields value={classification} onChange={patch=>setClassification({...classification,...patch})} />
-          {(plannedDate || time) && <details><summary>历史日期字段</summary><p>用于兼容旧计划；原定开始与截止分别在上方、下方设置。</p><div style={{ display: 'flex', gap: 12 }}>
+          {(plannedDate || time) && <details><summary>历史日期字段</summary><p>用于兼容旧计划；原定开始与截止分别在上方、下方设置。</p><div className="plan-form-pair" style={{ display: 'flex', gap: 12 }}>
             <label className="field" style={{ flex: 1 }}><span>旧计划日期</span><GlassDate label="旧计划日期" dateOnly date={plannedDate} onChange={setPlannedDate}/></label>
             <label className="field" style={{ flex: 1 }}><span>旧计划时间</span><GlassDate label="旧计划时间" timeOnly date={plannedDate||today()} time={time} onChange={(_,t)=>setTime(t)}/></label>
           </div></details>}
           <DateTimeField label="截止时间" date={dueDate} time={dueTime} onChange={(d,t)=>{setDueDate(d);setDueTime(t);}}/>
-          {(row.task.seriesId||row.task.recurrenceAnchor)&&<GlassSelect label="修改范围" value={scope} options={[{value:'one',label:'仅这一期'},{value:'future',label:'这期及后续未完成日程'}]} onChange={setScope}/>}
+          {(row.task.seriesId||row.task.recurrenceAnchor)&&<GlassChoices label="修改范围" value={scope} options={[{value:'one',label:'仅这一期'},{value:'future',label:'这期及后续未完成日程'}]} onChange={setScope}/>}
           {(!(row.task.seriesId||row.task.recurrenceAnchor)||scope==='future')&&<RepeatFields value={repeat} onChange={setRepeat}/>}
           {(row.task.seriesId||row.task.recurrenceAnchor)&&<div className="plan-series-actions"><button className="quiet-button" type="button" disabled={busy} onClick={()=>onSeries(row.task,true)}>从这一期停止重复</button><small>保留已经完成的历史记录</small></div>}
-          <div style={{ display: 'flex', gap: 12 }}>
-            <label className="field" style={{ flex: 1 }}>
+          <div className="plan-form-pair" style={{ display: 'flex', gap: 12 }}>
+            <div className="plan-choice-field">
               <span>优先级</span>
-              <GlassSelect label="优先级" value={priority} options={Object.entries(PRIORITY_LABEL).map(([value,label])=>({value,label}))} onChange={setPriority}/>
-            </label>
+              <GlassChoices label="优先级" value={priority} options={Object.entries(PRIORITY_LABEL).map(([value,label])=>({value,label}))} onChange={setPriority}/>
+            </div>
             <label className="field" style={{ flex: 1 }}>
               <span>清单</span>
               <input value={list} onChange={e => setList(e.target.value)} placeholder="工作/生活/学习..." />
@@ -324,19 +323,16 @@ function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries 
             </div>
           </div>
         </div>
-        <div className="todo-modal-footer">
-          <button className="quiet-button" disabled={busy} onClick={onClose}>取消</button>
-          <button className="quiet-button" disabled={busy || !title.trim()} onClick={save}>保存</button>
-        </div>
+        <PlanActionDock busy={busy} disabled={!title.trim()} onCancel={onClose} onConfirm={save} label="保存"/>
       </div>
     </PlanDialog>
   );
 }
 
-export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, revision = 0, focusId, toolbarAction, onNavigationChange, onExpand, fullscreen, onToggleFullscreen, entityContext,active=true }: {
-  entityContext: EntityContext;
+export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, revision = 0, focusId, toolbarAction, onNavigationChange, fullscreen, onToggleFullscreen, theme, onTheme, entityContext,active=true }: {
+  entityContext: EntityContext; theme:'light'|'dark'; onTheme:()=>void;
   date: string; source?: RecordRef; revision?: number; focusId?: string;active?:boolean;
-  toolbarAction?: PlanToolAction; onNavigationChange?:(state:PlanNavigationState)=>void; onExpand?: () => void; fullscreen?: boolean; onToggleFullscreen?: () => void;
+  toolbarAction?: PlanToolAction; onNavigationChange?:(state:PlanNavigationState)=>void; fullscreen?: boolean; onToggleFullscreen?: () => void;
   prepare: (targetDate?: string) => Promise<string | undefined>;
   changed: () => Promise<void>;
   onOpen: (ref: RecordRef) => void;
@@ -353,6 +349,7 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
     if(toolbarAction?.kind==='filter')setFilter(toolbarAction.value as PlanFilter);
     if(toolbarAction?.kind==='view')setLayout(toolbarAction.value as PlanLayout);
     if(toolbarAction?.kind==='category')setCategoryFilter(toolbarAction.value!);
+    if(toolbarAction?.kind==='add-category')setAddingCategory(true);
   }, [toolbarAction]);
   const [quickText, setQuickText] = useState('');
   const [parsed, setParsed] = useState<ParsedTodo | null>(null);
@@ -361,8 +358,10 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
   const [createId, setCreateId] = useState(() => crypto.randomUUID());
   const [rows, setRows] = useState<ActionRow[]>([]);
   const [filter, setFilter] = useState<PlanFilter>('all');
-  const [layout, setLayout] = useState<'board'|'list'|'windows'|'week'|'month'>('board');
+  const [layout, setLayout] = useState<PlanLayout>('fortnight');
   const [calendarDate,setCalendarDate]=useState(today);
+  const [showAllHours,setShowAllHours]=useState(false);
+  const [calendarInteraction,setCalendarInteraction]=useState({dragging:false,pending:false,saving:false});
   const [scheduleRows,setScheduleRows]=useState<ActionRow[]>([]);
   const [nextCursor,setNextCursor]=useState<string>();
   const [scheduleRange,setScheduleRange]=useState({from:today(),to:shiftDate(today(),90)});
@@ -385,7 +384,7 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
   const refresh = async () => {
     const epoch=++queryEpoch.current,data=(await api.actions()).tasks;
     const roots=data.filter(r=>r.task.recurrenceAnchor);
-    const range=layout==='week'||layout==='month'?calendarRange(calendarDate,layout):{from:roots.reduce((d,r)=>r.task.recurrenceAnchor!<d?r.task.recurrenceAnchor!:d,today()),to:shiftDate(today(),horizon)};
+    const range=layout==='fortnight'||layout==='week'||layout==='month'?calendarRange(calendarDate,layout):{from:roots.reduce((d,r)=>r.task.recurrenceAnchor!<d?r.task.recurrenceAnchor!:d,today()),to:shiftDate(today(),horizon)};
     const projected=await api.schedule(range.from,range.to);
     if(epoch!==queryEpoch.current)return;
     setScheduleRange(range);setRows(data);setScheduleRows(projected.tasks);setNextCursor(projected.nextCursor);
@@ -393,6 +392,7 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
   };
   useEffect(() => { void refresh().catch(() => setError('计划读取失败，请重试。')); }, [revision,layout,calendarDate,horizon]);
   useEffect(() => { if (focusId) { setFilter('all'); setSourceFilter('all'); setListFilter(''); } }, [focusId, revision]);
+  useEffect(() => { if(focusId){setLayout('list');setCategoryFilter('all');setViewFilter('');} },[focusId]);
   useEffect(() => { let active = true; if (source) { setQuickText(source.summary); setParsed({title: source.summary, dueDate:planClock().date,dueTime:planClock().time,priority:'medium',list:'',tags:[]}); setCreateId(crypto.randomUUID()); void api.loadDiary(source.date).then(({document}) => { const event = source.kind === 'facts' ? document.facts.events.find(e=>e.id===source.id) : undefined; const entry = source.kind !== 'facts' && source.kind !== 'todo' ? document.entries?.[source.kind].find(e=>e.id===source.id) : undefined; const entities = event ? [...event.people,...event.places,...event.activities,...event.foods] : entry?.sources || []; if(active) setParsed(p=>p && p.entities === undefined ? {...p,entities} : p); }).catch(()=>{}); } return ()=>{active=false}; }, [source]);
 
   const run = async (input: ActionInput) => {
@@ -509,7 +509,7 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
     finally { setBusy(false); }
   };
   const combined=Array.from(new Map([...rows.filter(r=>!r.task.recurrenceAnchor),...scheduleRows].map(r=>[r.task.id,r])).values());
-  const navigation:PlanNavigationState={filter,layout,category:categoryFilter,categories,counts:Object.fromEntries((['all','today','upcoming','overdue','done','trash'] as const).map(key=>[key,combined.filter(row=>matchesPlan(row.task,key)).length])) as PlanNavigationState['counts']};
+  const navigation:PlanNavigationState={filter,layout,category:categoryFilter,categories,saving:calendarInteraction.saving,restricted:sourceFilter!=='all'||!!listFilter||!!viewFilter||categoryFilter!=='all'||filter!=='all',counts:Object.fromEntries((['all','today','upcoming','overdue','done','trash'] as const).map(key=>[key,combined.filter(row=>matchesPlan(row.task,key)).length])) as PlanNavigationState['counts']};
   const navigationSignature=JSON.stringify(navigation);
   useEffect(()=>{onNavigationChange?.(navigation);},[navigationSignature,onNavigationChange]);
   const visible = combined.filter(r => matchesPlan(r.task, filter))
@@ -544,21 +544,10 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
     {hasUnclassified&&<button type="button" className="quiet-button plan-batch-button" onClick={()=>{setShowFilters(false);setBatch({category:null,important:null,urgent:null});}}>批量归类</button>}</>;
   const renderItem=(row:ActionRow,handle?:ReactNode)=><TodoItem key={`${row.date}:${row.task.id}`} row={row} busy={busy} handle={handle} onMove={(r,p)=>void move(r,p)} onCheck={r=>r.task.deletedAt?void act(r,'restore'):onCheck(r)} onEdit={onEdit} onDelete={onDelete} onStatus={onStatus} onOpenSource={onOpen} onOpenCompletion={r=>{if(r.pendingRecord&&!r.completionPending)setCompleting(r);else if(r.task.completion)onOpen(r.task.completion);else setCompleting(r);}}/>;
   return (
-    <section className="panel-section todo-panel" data-fullscreen={fullscreen ? 'true' : undefined} aria-labelledby="todo-title">
+    <section className="panel-section todo-panel" data-fullscreen={fullscreen ? 'true' : undefined} aria-label="我的计划">
       {confirmation.dialog}
       {refreshWarning&&<div className="refresh-warning" role="status">{refreshWarning}<button type="button" className="quiet-button" onClick={()=>void Promise.all([refresh(),changed()]).then(()=>setRefreshWarning('')).catch(()=>{})}>重试刷新</button></div>}
       {addingCategory&&<AddPlanCategory onClose={()=>setAddingCategory(false)}/>}
-      <div className="section-heading">
-        <div>
-          <ListTodo />
-          <div>
-            <h2 id="todo-title">我的计划</h2>
-            <p>从记录出发，完成后留下真正发生的事。</p>
-          </div>
-        </div>
-        <button type="button" className="plan-add-button" aria-label="新增计划" title="新增计划" onClick={()=>createPlan()}><Plus size={21}/></button>
-      </div>
-
       {source && (
         <p style={{ color: 'var(--muted)', fontSize: 13 }}>
           来源：{source.summary}
@@ -566,8 +555,6 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
         </p>
       )}
 
-      {/* 进度统计 — 可点击过滤 */}
-      <TodoStats rows={combined} filter={filter} onFilter={setFilter} />
       {retryMove&&<p role="status" className="plan-retry">分类选择已保留。<button disabled={busy} onClick={()=>void move(retryMove.row,retryMove.patch)}>重试归类</button><button onClick={()=>setRetryMove(undefined)}>取消</button></p>}
 
       {error && (
@@ -577,18 +564,12 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
         </div>
       )}
 
-      <div className="plan-browse-tools">
-        {categoryControls}
-        <div className="plan-content-toolbar">
-          <button type="button" className={`quiet-button plan-filter-trigger${hasExtraFilters?' has-extra-filters':''}`} aria-label="筛选计划" aria-haspopup="dialog" onClick={()=>setShowFilters(true)}><SlidersHorizontal size={16}/><span>{rangeLabels[filter]}</span>{hasExtraFilters&&<span className="plan-filter-dot" aria-label="已应用其他筛选"/>}<ChevronDown size={14}/></button>
-          <span className="plan-range-label">{rangeLabels[filter]}{hasExtraFilters?' · 已筛选':''}</span>
-          <nav className="plan-view-switch" aria-label="计划视图">{([['board','四象限'],['windows','窗口'],['list','列表'],['week','周'],['month','月']] as const).map(([key,label])=><button key={key} type="button" aria-pressed={filter==='trash'?key==='list':layout===key} disabled={filter==='trash'&&key!=='list'} onClick={()=>setLayout(key)}>{label}</button>)}</nav>
-        </div>
-      </div>
+      <PlanToolbar layout={layout} onLayout={setLayout} anchor={calendarDate} onAnchor={setCalendarDate} filter={filter} filterLabel={rangeLabels[filter]} restricted={hasExtraFilters||categoryFilter!=='all'||filter!=='all'} saving={calendarInteraction.saving} onFilters={()=>setShowFilters(true)} onCreate={()=>createPlan()} theme={theme} onTheme={onTheme}/>
       <nav className="plan-time-tabs" aria-label="时间与状态">{(['all','today','upcoming','overdue','done','trash'] as const).map(key=><button type="button" key={key} aria-pressed={filter===key} onClick={()=>setFilter(key)}>{rangeLabels[key]}</button>)}</nav>
-      {layout!=='week'&&layout!=='month'&&rows.some(r=>r.task.recurrenceAnchor)&&<div className="schedule-pagination"><span>重复日程已展开至 {scheduleRange.to} · 统计当前已加载记录</span><button className="quiet-button" disabled={busy} onClick={()=>setHorizon(h=>h+90)}>后 90 天</button></div>}
+
+      {layout!=='fortnight'&&layout!=='week'&&layout!=='month'&&rows.some(r=>r.task.recurrenceAnchor)&&<div className="schedule-pagination"><span>重复日程已展开至 {scheduleRange.to} · 统计当前已加载记录</span><button className="quiet-button" disabled={busy} onClick={()=>setHorizon(h=>h+90)}>后 90 天</button></div>}
       {nextCursor&&<div className="schedule-pagination"><span>重复日程分批加载 · {scheduleRange.from} 至 {scheduleRange.to}</span><button disabled={busy} className="quiet-button" onClick={()=>void api.schedule(scheduleRange.from,scheduleRange.to,nextCursor).then(data=>{setScheduleRows(old=>[...old,...data.tasks]);setNextCursor(data.nextCursor);}).catch(()=>setError('读取更多日程失败，请重试。'))}>加载更多日程</button></div>}
-      {showFilters&&<PlanDialog label="筛选计划" busy={false} onClose={()=>setShowFilters(false)}><div className="compact-sheet"><header><div><h2>筛选计划</h2><p>调整筛选后，继续浏览当前视图。</p></div><button className="square-button" aria-label="关闭计划筛选" onClick={()=>setShowFilters(false)}><X size={20}/></button></header><section className="plan-filter-section"><h3>事项类别</h3>{categoryControls}</section>{filterControls}<footer><button className="quiet-button" onClick={()=>{setFilter('all');setCategoryFilter('all');setSourceFilter('all');setListFilter('');setViewFilter('');}}>重置筛选</button><button className="save-button" onClick={()=>setShowFilters(false)}>显示 {visible.length} 项</button><button className="quiet-button" onClick={()=>{setShowFilters(false);onExpand?.();}}>展开完整顶部</button></footer></div></PlanDialog>}
+      {showFilters&&<PlanDialog label="筛选计划" busy={false} onClose={()=>setShowFilters(false)}><div className="compact-sheet"><header><div><h2>筛选计划</h2><p>调整筛选后，继续浏览当前视图。</p></div><button className="square-button" aria-label="关闭计划筛选" onClick={()=>setShowFilters(false)}><X size={20}/></button></header><TodoStats rows={combined} filter={filter} onFilter={setFilter}/><section className="plan-filter-section"><h3>事项类别</h3>{categoryControls}</section>{filterControls}<section className="plan-filter-section"><h3>日程显示</h3><label className="plan-hours-option"><input type="checkbox" checked={showAllHours} disabled={calendarInteraction.dragging||calendarInteraction.pending||calendarInteraction.saving} onChange={e=>setShowAllHours(e.target.checked)}/>显示全部时段</label><p className="plan-filter-help">关闭后只显示有日程的小时。拖动及待确认期间固定刻度。</p></section><section className="plan-filter-section"><h3>任务颜色</h3><div className="plan-urgency-legend" aria-label="任务颜色说明">{QUADRANTS.map(q=><span key={q.id} style={urgencyStyle(q)}><i className="plan-urgency-dot" aria-hidden="true"/>{q.label}</span>)}<span>未设置：待分类</span></div></section><footer><button className="quiet-button" onClick={()=>{setFilter('all');setCategoryFilter('all');setSourceFilter('all');setListFilter('');setViewFilter('');}}>重置筛选</button><button className="save-button" onClick={()=>setShowFilters(false)}>显示 {visible.length} 项</button></footer></div></PlanDialog>}
 
       {/* 计划列表 */}
       {filter==='trash'||layout==='list'?<ul className="todo-list plan-list-view">
@@ -606,7 +587,7 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
             onOpenCompletion={r => { if(r.pendingRecord&&!r.completionPending)setCompleting(r);else if(r.task.completion)onOpen(r.task.completion);else setCompleting(r); }}
           />
         ))}
-      </ul>:layout==='week'||layout==='month'?<PlanCalendar active={active} view={layout} anchor={calendarDate} onAnchor={setCalendarDate} rows={visible} busy={busy} onEdit={onEdit} onMove={(row,target)=>{const latest=combined.find(r=>r.date===row.date&&r.task.id===row.task.id)||row;return act(latest,'update',{...latest.task,dueDate:target.date,dueTime:target.time});}}/>:layout==='windows'?<PlanWindows rows={visible} categories={categories} busy={busy} render={renderItem} onMove={(r,p)=>void move(r,p)} onCreate={categoryId=>createPlan(categoryId)} onAddCategory={()=>setAddingCategory(true)} onReorder={reorderCategories}/>:<PlanBoard rows={visible} busy={busy} render={renderItem} onMove={(r,p)=>void move(r,p)}/>}
+      </ul>:layout==='fortnight'||layout==='week'||layout==='month'?<PlanCalendar active={active} view={layout} anchor={calendarDate} showAllHours={showAllHours} onInteractionChange={setCalendarInteraction} rows={visible} busy={busy} onEdit={onEdit} onMove={(row,target)=>{const latest=combined.find(r=>r.date===row.date&&r.task.id===row.task.id)||row;return act(latest,'update',{...latest.task,dueDate:target.date,dueTime:target.time});}}/>:layout==='windows'?<PlanWindows rows={visible} categories={categories} busy={busy} render={renderItem} onMove={(r,p)=>void move(r,p)} onCreate={categoryId=>createPlan(categoryId)} onAddCategory={()=>setAddingCategory(true)} onReorder={reorderCategories}/>:<PlanBoard rows={visible} busy={busy} render={renderItem} onMove={(r,p)=>void move(r,p)}/>}
       {batch&&<PlanDialog busy={busy} onClose={()=>setBatch(undefined)}><div className="todo-modal"><div className="todo-modal-header"><h3>批量归类</h3><p>仅修改当前筛选范围内的待分类事项。</p></div><div className="todo-modal-body"><ClassificationFields value={batch} start={false} onChange={patch=>setBatch({...batch,...patch})}/></div><div className="todo-modal-footer"><button className="quiet-button" disabled={busy} onClick={()=>setBatch(undefined)}>取消</button><button className="save-button" disabled={busy||!batch.category||typeof batch.important!=='boolean'||typeof batch.urgent!=='boolean'} onClick={()=>void batchSave()}>应用分类</button></div></div></PlanDialog>}
 
       {!visible.length && <p className="todo-empty">此范围暂无计划。可以从一条记录创建行动，也可以直接在上方添加。</p>}

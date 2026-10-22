@@ -6,6 +6,16 @@ export function timeTop(time:string,hours:number[]) {
   const [hour,minute]=time.split(':').map(Number);
   return Math.max(0,hours.indexOf(hour))*HOUR_HEIGHT+minute/60*HOUR_HEIGHT;
 }
+
+/** Deadline cards are callouts, not durations. Keep the exact anchor while separating nearby cards. */
+export function deadlineMarkers(items:{key:string;time:string}[],hours:number[]) {
+  let bottom=-2;
+  return new Map([...items].sort((a,b)=>a.time.localeCompare(b.time)||a.key.localeCompare(b.key)).map(item=>{
+    const anchor=timeTop(item.time,hours),top=Math.max(anchor,bottom+2);
+    bottom=top+46;
+    return [item.key,{anchor,top}];
+  }));
+}
 export function timeAtOffset(offset:number,hours:number[]) {
   if(!hours.length)return '';
   const position=Math.max(0,offset)/HOUR_HEIGHT;

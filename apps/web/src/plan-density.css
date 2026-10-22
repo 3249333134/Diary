@@ -1,0 +1,66 @@
+/* One toolbar owns the main plan canvas. Direct filters live in the desktop rail. */
+.main-content[data-workspace=plan]>.topbar,
+.main-content[data-workspace=plan]>.mobile-workspace-switch { display:none; }
+.main-content[data-workspace=plan] .todo-panel { padding:8px; gap:0; }
+.plan-main-toolbar { display:flex; align-items:center; gap:8px; flex:0 0 60px; min-width:0; max-height:64px; padding:0 2px 8px; box-sizing:border-box; }
+.plan-date-tools { display:flex; align-items:center; gap:6px; flex-shrink:0; min-width:0; }
+.plan-date-range { font-size:12px; font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.plan-date-tools nav { display:flex; gap:0; }
+.plan-main-toolbar button { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; min-width:44px; min-height:44px; padding:8px; border:0; border-radius:10px; background:transparent; color:var(--text); font:inherit; font-size:12px; cursor:pointer; }
+.plan-main-toolbar button:hover { background:var(--purple-soft); }
+.plan-main-toolbar button:disabled { opacity:.5; cursor:default; }
+.plan-main-toolbar button:focus-visible { outline:2px solid var(--purple); outline-offset:-2px; }
+.plan-main-toolbar .plan-view-switch { display:flex; align-items:center; flex:1; justify-content:flex-start; min-width:44px; padding:2px; gap:0; border-radius:12px; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; background:var(--glass-item); }
+.plan-main-toolbar .plan-view-switch::-webkit-scrollbar { display:none; }
+.plan-main-toolbar .plan-view-switch button { min-height:44px; }
+.plan-main-toolbar .plan-view-switch [aria-pressed=true] { background:var(--purple-soft); color:var(--purple-ink); font-weight:600; }
+.plan-toolbar-actions { display:flex; gap:2px; flex-shrink:0; }
+.plan-toolbar-actions .plan-add-button { min-width:44px; width:44px; height:44px; background:var(--plan-primary); color:white; }
+.plan-main-toolbar .plan-filter-trigger { position:relative; }
+.plan-main-toolbar .plan-filter-dot { position:absolute; right:7px; top:7px; width:6px; height:6px; border-radius:50%; background:var(--purple); }
+.plan-filter-trigger[data-restricted=true],.compact-browse-context[data-restricted=true] { color:var(--purple-ink); background:var(--purple-soft); }
+.plan-hours-option { display:flex; align-items:center; gap:8px; min-height:44px; cursor:pointer; font-size:13px; color:var(--text); }
+.plan-hours-option input { width:18px; height:18px; min-height:0; accent-color:var(--purple); }
+.plan-filter-help { margin:4px 0; color:var(--muted); font-size:12px; }
+.calendar-week-section+.calendar-week-section { margin-top:8px; }
+.calendar-week-top { min-height:52px; box-sizing:border-box; }
+.calendar-week-top.calendar-time-label { font-size:11px; }
+.calendar-week button.calendar-week-top { font-size:12px; }
+.calendar-feedback { top:54px; }
+.plan-rail-navigation { gap:12px; }
+.plan-rail-navigation button:disabled { opacity:.5; cursor:default; }
+.plan-rail-navigation [data-plan-drop]:hover { outline:1px dashed var(--purple); outline-offset:-1px; }
+.plan-filter-section .plan-urgency-legend { gap:10px 16px; }
+.compact-sheet>.todo-stats { margin:12px 0; }
+.compact-sheet .todo-stat-chip { min-height:56px; padding:6px; }
+.compact-sheet .todo-stat-chip strong { font-size:20px; }
+.compact-sheet .todo-stat-chip>span { font-size:11px; }
+.todo-panel>.todo-empty { flex-shrink:0; margin:6px; font-size:12px; }
+@media(min-width:900px) {
+  .main-content[data-workspace=plan] { padding:8px 12px 12px; }
+  .main-content[data-workspace=plan] .plan-time-tabs { display:none; }
+  .main-content[data-workspace=plan] .todo-panel { padding:8px; }
+  .app-shell:has(.main-content[data-workspace=plan]):has(.todo-panel[data-fullscreen=true]) { grid-template-columns:minmax(0,1fr); }
+  .app-shell:has(.main-content[data-workspace=plan]):has(.todo-panel[data-fullscreen=true])>.date-rail,
+  .app-shell:has(.main-content[data-workspace=plan]):has(.todo-panel[data-fullscreen=true])>.context-rail { display:none; }
+  .main-content[data-workspace=plan]:has(.todo-panel[data-fullscreen=true]) .plan-main-toolbar { padding-left:0; }
+}
+@media(max-width:899px) {
+  .main-content[data-workspace=plan]>.compact-browse-bar { display:flex; flex-shrink:0; align-items:center; gap:4px; height:52px; min-height:52px; padding:3px; box-sizing:border-box; border:1px solid var(--glass-edge); border-radius:14px; background:var(--glass); backdrop-filter:var(--glass-blur); }
+  .main-content[data-workspace=plan] .plan-calendar { flex:1; min-height:0; }
+  .main-content[data-workspace=plan] .todo-panel { padding:6px 8px; }
+  .plan-main-toolbar { flex-basis:60px; padding:0 0 4px; gap:4px; }
+  .plan-date-tools { gap:0; }
+  .plan-date-range { font-size:11px; }
+  .plan-date-tools nav button { min-width:44px; padding:6px; }
+  .plan-main-toolbar .plan-toolbar-actions { display:none; }
+  .main-content[data-workspace=plan] .plan-time-tabs { margin:0; padding:0 0 4px; gap:2px; min-height:48px; }
+  .main-content[data-workspace=plan] .plan-time-tabs button { padding:6px 9px; font-size:12px; }
+}
+@media(max-width:599px) {
+  .plan-main-toolbar .plan-date-tools { position:relative; flex-direction:column; padding-top:9px; }
+  .plan-main-toolbar .plan-date-range { position:absolute; left:0; top:-2px; font-size:10px; line-height:12px; }
+  .plan-date-tools nav { padding-top:0; }
+  .plan-date-tools nav button { min-height:44px; height:44px; }
+  .plan-main-toolbar .plan-view-switch { margin-left:4px; }
+}

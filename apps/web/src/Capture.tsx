@@ -1,6 +1,7 @@
 import {validationMessage,fieldLimit} from '@diary/contracts';
 import {FieldHint} from './FieldHint';
 import {GlassSelect} from './GlassSelect';
+import {GlassChoices} from './GlassChoices';
 import { PlanEntityFields, type EntityContext } from './PlanEntities';
 import { useEffect, useRef, useState } from 'react';
 import { captureDraftSchema, type CaptureDraft, type RecordRef } from '@diary/contracts';
@@ -23,7 +24,7 @@ export function DraftFields({ draft, onChange, diaryOnly = false, disabled = fal
       <DateTimeField label={draft.kind==='plan'?'截止时间':'发生时间'} date={draft.date} time={draft.time} required={draft.kind!=='plan'} onChange={(date,time)=>patch({date,time})}/>
     </div>
     <label>{draft.kind === 'plan' ? '计划标题' : '正文'}<textarea rows={3} value={draft.content} onChange={e => patch({ content: e.target.value })} /><FieldHint path={draft.kind==='plan'?'todos.0.title':'content'} limit={draft.kind==='plan'?undefined:fieldLimit(captureDraftSchema,'content')} value={draft.content}/></label>
-    {draft.kind === 'plan' && <><label>说明<textarea rows={2} value={draft.description} onChange={e => patch({ description: e.target.value })} /><FieldHint path="todos.0.description" value={draft.description}/></label><div className="capture-row"><label>优先级<GlassSelect label="优先级" value={draft.priority} options={[{value:'high',label:'高'},{value:'medium',label:'中'},{value:'low',label:'低'}]} onChange={priority=>patch({priority:priority as CaptureDraft['priority']})}/></label><label>清单<input value={draft.list} onChange={e => patch({ list: e.target.value })} /></label></div></>}
+    {draft.kind === 'plan' && <><label>说明<textarea rows={2} value={draft.description} onChange={e => patch({ description: e.target.value })} /><FieldHint path="todos.0.description" value={draft.description}/></label><div className="capture-row"><div className="plan-choice-field"><span>优先级</span><GlassChoices label="优先级" value={draft.priority} options={[{value:'high',label:'高'},{value:'medium',label:'中'},{value:'low',label:'低'}]} onChange={priority=>patch({priority:priority as CaptureDraft['priority']})}/></div><label>清单<input value={draft.list} onChange={e => patch({ list: e.target.value })} /></label></div></>}
     {draft.kind === 'plan' && <ClassificationFields value={draft} onChange={patch} />}
     {draft.kind === 'plan' && <RepeatFields value={draft.repeat} onChange={repeat=>patch({repeat})}/>}
     {draft.kind !== 'plan' && <SharedTagInput value={draft.tags} onChange={tags => patch({ tags })} />}

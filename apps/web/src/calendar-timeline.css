@@ -1,0 +1,36 @@
+/* The calendar is a measuring canvas: dates stay left, deadline instants run right. */
+.calendar-timeline-canvas { --timeline-date-width:96px; min-width:100%; width:max-content; }
+.calendar-timeline-heading,.calendar-timeline-row { display:grid; grid-template-columns:var(--timeline-date-width) var(--timeline-all-width) minmax(var(--timeline-hours-width),1fr); min-width:100%; width:calc(var(--timeline-date-width) + var(--timeline-all-width) + var(--timeline-hours-width)); }
+.calendar-timeline-heading { position:sticky; top:0; z-index:6; height:44px; background:var(--surface); }
+.timeline-corner { position:sticky; left:0; z-index:7; display:flex; align-items:center; padding:8px; box-sizing:border-box; background:var(--surface); font-size:11px; border-bottom:1px solid var(--line); }
+.timeline-all-heading { grid-column:2; display:flex; align-items:center; padding:8px; font-size:11px; color:var(--muted); border-bottom:1px solid var(--line); }
+.timeline-hour-axis { grid-column:3; position:relative; border-bottom:1px solid var(--line); color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums; }
+.timeline-hour-axis>span { position:absolute; top:15px; padding-left:5px; white-space:nowrap; }
+.calendar-timeline-row { min-height:60px; border-bottom:1px solid var(--line); box-sizing:content-box; }
+.timeline-date { position:sticky; left:0; z-index:3; align-self:stretch; display:flex; flex-direction:column; justify-content:center; gap:3px; min-height:44px; min-width:0; padding:6px; border:0; border-right:1px solid var(--line); color:var(--text); background:var(--surface); font:inherit; cursor:pointer; }
+.timeline-date strong { font-size:13px; font-variant-numeric:tabular-nums; }
+.timeline-date small { font-size:10px; color:var(--muted); white-space:nowrap; }
+.timeline-all-day { isolation:isolate; grid-column:2; min-width:0; padding:0 4px; box-sizing:border-box; overflow:auto; border-right:1px solid var(--line); }
+.timeline-all-day .calendar-chip { height:60px; box-sizing:border-box; margin:4px 0 0; }
+.timeline-timed-cell { isolation:isolate; grid-column:3; position:relative; min-width:0; overflow:auto; background-image:linear-gradient(to right,var(--line) 1px,transparent 1px); scrollbar-width:thin; }
+.timeline-markers { position:relative; min-height:100%; }
+.timeline-timed-cell .calendar-chip { position:absolute; height:60px; box-sizing:border-box; margin:0; }
+.timeline-timed-cell .calendar-chip::before { content:''; position:absolute; left:-3px; top:6px; width:5px; height:5px; border-radius:50%; background:var(--urgency-color,var(--purple)); }
+.timeline-timed-cell .calendar-chip-copy,.timeline-all-day .calendar-chip-copy { padding:5px 4px 5px 7px; align-content:center; gap:4px; }
+.timeline-timed-cell .calendar-chip-copy small,.timeline-all-day .calendar-chip-copy small { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.timeline-timed-cell .calendar-chip-copy strong { font-size:12px; }
+.timeline-timed-cell .calendar-chip:hover,.timeline-timed-cell .calendar-chip:focus-within { z-index:5; }
+.timeline-unarranged-wrap { padding-top:24px; }
+.calendar-timeline-canvas .calendar-unarranged { position:sticky; left:0; box-sizing:border-box; max-width:100%; padding:0 4px 8px; }
+.calendar-unarranged summary { display:flex; align-items:center; gap:8px; padding:0 8px; font-size:13px; font-weight:600; list-style:none; border-radius:10px; }
+.calendar-unarranged summary::before { content:'›'; display:inline-block; font-size:20px; font-weight:400; }
+.calendar-unarranged[open] summary::before { transform:rotate(90deg); }
+.calendar-unarranged summary:hover { background:var(--purple-soft); }
+.calendar-unarranged summary:focus-visible { outline:2px solid var(--purple); outline-offset:-2px; }
+.calendar-unarranged>div { padding:0 8px; display:grid; gap:4px; }
+.calendar-unarranged .calendar-chip { margin:0; }
+.calendar-scroll:not([data-view=month])>.calendar-selected-day { top:44px; z-index:8; width:calc(100% - 2px); box-sizing:border-box; }
+.calendar-scroll:not([data-view=month]) { scroll-padding-top:48px; }
+@media(max-width:899px) { .calendar-timeline-canvas { --timeline-date-width:84px; } }
+
+@media(max-width:599px) { .calendar-timeline-canvas { --timeline-date-width:72px; --timeline-all-column-width:112px; } }

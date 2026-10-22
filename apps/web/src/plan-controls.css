@@ -1,0 +1,40 @@
+.glass-choices{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.glass-choice{display:inline-flex!important;flex-direction:row!important;align-items:center;gap:6px!important;min-height:44px;padding:8px 10px;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;background:var(--plan-control);color:var(--text)!important;font-size:13px!important;cursor:pointer;overflow-wrap:anywhere}
+.glass-choice-check{display:grid;place-items:center;width:16px;height:16px;flex:none;border:1px solid var(--muted);border-radius:50%;color:transparent}
+.glass-choice-dot{width:7px;height:7px;flex:none;border-radius:50%}
+.glass-choice[data-selected]{background:var(--purple-soft);border-color:var(--purple);color:var(--purple-ink)!important}
+.glass-choice[data-selected] .glass-choice-check{background:var(--purple-strong);border-color:var(--purple-strong);color:#fff}
+.glass-choice[data-focus-visible]{outline:2px solid var(--purple);outline-offset:2px}
+.glass-choice[data-disabled]{opacity:.5;cursor:default}
+.glass-choices input{min-height:0!important}
+.plan-classification-fields{grid-template-columns:minmax(0,1fr)!important;gap:16px!important}
+.plan-choice-field{display:grid;gap:6px;min-width:0;font-size:12px;color:var(--muted)}
+.repeat-fields>.glass-choices{width:100%}
+.plan-action-dock{display:flex;align-items:center;justify-content:flex-end;gap:8px 16px;flex-wrap:wrap;flex-shrink:0;padding:10px 12px;border:1px solid var(--plan-edge);border-radius:14px;background:var(--plan-glass);box-shadow:0 8px 24px rgba(32,20,55,.14);color:var(--text);min-width:0}
+.plan-action-status{font-size:12px;line-height:1.5;overflow-wrap:anywhere;flex:1;min-width:120px}
+.plan-action-buttons{display:flex;gap:8px;margin-left:auto}
+.plan-action-dock button{min-height:44px;padding:8px 14px;white-space:nowrap;border-radius:10px;font:inherit;font-size:13px;cursor:pointer}
+.plan-action-dock .save-button{background:var(--plan-primary);color:#fff;border:1px solid transparent}
+.plan-action-dock .quiet-button{background:var(--plan-control);color:var(--text);border:1px solid var(--line)}
+.plan-action-dock button:disabled{opacity:.5;cursor:default}
+.plan-action-dock button:focus-visible{outline:2px solid var(--purple);outline-offset:2px}
+/* One scrolling body. Actions remain inside the modal's focus scope. */
+.glass-modal.plan-task-dialog{display:flex;flex-direction:column;overflow:hidden;height:calc(var(--app-height,100dvh) - 24px);max-height:900px}
+.plan-task-dialog>.plan-dialog-content{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.glass-modal.plan-task-dialog .todo-modal{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;max-height:none}
+.plan-task-dialog .todo-modal-header{flex-shrink:0;padding:16px 20px 12px}
+.plan-task-dialog .todo-modal-body{overflow:auto;min-height:0;overscroll-behavior:contain;flex:1;align-content:start;padding:16px 20px}
+.plan-task-dialog .plan-action-dock{margin:8px 12px 12px;align-self:flex-end;max-width:calc(100% - 24px)}
+.plan-task-dialog .plan-form-pair{display:grid!important;grid-template-columns:minmax(0,1fr);gap:16px!important}
+/* A real footer slot reserves the dock's measured height without moving calendar rows. */
+.calendar-action-slot{display:flex;justify-content:flex-end;flex-shrink:0;min-height:0;padding-top:8px}
+.calendar-action-slot .plan-action-dock{max-width:100%;box-sizing:border-box}
+.calendar-action-slot[hidden]{display:none}
+.plan-urgency-legend{display:flex;flex-wrap:wrap;gap:4px 12px;flex-shrink:0;padding:2px 0 6px;color:var(--text);font-size:11px}
+.plan-urgency-legend span{display:inline-flex;align-items:center;gap:4px}
+.plan-urgency-dot{width:7px;height:7px;flex:none;border-radius:50%;background:var(--urgency-color)}
+@media(max-width:599px){.plan-task-dialog .todo-modal-body{padding:12px}.plan-task-dialog .todo-modal-header{padding:12px}.glass-modal.plan-task-dialog{height:calc(var(--app-height,100dvh) - 16px)}.calendar-action-slot .plan-action-dock{width:100%}}
+
+.glass-modal-overlay:has(.plan-task-dialog){inset:var(--viewport-top,0px) 0 auto;height:var(--app-height,100dvh);box-sizing:border-box}
+.plan-filter-trigger{white-space:nowrap;flex-shrink:0}
+.plan-content-toolbar .plan-view-switch{flex:1;min-width:0}

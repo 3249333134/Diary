@@ -1,0 +1,365 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-21T23:43:20.442Z",
+  "title": "Design System: 独立日记",
+  "extensions": {
+    "colorMeta": {
+      "page": {
+        "role": "neutral",
+        "displayName": "页面底色",
+        "tonalRamp": [
+          "oklch(15.00% 0.0067 295.45)",
+          "oklch(26.43% 0.0067 295.45)",
+          "oklch(37.86% 0.0067 295.45)",
+          "oklch(49.29% 0.0067 295.45)",
+          "oklch(60.71% 0.0067 295.45)",
+          "oklch(72.14% 0.0067 295.45)",
+          "oklch(83.57% 0.0067 295.45)",
+          "oklch(95.00% 0.0067 295.45)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "卡片表面",
+        "tonalRamp": [
+          "oklch(15.00% 0.0000 89.88)",
+          "oklch(26.43% 0.0000 89.88)",
+          "oklch(37.86% 0.0000 89.88)",
+          "oklch(49.29% 0.0000 89.88)",
+          "oklch(60.71% 0.0000 89.88)",
+          "oklch(72.14% 0.0000 89.88)",
+          "oklch(83.57% 0.0000 89.88)",
+          "oklch(95.00% 0.0000 89.88)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "正文墨色",
+        "tonalRamp": [
+          "oklch(15.00% 0.0131 291.98)",
+          "oklch(26.43% 0.0131 291.98)",
+          "oklch(37.86% 0.0131 291.98)",
+          "oklch(49.29% 0.0131 291.98)",
+          "oklch(60.71% 0.0131 291.98)",
+          "oklch(72.14% 0.0131 291.98)",
+          "oklch(83.57% 0.0131 291.98)",
+          "oklch(95.00% 0.0131 291.98)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "次级文字",
+        "tonalRamp": [
+          "oklch(15.00% 0.0206 296.24)",
+          "oklch(26.43% 0.0206 296.24)",
+          "oklch(37.86% 0.0206 296.24)",
+          "oklch(49.29% 0.0206 296.24)",
+          "oklch(60.71% 0.0206 296.24)",
+          "oklch(72.14% 0.0206 296.24)",
+          "oklch(83.57% 0.0206 296.24)",
+          "oklch(95.00% 0.0206 296.24)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "结构边线",
+        "tonalRamp": [
+          "oklch(15.00% 0.0152 298.54)",
+          "oklch(26.43% 0.0152 298.54)",
+          "oklch(37.86% 0.0152 298.54)",
+          "oklch(49.29% 0.0152 298.54)",
+          "oklch(60.71% 0.0152 298.54)",
+          "oklch(72.14% 0.0152 298.54)",
+          "oklch(83.57% 0.0152 298.54)",
+          "oklch(95.00% 0.0152 298.54)"
+        ]
+      },
+      "primary": {
+        "role": "primary",
+        "displayName": "界面主紫",
+        "tonalRamp": [
+          "oklch(15.00% 0.1903 288.47)",
+          "oklch(26.43% 0.1903 288.47)",
+          "oklch(37.86% 0.1903 288.47)",
+          "oklch(49.29% 0.1903 288.47)",
+          "oklch(60.71% 0.1903 288.47)",
+          "oklch(72.14% 0.1903 288.47)",
+          "oklch(83.57% 0.1903 288.47)",
+          "oklch(95.00% 0.1903 288.47)"
+        ]
+      },
+      "primary-strong": {
+        "role": "primary",
+        "displayName": "主要行动深紫",
+        "tonalRamp": [
+          "oklch(15.00% 0.1921 286.41)",
+          "oklch(26.43% 0.1921 286.41)",
+          "oklch(37.86% 0.1921 286.41)",
+          "oklch(49.29% 0.1921 286.41)",
+          "oklch(60.71% 0.1921 286.41)",
+          "oklch(72.14% 0.1921 286.41)",
+          "oklch(83.57% 0.1921 286.41)",
+          "oklch(95.00% 0.1921 286.41)"
+        ]
+      },
+      "primary-soft": {
+        "role": "primary",
+        "displayName": "选中弱紫",
+        "tonalRamp": [
+          "oklch(15.00% 0.0258 295.55)",
+          "oklch(26.43% 0.0258 295.55)",
+          "oklch(37.86% 0.0258 295.55)",
+          "oklch(49.29% 0.0258 295.55)",
+          "oklch(60.71% 0.0258 295.55)",
+          "oklch(72.14% 0.0258 295.55)",
+          "oklch(83.57% 0.0258 295.55)",
+          "oklch(95.00% 0.0258 295.55)"
+        ]
+      },
+      "success": {
+        "role": "secondary",
+        "displayName": "成功绿",
+        "tonalRamp": [
+          "oklch(15.00% 0.1011 163.07)",
+          "oklch(26.43% 0.1011 163.07)",
+          "oklch(37.86% 0.1011 163.07)",
+          "oklch(49.29% 0.1011 163.07)",
+          "oklch(60.71% 0.1011 163.07)",
+          "oklch(72.14% 0.1011 163.07)",
+          "oklch(83.57% 0.1011 163.07)",
+          "oklch(95.00% 0.1011 163.07)"
+        ]
+      },
+      "warning": {
+        "role": "secondary",
+        "displayName": "待保存琥珀",
+        "tonalRamp": [
+          "oklch(15.00% 0.1110 69.88)",
+          "oklch(26.43% 0.1110 69.88)",
+          "oklch(37.86% 0.1110 69.88)",
+          "oklch(49.29% 0.1110 69.88)",
+          "oklch(60.71% 0.1110 69.88)",
+          "oklch(72.14% 0.1110 69.88)",
+          "oklch(83.57% 0.1110 69.88)",
+          "oklch(95.00% 0.1110 69.88)"
+        ]
+      },
+      "danger": {
+        "role": "secondary",
+        "displayName": "错误红",
+        "tonalRamp": [
+          "oklch(15.00% 0.1633 17.72)",
+          "oklch(26.43% 0.1633 17.72)",
+          "oklch(37.86% 0.1633 17.72)",
+          "oklch(49.29% 0.1633 17.72)",
+          "oklch(60.71% 0.1633 17.72)",
+          "oklch(72.14% 0.1633 17.72)",
+          "oklch(83.57% 0.1633 17.72)",
+          "oklch(95.00% 0.1633 17.72)"
+        ]
+      },
+      "urgency-q1": {
+        "role": "secondary",
+        "displayName": "重要紧急红",
+        "tonalRamp": [
+          "oklch(15.00% 0.1633 17.72)",
+          "oklch(26.43% 0.1633 17.72)",
+          "oklch(37.86% 0.1633 17.72)",
+          "oklch(49.29% 0.1633 17.72)",
+          "oklch(60.71% 0.1633 17.72)",
+          "oklch(72.14% 0.1633 17.72)",
+          "oklch(83.57% 0.1633 17.72)",
+          "oklch(95.00% 0.1633 17.72)"
+        ]
+      },
+      "urgency-q2": {
+        "role": "secondary",
+        "displayName": "重要不紧急紫",
+        "tonalRamp": [
+          "oklch(15.00% 0.1560 295.97)",
+          "oklch(26.43% 0.1560 295.97)",
+          "oklch(37.86% 0.1560 295.97)",
+          "oklch(49.29% 0.1560 295.97)",
+          "oklch(60.71% 0.1560 295.97)",
+          "oklch(72.14% 0.1560 295.97)",
+          "oklch(83.57% 0.1560 295.97)",
+          "oklch(95.00% 0.1560 295.97)"
+        ]
+      },
+      "urgency-q3": {
+        "role": "secondary",
+        "displayName": "不重要紧急橙",
+        "tonalRamp": [
+          "oklch(15.00% 0.1169 65.59)",
+          "oklch(26.43% 0.1169 65.59)",
+          "oklch(37.86% 0.1169 65.59)",
+          "oklch(49.29% 0.1169 65.59)",
+          "oklch(60.71% 0.1169 65.59)",
+          "oklch(72.14% 0.1169 65.59)",
+          "oklch(83.57% 0.1169 65.59)",
+          "oklch(95.00% 0.1169 65.59)"
+        ]
+      },
+      "urgency-q4": {
+        "role": "neutral",
+        "displayName": "不重要不紧急灰",
+        "tonalRamp": [
+          "oklch(15.00% 0.0220 273.01)",
+          "oklch(26.43% 0.0220 273.01)",
+          "oklch(37.86% 0.0220 273.01)",
+          "oklch(49.29% 0.0220 273.01)",
+          "oklch(60.71% 0.0220 273.01)",
+          "oklch(72.14% 0.0220 273.01)",
+          "oklch(83.57% 0.0220 273.01)",
+          "oklch(95.00% 0.0220 273.01)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "body": {
+        "displayName": "中文系统正文",
+        "purpose": "沿用系统中文字体；正文 14px、行高 1.65，移动输入正文 16px。"
+      }
+    },
+    "shadows": [
+      {
+        "name": "plan-overlay",
+        "value": "var(--plan-shadow)",
+        "purpose": "计划玻璃浮层与弹窗的主题化阴影。"
+      },
+      {
+        "name": "plan-action-dock",
+        "value": "0 8px 24px rgba(32,20,55,.14)",
+        "purpose": "新建、编辑与日历待确认操作停靠区。"
+      }
+    ],
+    "motion": [
+      {
+        "name": "glass-control-state",
+        "value": ".16s",
+        "purpose": "玻璃选择控件的背景与按下变化；减少动态效果时停用。"
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "899px"
+      },
+      {
+        "name": "compact-calendar",
+        "value": "599px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "主要按钮",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "当前工作区的主要保存行动。",
+      "html": "<button type=\"button\" class=\"ds-primary\">立即保存</button>",
+      "css": ".ds-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border:0;border-radius:11px;background:var(--purple-strong,#5d42c4);color:#fff;font-family:\"PingFang SC\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", sans-serif;font-size:12px;font-weight:600;cursor:pointer}.ds-primary:hover{background:var(--purple,#7256d8)}.ds-primary:focus-visible{outline:2px solid var(--purple,#7256d8);outline-offset:2px}.ds-primary:disabled{opacity:.5;cursor:default}"
+    },
+    {
+      "name": "轻量按钮",
+      "kind": "button",
+      "description": "取消与次级行动保持轻量。",
+      "html": "<button type=\"button\" class=\"ds-quiet\">取消</button>",
+      "css": ".ds-quiet{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 12px;border:1px solid var(--line,#dedbe6);border-radius:10px;background:var(--surface,#fff);color:var(--text,#222128);font-family:\"PingFang SC\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", sans-serif;font-size:12px;font-weight:500;cursor:pointer}.ds-quiet:hover{background:var(--purple-soft,#ece8fb);border-color:var(--purple-soft,#ece8fb)}.ds-quiet:focus-visible{outline:2px solid var(--purple,#7256d8);outline-offset:2px}.ds-quiet:disabled{opacity:.5;cursor:default}"
+    },
+    {
+      "name": "文字输入",
+      "kind": "input",
+      "description": "可自由输入的字段与候选共用玻璃外框和清晰焦点。",
+      "html": "<label class=\"ds-field\"><span>标题</span><span class=\"ds-input-wrap\"><input aria-label=\"标题\" placeholder=\"写下计划标题\" /></span></label>",
+      "css": ".ds-field{display:grid;gap:6px;min-width:0;font-family:\"PingFang SC\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", sans-serif;font-size:13px;color:var(--muted,#686572)}.ds-input-wrap{display:flex;min-height:44px;border:1px solid var(--plan-edge,var(--line,#dedbe6));border-radius:10px;background:var(--plan-control,var(--surface,#fff));box-shadow:inset 0 1px 0 var(--plan-edge,var(--line,#dedbe6))}.ds-input-wrap:focus-within{outline:2px solid var(--purple,#7256d8);outline-offset:2px}.ds-input-wrap input{width:100%;min-width:0;border:0;background:transparent;outline:none;padding:10px 12px;color:var(--text,#222128);font:inherit}@media(max-width:899px){.ds-input-wrap input{font-size:16px}}"
+    },
+    {
+      "name": "计划视图切换",
+      "kind": "nav",
+      "description": "六视图组嵌在 60px 日期／视图工具栏内，横向滚动并保持选中项可见；两周仍为初始视图。",
+      "html": "<nav class=\"ds-view-nav\" aria-label=\"计划视图\"><button type=\"button\" aria-pressed=\"true\">两周</button><button type=\"button\" aria-pressed=\"false\">四象限</button><button type=\"button\" aria-pressed=\"false\">窗口</button><button type=\"button\" aria-pressed=\"false\">列表</button><button type=\"button\" aria-pressed=\"false\">周</button><button type=\"button\" aria-pressed=\"false\">月</button></nav>",
+      "css": ".ds-view-nav{display:flex;align-items:center;gap:0;padding:2px;min-width:44px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;border:1px solid var(--plan-edge,var(--line,#dedbe6));border-radius:12px;background:var(--glass-item,var(--surface,#fff));font-family:\"PingFang SC\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", sans-serif}.ds-view-nav::-webkit-scrollbar{display:none}.ds-view-nav button{min-height:44px;min-width:44px;padding:8px;flex-shrink:0;border:0;border-radius:10px;background:transparent;color:var(--text,#222128);white-space:nowrap;font:inherit;font-size:12px;cursor:pointer}.ds-view-nav button:hover{background:var(--purple-soft,#ece8fb)}.ds-view-nav button[aria-pressed=true]{background:var(--purple-soft,#ece8fb);color:var(--purple-ink,#5d42c4);box-shadow:inset 0 1px 0 var(--plan-edge,var(--line,#dedbe6));font-weight:600}.ds-view-nav button:focus-visible{outline:2px solid var(--purple,#7256d8);outline-offset:-2px}.ds-view-nav button:disabled{opacity:.5;cursor:default}"
+    },
+    {
+      "name": "计划单选项",
+      "kind": "custom",
+      "description": "类别、四象限、优先级、重复频率及修改范围直接展开；选中项兼具颜色和勾选。",
+      "html": "<div class=\"ds-choices\" role=\"radiogroup\" aria-label=\"四象限\"><label class=\"ds-choice\"><input type=\"radio\" name=\"ds-quadrant\" value=\"\" /><span class=\"ds-choice-check\" aria-hidden=\"true\">✓</span>待分类</label><label class=\"ds-choice ds-choice-selected\"><input type=\"radio\" name=\"ds-quadrant\" value=\"q2\" checked /><span class=\"ds-choice-check\" aria-hidden=\"true\">✓</span><span class=\"ds-choice-dot\" aria-hidden=\"true\"></span>重要不紧急</label></div>",
+      "css": ".ds-choices{display:flex;flex-wrap:wrap;gap:6px;min-width:0;font-family:\"PingFang SC\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", sans-serif}.ds-choice{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 10px;border:1px solid var(--line,#dedbe6);border-radius:10px;background:var(--plan-control,var(--surface,#fff));color:var(--text,#222128);font-size:13px;cursor:pointer;overflow-wrap:anywhere}.ds-choice input{position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden}.ds-choice-check{display:grid;place-items:center;width:16px;height:16px;flex:none;border:1px solid var(--muted,#686572);border-radius:50%;color:transparent}.ds-choice-dot{width:7px;height:7px;flex:none;border-radius:50%;background:#7856bd}.ds-choice:has(input:checked){background:var(--purple-soft,#ece8fb);border-color:var(--purple,#7256d8);color:var(--purple-ink,#5d42c4)}.ds-choice:has(input:checked) .ds-choice-check{background:var(--purple-strong,#5d42c4);border-color:var(--purple-strong,#5d42c4);color:#fff}.ds-choice:has(input:focus-visible){outline:2px solid var(--purple,#7256d8);outline-offset:2px}.ds-choice:has(input:disabled){opacity:.5;cursor:default}"
+    },
+    {
+      "name": "紧急度计划卡片",
+      "kind": "card",
+      "description": "卡片染色表达重要／紧急；类别、象限和状态仍有文字。",
+      "html": "<article class=\"ds-plan-card\"><button type=\"button\" class=\"ds-plan-summary\" aria-expanded=\"false\"><strong>整理本周记录</strong><span class=\"ds-plan-meta\"><b>工作</b><span>重要不紧急</span><span>截止 周五 15:00</span></span></button></article>",
+      "css": ".ds-plan-card{--urgency-color:#7856bd;min-width:0;padding:12px;border:1px solid color-mix(in srgb,var(--urgency-color) 45%,var(--line,#dedbe6));border-radius:12px;background:color-mix(in srgb,var(--urgency-color) 11%,var(--surface,#fff));color:var(--text,#222128);font-family:\"PingFang SC\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", sans-serif}:host-context([data-theme=dark]) .ds-plan-card{background:color-mix(in srgb,var(--urgency-color) 21%,var(--surface,#fff))}.ds-plan-summary{display:grid;gap:8px;width:100%;min-height:76px;padding:8px 0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;overflow-wrap:anywhere}.ds-plan-summary>strong{font-size:16px;line-height:1.5}.ds-plan-meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12px;line-height:1.6}.ds-plan-summary:focus-visible{outline:2px solid var(--purple,#7256d8);outline-offset:2px;border-radius:8px}"
+    },
+    {
+      "name": "计划状态徽标",
+      "kind": "chip",
+      "description": "完成、即将到期与超期使用文字徽标，不覆盖紧急度底色。",
+      "html": "<div class=\"ds-statuses\"><span class=\"ds-status ds-done\">已完成</span><span class=\"ds-status ds-soon\">即将到期</span><span class=\"ds-status ds-overdue\">已超期</span></div>",
+      "css": ".ds-statuses{display:flex;flex-wrap:wrap;gap:6px;font-family:\"PingFang SC\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", sans-serif}.ds-status{padding:1px 6px;border-radius:5px;font-size:11px;font-weight:600}.ds-done{color:#176c48;background:#def3e7}.ds-soon{color:#77570d;background:#fff1bb}.ds-overdue{color:#a12d3d;background:#fce3e6}"
+    },
+    {
+      "name": "任务操作停靠区",
+      "kind": "custom",
+      "description": "弹窗内部右下方和日历底部共用取消、确认与保存状态。",
+      "html": "<footer class=\"ds-action-dock\" aria-label=\"任务操作\"><span class=\"ds-action-status\" role=\"status\">待确认：2 项日程 · 仅修改截止时间</span><div class=\"ds-action-buttons\"><button type=\"button\" class=\"ds-action-cancel\">取消</button><button type=\"button\" class=\"ds-action-confirm\">确认改期（2项）</button></div></footer>",
+      "css": ".ds-action-dock{display:flex;align-items:center;justify-content:flex-end;gap:8px 16px;flex-wrap:wrap;min-width:0;padding:10px 12px;border:1px solid var(--plan-edge,var(--line,#dedbe6));border-radius:14px;background:var(--plan-glass,var(--surface,#fff));box-shadow:0 8px 24px rgba(32,20,55,.14);color:var(--text,#222128);font-family:\"PingFang SC\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", sans-serif}.ds-action-status{flex:1;min-width:120px;font-size:12px;line-height:1.5;overflow-wrap:anywhere}.ds-action-buttons{display:flex;gap:8px;margin-left:auto}.ds-action-dock button{min-height:44px;padding:8px 14px;border-radius:10px;font:inherit;font-size:13px;white-space:nowrap;cursor:pointer}.ds-action-confirm{border:1px solid transparent;background:var(--plan-primary,#7154d3);color:#fff}.ds-action-cancel{border:1px solid var(--line,#dedbe6);background:var(--plan-control,var(--surface,#fff));color:var(--text,#222128)}.ds-action-dock button:focus-visible{outline:2px solid var(--purple,#7256d8);outline-offset:2px}.ds-action-dock button:disabled{opacity:.5;cursor:default}@media(max-width:599px){.ds-action-dock{width:100%}}"
+    },
+    {
+      "name": "计划日期与视图工具栏",
+      "kind": "custom",
+      "refersTo": "plan-toolbar",
+      "description": "桌面主画布以单条 60px 工具栏组织日期导航、六视图与筛选／新增／主题；手机仅在此保留日期和视图，操作移至紧凑图标栏。",
+      "html": "<header class=\"ds-plan-toolbar\" aria-label=\"计划工具栏\"><div class=\"ds-plan-date\"><strong title=\"示例日期范围\">2026-10-19 — 11-01</strong><nav aria-label=\"日历日期\"><button type=\"button\" aria-label=\"上一期\"><svg aria-hidden=\"true\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m15 18-6-6 6-6\"/></svg></button><button type=\"button\">今天</button><button type=\"button\" aria-label=\"下一期\"><svg aria-hidden=\"true\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 18 6-6-6-6\"/></svg></button></nav></div><nav class=\"ds-plan-views\" aria-label=\"计划视图\"><button type=\"button\" aria-pressed=\"true\">两周</button><button type=\"button\" aria-pressed=\"false\">四象限</button><button type=\"button\" aria-pressed=\"false\">窗口</button><button type=\"button\" aria-pressed=\"false\">列表</button><button type=\"button\" aria-pressed=\"false\">周</button><button type=\"button\" aria-pressed=\"false\">月</button></nav><div class=\"ds-plan-tools\"><button type=\"button\" aria-label=\"筛选计划\" aria-haspopup=\"dialog\"><svg aria-hidden=\"true\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4\"/></svg></button><button type=\"button\" class=\"ds-plan-add\" aria-label=\"新增计划\"><svg aria-hidden=\"true\" width=\"21\" height=\"21\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg></button><button type=\"button\" aria-label=\"切换到深色主题\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.9 13A9 9 0 0 1 11 3.1 7 7 0 0 0 20.9 13Z\"/></svg></button></div></header>",
+      "css": ".ds-plan-toolbar{display:flex;align-items:center;gap:8px;flex:0 0 60px;height:60px;max-height:64px;min-width:0;padding:0 2px 8px;box-sizing:border-box;color:var(--text,#222128);font-family:\"PingFang SC\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", sans-serif}.ds-plan-date{display:flex;align-items:center;gap:6px;flex-shrink:0;min-width:0}.ds-plan-date>strong{font-size:12px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}.ds-plan-date nav{display:flex;gap:0}.ds-plan-toolbar button{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-width:44px;min-height:44px;padding:8px;border:0;border-radius:10px;background:transparent;color:var(--text,#222128);font:inherit;font-size:12px;cursor:pointer}.ds-plan-toolbar button:hover{background:var(--purple-soft,#ece8fb)}.ds-plan-toolbar button:focus-visible{outline:2px solid var(--purple,#7256d8);outline-offset:-2px}.ds-plan-toolbar button:disabled{opacity:.5;cursor:default}.ds-plan-views{display:flex;align-items:center;flex:1;justify-content:flex-start;min-width:44px;padding:2px;gap:0;border:1px solid var(--plan-edge,var(--line,#dedbe6));border-radius:12px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;background:var(--glass-item,var(--surface,#fff))}.ds-plan-views::-webkit-scrollbar{display:none}.ds-plan-views [aria-pressed=true]{background:var(--purple-soft,#ece8fb);color:var(--purple-ink,#5d42c4);font-weight:600}.ds-plan-tools{display:flex;gap:2px;flex-shrink:0}.ds-plan-tools .ds-plan-add{width:44px;height:44px;background:var(--plan-primary,#7154d3);color:#fff}@media(max-width:899px){.ds-plan-toolbar{padding:0 0 4px;gap:4px}.ds-plan-date{gap:0}.ds-plan-date>strong{font-size:11px}.ds-plan-date nav button{padding:6px}.ds-plan-toolbar .ds-plan-tools{display:none}}@media(max-width:599px){.ds-plan-date{position:relative;flex-direction:column;padding-top:9px}.ds-plan-date>strong{position:absolute;left:0;top:-2px;font-size:10px;line-height:12px}.ds-plan-date nav button{height:44px}.ds-plan-views{margin-left:4px}}"
+    },
+    {
+      "name": "计划侧栏导航",
+      "kind": "nav",
+      "description": "桌面侧栏承载六状态与已加载数量、全部六视图、类别和新增类别；类别按钮也是归类拖入目标，全屏隐藏左右侧栏。",
+      "html": "<div class=\"ds-plan-rail\"><button type=\"button\" class=\"ds-rail-create\"><svg aria-hidden=\"true\" width=\"21\" height=\"21\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg>新建计划</button><nav aria-label=\"计划快捷导航\"><button type=\"button\" aria-pressed=\"true\"><span>全部计划</span><small>0</small></button><button type=\"button\" aria-pressed=\"false\"><span>今日</span><small>0</small></button><button type=\"button\" aria-pressed=\"false\"><span>即将开始</span><small>0</small></button><button type=\"button\" aria-pressed=\"false\"><span>逾期</span><small>0</small></button><button type=\"button\" aria-pressed=\"false\"><span>已完成</span><small>0</small></button><button type=\"button\" aria-pressed=\"false\"><span>回收站</span><small>0</small></button></nav><section class=\"ds-rail-group\"><h2>日程视图</h2><nav aria-label=\"侧栏日程视图\"><button type=\"button\" aria-pressed=\"true\"><span>两周日程</span></button><button type=\"button\" aria-pressed=\"false\"><span>四象限</span></button><button type=\"button\" aria-pressed=\"false\"><span>分类窗口</span></button><button type=\"button\" aria-pressed=\"false\"><span>列表</span></button><button type=\"button\" aria-pressed=\"false\"><span>周日程</span></button><button type=\"button\" aria-pressed=\"false\"><span>月日程</span></button></nav></section><section class=\"ds-rail-group\"><h2>事项类别</h2><nav aria-label=\"侧栏计划类别\"><button type=\"button\" aria-pressed=\"true\"><i class=\"ds-rail-dot\" aria-hidden=\"true\"></i><span>全部类别</span></button><button type=\"button\" data-plan-drop=\"category:work\"><i class=\"ds-rail-dot\" aria-hidden=\"true\"></i><span>工作</span></button><button type=\"button\" data-plan-drop=\"category:personal\"><i class=\"ds-rail-dot\" aria-hidden=\"true\"></i><span>个人生活</span></button><button type=\"button\"><svg aria-hidden=\"true\" width=\"21\" height=\"21\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg><span>新增类别</span></button></nav></section><button type=\"button\"><svg aria-hidden=\"true\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4\"/></svg><span>更多筛选</span></button><small class=\"ds-rail-caption\">数量为当前已加载的日程</small></div>",
+      "css": ".ds-plan-rail{display:grid;gap:12px;margin-top:12px;color:var(--text,#222128);font-family:\"PingFang SC\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", sans-serif}.ds-plan-rail nav{display:grid;gap:4px}.ds-plan-rail button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:8px 12px;border:0;border-radius:10px;background:transparent;color:var(--text,#222128);text-align:left;font:inherit;font-size:13px;cursor:pointer}.ds-plan-rail button>span{flex:1;min-width:0}.ds-plan-rail button>small{color:var(--muted,#686572);font-variant-numeric:tabular-nums}.ds-plan-rail button:hover{background:var(--glass-item,var(--surface,#fff))}.ds-plan-rail button[aria-pressed=true]{background:var(--purple-soft,#ece8fb);color:var(--purple-ink,#5d42c4);font-weight:600}.ds-plan-rail button:focus-visible{outline:2px solid var(--purple,#7256d8);outline-offset:2px}.ds-plan-rail button:disabled{opacity:.5;cursor:default}.ds-plan-rail .ds-rail-create{background:var(--purple,#7256d8);color:#fff;justify-content:center}.ds-rail-group h2{font-size:12px;font-weight:500;color:var(--muted,#686572);margin:0 12px 8px}.ds-rail-dot{width:8px;height:8px;flex:none;border-radius:50%;background:var(--purple,#7256d8)}.ds-plan-rail [data-plan-drop]:hover{outline:1px dashed var(--purple,#7256d8);outline-offset:-1px}.ds-rail-caption{color:var(--muted,#686572);font-size:10px;padding:0 12px}"
+    },
+    {
+      "name": "共享导航与紧凑日记框架",
+      "kind": "custom",
+      "refersTo": "diary-toolbar",
+      "description": "手机共用 52px 导航和 60px 日记日期工具栏，正文不重复标题、摘要条或新增。桌面栏目在左栏，全屏嵌入工具栏；顶部动作按当前栏目分派，四个记录面板持续挂载。",
+      "html": "<div class=\"ds-diary-example\"><nav class=\"ds-workspace-nav\" aria-label=\"紧凑浏览工具栏\"><button type=\"button\" aria-label=\"日记\" aria-pressed=\"true\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.24 12.24a6 6 0 0 0-8.48-8.48L3 12.5V21h8.5zM16 8 2 22M9 15H2\"/></svg><small>日记</small></button><button type=\"button\" aria-label=\"计划\" aria-pressed=\"false\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M13 5h8M13 12h8M13 19h8M3 17l2 2 4-4\"/><rect x=\"3\" y=\"4\" width=\"4\" height=\"4\" rx=\"1\"/></svg><small>计划</small></button><button type=\"button\" class=\"ds-workspace-context\" aria-label=\"编辑今日信息\" aria-haspopup=\"dialog\"><svg aria-hidden=\"true\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16v-4M12 8h.01\"/></svg><span>信息</span><svg aria-hidden=\"true\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"/></svg></button><button type=\"button\" aria-label=\"切换到深色主题\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.9 13A9 9 0 0 1 11 3.1 7 7 0 0 0 20.9 13Z\"/></svg></button><button type=\"button\" class=\"ds-workspace-create\" aria-label=\"新增事实\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg></button><button type=\"button\" aria-label=\"退出登录\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"8\" r=\"5\"/><path d=\"M20 21a8 8 0 0 0-16 0\"/></svg></button></nav><section class=\"ds-diary-frame\"><header class=\"ds-diary-toolbar\" aria-label=\"日记工具栏\"><nav class=\"ds-diary-date\" aria-label=\"日记日期导航\"><button type=\"button\" aria-label=\"前一天\"><svg aria-hidden=\"true\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m15 18-6-6 6-6\"/></svg></button><button type=\"button\" class=\"ds-diary-picker\" aria-label=\"日记日期\" aria-haspopup=\"dialog\">2026-10-22<svg aria-hidden=\"true\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"/></svg></button><button type=\"button\" aria-label=\"后一天\"><svg aria-hidden=\"true\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 18 6-6-6-6\"/></svg></button><button type=\"button\" aria-label=\"回到今天\">今天</button></nav><span class=\"ds-diary-count\" aria-label=\"事实 2 条\"><span>事实</span><b>2</b><small>条</small></span><nav class=\"ds-diary-tabs\" role=\"tablist\" aria-label=\"日记栏目\"><button type=\"button\" role=\"tab\" aria-selected=\"true\">事实</button><button type=\"button\" role=\"tab\" aria-selected=\"false\">新知</button><button type=\"button\" role=\"tab\" aria-selected=\"false\">输入</button><button type=\"button\" role=\"tab\" aria-selected=\"false\">灵感</button><button type=\"button\" role=\"tab\" aria-selected=\"false\">关联</button></nav><div class=\"ds-diary-actions\"><button type=\"button\" class=\"ds-diary-desktop\" aria-label=\"编辑今日信息\" aria-haspopup=\"dialog\"><svg aria-hidden=\"true\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16v-4M12 8h.01\"/></svg></button><button type=\"button\" class=\"ds-diary-desktop ds-diary-create\" aria-label=\"新增事实\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg></button><button type=\"button\" class=\"ds-diary-desktop\" aria-label=\"切换到深色主题\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.9 13A9 9 0 0 1 11 3.1 7 7 0 0 0 20.9 13Z\"/></svg></button><button type=\"button\" class=\"ds-diary-save\" data-status=\"saved\" aria-label=\"保存日记\" title=\"已保存\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m20 6-11 11-5-5\"/></svg><span class=\"ds-visually-hidden\" role=\"status\" aria-live=\"polite\">已保存</span></button></div></header><div class=\"ds-diary-body\" role=\"region\" aria-label=\"事实记录区\" tabindex=\"0\"></div></section></div>",
+      "css": ".ds-diary-example{display:flex;flex-direction:column;gap:8px;min-width:0;font-family:\"PingFang SC\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", sans-serif;color:var(--text,#222128)}.ds-workspace-nav{display:none}.ds-diary-frame{box-sizing:border-box;display:flex;flex-direction:column;padding:8px;margin:0;border:1px solid var(--glass-edge,var(--line,#dedbe6));border-radius:16px;background:var(--glass,var(--surface,#fff));backdrop-filter:var(--glass-blur,none);min-width:0}.ds-diary-toolbar{box-sizing:border-box;display:flex;align-items:center;gap:8px;flex:0 0 60px;height:60px;min-width:0;max-height:64px;padding:0 0 8px}.ds-diary-toolbar button,.ds-workspace-nav button{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-width:44px;min-height:44px;padding:6px;border:0;border-radius:10px;background:transparent;color:var(--text,#222128);font:inherit;font-size:13px;cursor:pointer}.ds-diary-toolbar button:hover,.ds-workspace-nav button:hover{background:var(--purple-soft,#ece8fb)}.ds-diary-toolbar button:focus-visible,.ds-workspace-nav button:focus-visible{outline:2px solid var(--purple,#7256d8);outline-offset:-2px}.ds-diary-toolbar button:disabled,.ds-workspace-nav button:disabled{opacity:.5;cursor:default}.ds-diary-date{display:flex;align-items:center;flex-shrink:0;min-width:0;gap:0}.ds-diary-date .ds-diary-picker{width:114px;min-width:114px;padding:6px 4px;font-size:13px;font-weight:600;gap:4px}.ds-diary-count{display:flex;align-items:baseline;gap:4px;white-space:nowrap;color:var(--muted,#686572);font-size:12px;min-width:0}.ds-diary-count>span{color:var(--text,#222128);font-weight:600;font-size:14px;margin-right:4px}.ds-diary-count b{font-weight:500;font-variant-numeric:tabular-nums}.ds-diary-count small{font-size:11px}.ds-diary-actions{display:flex;align-items:center;gap:4px;margin-left:auto;flex-shrink:0}.ds-diary-toolbar .ds-diary-create,.ds-workspace-nav .ds-workspace-create{background:var(--purple-strong,#5d42c4);color:#fff}.ds-diary-toolbar .ds-diary-save{position:relative;background:var(--purple-soft,#ece8fb);color:var(--purple-ink,#5d42c4)}.ds-diary-save[data-status=saved]{color:var(--green,#237e5b);background:var(--green-soft,#def3e7)}.ds-diary-save[data-status=error],.ds-diary-save[data-status=conflict]{color:var(--red,#bd3d4c);background:var(--red-soft,#fce3e6)}.ds-diary-save[data-status=dirty]::after{content:'';position:absolute;top:6px;right:6px;width:6px;height:6px;background:var(--amber,#9a6416);border-radius:50%}.ds-diary-tabs{display:none}.ds-diary-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior-y:contain;scrollbar-gutter:stable;padding:0 2px 4px}.ds-visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}@media(min-width:900px){.ds-diary-frame[data-fullscreen=true] .ds-diary-tabs{display:flex;flex:1;min-width:44px;gap:0;padding:2px;margin:0;overflow:auto;background:var(--glass-item,var(--surface,#fff));border-radius:10px}.ds-diary-tabs button{min-width:60px;flex-shrink:0;gap:4px}.ds-diary-tabs [aria-selected=true]{background:var(--purple-soft,#ece8fb);color:var(--purple-ink,#5d42c4)}}@media(max-width:899px){.ds-workspace-nav{box-sizing:border-box;display:flex;flex-shrink:0;align-items:center;gap:4px;height:52px;min-height:52px;padding:3px;border:1px solid var(--glass-edge,var(--line,#dedbe6));border-radius:14px;background:var(--glass,var(--surface,#fff));backdrop-filter:var(--glass-blur,none)}.ds-workspace-nav button{height:44px;gap:5px}.ds-workspace-nav button:has(small){flex-direction:column;gap:1px}.ds-workspace-nav small{font-size:10px;font-weight:600;line-height:12px}.ds-workspace-nav [aria-pressed=true]{background:var(--purple-soft,#ece8fb);color:var(--purple-ink,#5d42c4)}.ds-workspace-nav .ds-workspace-context{flex:1;min-width:0}.ds-diary-frame{padding:6px 8px}.ds-diary-toolbar{gap:4px;padding:0 0 4px}.ds-diary-toolbar .ds-diary-desktop{display:none}.ds-diary-count>span{display:none}.ds-diary-actions{gap:0}}@supports not(backdrop-filter:blur(1px)){.ds-diary-frame{background:var(--surface,#fff)}}@media(prefers-reduced-transparency:reduce){.ds-diary-frame,.ds-workspace-nav{background:var(--surface,#fff);backdrop-filter:none}}"
+    },
+    {
+      "name": "连续日期与截止时间轴",
+      "kind": "custom",
+      "description": "周／两周以 7／14 个日期行共用横向小时轴：160px 每占用小时、148px 截止卡、64px 密集轨道；日期列固定并按 96／84／72px 响应。全天列仅有事项时出现，拖动与待确认冻结小时和行高。",
+      "html": "<div class=\"ds-timeline-scroll\"><div class=\"ds-timeline-canvas\"><header class=\"ds-timeline-heading\"><div class=\"ds-timeline-corner\">截止日期</div><div class=\"ds-timeline-all-heading\">全天</div><div class=\"ds-timeline-axis\"><span style=\"left:0\">09:00</span><span style=\"left:160px\">15:00</span></div></header><div class=\"ds-timeline-row\" style=\"height:136px\"><button type=\"button\" class=\"ds-timeline-date\" aria-label=\"查看示例日期的日程\"><strong>10-22</strong><small>2026 · 周四</small><small>3 项</small></button><div class=\"ds-timeline-all\"><div class=\"ds-timeline-chip\" title=\"本周复盘 · 截止 全天 · 工作 · 重要不紧急\"><button type=\"button\" class=\"ds-timeline-copy\"><small>截止 全天 · 工作</small><strong>本周复盘</strong></button><button type=\"button\" class=\"ds-timeline-grip\" aria-label=\"拖动截止时间：本周复盘\"><svg aria-hidden=\"true\" width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"5\" r=\"1\"/><circle cx=\"9\" cy=\"12\" r=\"1\"/><circle cx=\"9\" cy=\"19\" r=\"1\"/><circle cx=\"15\" cy=\"5\" r=\"1\"/><circle cx=\"15\" cy=\"12\" r=\"1\"/><circle cx=\"15\" cy=\"19\" r=\"1\"/></svg></button></div></div><div class=\"ds-timeline-timed\"><div class=\"ds-timeline-markers\" style=\"height:136px\"><div class=\"ds-timeline-position\" style=\"left:40px;top:4px\"><div class=\"ds-timeline-chip\" title=\"整理本周记录 · 截止 09:15 · 工作 · 重要不紧急\"><button type=\"button\" class=\"ds-timeline-copy\"><small>截止 09:15 · 工作</small><strong>整理本周记录</strong></button><button type=\"button\" class=\"ds-timeline-grip\" aria-label=\"拖动截止时间：整理本周记录\"><svg aria-hidden=\"true\" width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"5\" r=\"1\"/><circle cx=\"9\" cy=\"12\" r=\"1\"/><circle cx=\"9\" cy=\"19\" r=\"1\"/><circle cx=\"15\" cy=\"5\" r=\"1\"/><circle cx=\"15\" cy=\"12\" r=\"1\"/><circle cx=\"15\" cy=\"19\" r=\"1\"/></svg></button></div></div><div class=\"ds-timeline-position\" style=\"left:80px;top:68px\"><div class=\"ds-timeline-chip\" data-pending=\"true\" title=\"核对待办清单 · 截止 09:30 · 工作 · 重要不紧急\"><button type=\"button\" class=\"ds-timeline-copy\"><small>截止 09:30 · 工作 · 待确认</small><strong>核对待办清单</strong></button><button type=\"button\" class=\"ds-timeline-grip\" aria-label=\"拖动截止时间：核对待办清单\"><svg aria-hidden=\"true\" width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"5\" r=\"1\"/><circle cx=\"9\" cy=\"12\" r=\"1\"/><circle cx=\"9\" cy=\"19\" r=\"1\"/><circle cx=\"15\" cy=\"5\" r=\"1\"/><circle cx=\"15\" cy=\"12\" r=\"1\"/><circle cx=\"15\" cy=\"19\" r=\"1\"/></svg></button></div></div></div></div></div><div class=\"ds-timeline-row\" style=\"height:72px\"><button type=\"button\" class=\"ds-timeline-date\" aria-label=\"查看下一个示例日期的日程\"><strong>10-23</strong><small>2026 · 周五</small><small>1 项</small></button><div class=\"ds-timeline-all\"></div><div class=\"ds-timeline-timed\"><div class=\"ds-timeline-markers\" style=\"height:72px\"><div class=\"ds-timeline-position\" style=\"left:160px;top:4px\"><div class=\"ds-timeline-chip\" title=\"归档资料 · 截止 15:00 · 个人生活 · 重要不紧急\"><button type=\"button\" class=\"ds-timeline-copy\"><small>截止 15:00 · 个人生活</small><strong>归档资料</strong></button><button type=\"button\" class=\"ds-timeline-grip\" aria-label=\"拖动截止时间：归档资料\"><svg aria-hidden=\"true\" width=\"17\" height=\"17\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"5\" r=\"1\"/><circle cx=\"9\" cy=\"12\" r=\"1\"/><circle cx=\"9\" cy=\"19\" r=\"1\"/><circle cx=\"15\" cy=\"5\" r=\"1\"/><circle cx=\"15\" cy=\"12\" r=\"1\"/><circle cx=\"15\" cy=\"19\" r=\"1\"/></svg></button></div></div></div></div></div></div></div>",
+      "css": ".ds-timeline-scroll{overflow:auto;min-width:0;font-family:\"PingFang SC\", \"Microsoft YaHei UI\", \"Microsoft YaHei\", \"Noto Sans CJK SC\", sans-serif;color:var(--text,#222128);scroll-padding-top:48px}.ds-timeline-canvas{--ds-date-width:96px;--ds-all-width:164px;--ds-hour-width:320px;min-width:100%;width:max-content}.ds-timeline-heading,.ds-timeline-row{display:grid;grid-template-columns:var(--ds-date-width) var(--ds-all-width) minmax(var(--ds-hour-width),1fr);min-width:100%;width:calc(var(--ds-date-width) + var(--ds-all-width) + var(--ds-hour-width))}.ds-timeline-heading{position:sticky;top:0;z-index:6;height:44px;background:var(--surface,#fff)}.ds-timeline-corner{position:sticky;left:0;z-index:7;display:flex;align-items:center;padding:8px;background:var(--surface,#fff);font-size:11px;border-bottom:1px solid var(--line,#dedbe6)}.ds-timeline-all-heading{display:flex;align-items:center;padding:8px;font-size:11px;color:var(--muted,#686572);border-bottom:1px solid var(--line,#dedbe6)}.ds-timeline-axis{position:relative;border-bottom:1px solid var(--line,#dedbe6);color:var(--muted,#686572);font-size:11px;font-variant-numeric:tabular-nums}.ds-timeline-axis>span{position:absolute;top:15px;padding-left:5px;white-space:nowrap}.ds-timeline-row{min-height:60px;border-bottom:1px solid var(--line,#dedbe6)}.ds-timeline-date{position:sticky;left:0;z-index:3;align-self:stretch;display:flex;flex-direction:column;justify-content:center;gap:3px;min-height:44px;min-width:0;padding:6px;border:0;border-right:1px solid var(--line,#dedbe6);color:var(--text,#222128);background:var(--surface,#fff);font:inherit;cursor:pointer}.ds-timeline-date strong{font-size:13px;font-variant-numeric:tabular-nums}.ds-timeline-date small{font-size:10px;color:var(--muted,#686572);white-space:nowrap}.ds-timeline-all{box-sizing:border-box;isolation:isolate;min-width:0;padding:0 4px;overflow:auto;border-right:1px solid var(--line,#dedbe6)}.ds-timeline-timed{isolation:isolate;position:relative;min-width:0;overflow:auto;background-image:linear-gradient(to right,var(--line,#dedbe6) 1px,transparent 1px);background-size:160px 100%;scrollbar-width:thin}.ds-timeline-markers{position:relative;min-height:100%}.ds-timeline-position{position:absolute;width:148px;height:60px}.ds-timeline-chip{box-sizing:border-box;--urgency-color:#7856bd;position:relative;display:flex;align-items:center;min-width:0;height:60px;border:1px solid color-mix(in srgb,var(--urgency-color) 45%,var(--line,#dedbe6));border-radius:10px;background:color-mix(in srgb,var(--urgency-color) 11%,var(--surface,#fff));color:var(--text,#222128)}.ds-timeline-timed .ds-timeline-chip::before{content:'';position:absolute;left:-3px;top:6px;width:5px;height:5px;border-radius:50%;background:var(--urgency-color)}.ds-timeline-all>.ds-timeline-chip{margin:4px 0 0}.ds-timeline-copy{display:grid;align-content:center;gap:4px;flex:1;min-width:0;min-height:44px;padding:5px 4px 5px 7px;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}.ds-timeline-copy small{font-size:10px;color:var(--muted,#686572);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ds-timeline-copy strong{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ds-timeline-grip{min-width:44px;min-height:44px;align-self:stretch;padding:0;border:0;background:transparent;color:var(--muted,#686572);touch-action:none;cursor:grab}.ds-timeline-chip[data-pending=true]{outline:2px solid var(--purple,#7256d8);outline-offset:-2px}.ds-timeline-chip:hover,.ds-timeline-chip:focus-within{z-index:5}.ds-timeline-copy:focus-visible,.ds-timeline-grip:focus-visible,.ds-timeline-date:focus-visible{outline:2px solid var(--purple,#7256d8);outline-offset:-2px}:host-context([data-theme=dark]) .ds-timeline-chip{background:color-mix(in srgb,var(--urgency-color) 21%,var(--surface,#fff))}@media(max-width:899px){.ds-timeline-canvas{--ds-date-width:84px}}@media(max-width:599px){.ds-timeline-canvas{--ds-date-width:72px;--ds-all-width:112px}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "安静的关系手账",
+    "overview": "界面继承项目方舟的紫色语义色与明暗主题，但降低视觉噪声。快速记录与当前工作区的主要行动使用紫色聚焦；编辑、关系探索与保存状态保持轻量、可信、内容优先。",
+    "keyCharacteristics": [],
+    "rules": [
+      {
+        "name": "The Independent Channels Rule",
+        "body": "计划底色与边框表达重要／紧急，类别保留独立文字；完成、即将到期和超期使用文字徽标，状态不覆盖紧急度底色。",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do 使用 Lucide SVG 作为结构图标，并为图标按钮提供可读名称。",
+      "Do 保留拆分确认、删除确认、AI 失败回退与保存状态反馈。",
+      "Do 支持键盘焦点、屏幕阅读器、明暗主题和 `prefers-reduced-motion`。"
+    ],
+    "donts": [
+      "Don't 用 emoji 替代结构图标，或用颜色作为唯一状态线索。",
+      "Don't 隐藏 AI 发送范围、静默覆盖冲突，或把事件备注提升为整日备注。",
+      "Don't 为追求简洁而裁掉图谱实体节点或截断节点名称。"
+    ]
+  }
+}

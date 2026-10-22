@@ -1,0 +1,40 @@
+[
+  {
+    "width": 1280,
+    "theme": "light",
+    "main": {
+      "top": 0,
+      "height": 900,
+      "width": 884
+    },
+    "calendar": {
+      "top": 403.5,
+      "height": 318.3125,
+      "width": 802
+    },
+    "panel": {
+      "top": 72,
+      "height": 756,
+      "width": 836
+    }
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "main": {
+      "top": 0,
+      "height": 900,
+      "width": 990
+    },
+    "calendar": {
+      "top": 403.5,
+      "height": 318.3125,
+      "width": 908
+    },
+    "panel": {
+      "top": 72,
+      "height": 756,
+      "width": 942
+    }
+  }
+]

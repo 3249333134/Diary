@@ -1,0 +1,37 @@
+/* The card's tint always means importance/urgency, independent of its category or deadline status. */
+.todo-panel .todo-list li.plan-card[data-urgency],.calendar-chip[data-urgency],.calendar-drag-ghost,.plan-drag-preview{
+  background:color-mix(in srgb,var(--urgency-color) 11%,var(--surface));
+  border:1px solid color-mix(in srgb,var(--urgency-color) 45%,var(--line));
+  color:var(--text);
+}
+:root[data-theme=dark] .todo-panel .todo-list li.plan-card[data-urgency],:root[data-theme=dark] .calendar-chip[data-urgency],:root[data-theme=dark] .calendar-drag-ghost,:root[data-theme=dark] .plan-drag-preview{
+  background:color-mix(in srgb,var(--urgency-color) 21%,var(--surface));
+}
+.todo-panel .plan-quadrant.q1{--quadrant:#bd3d4c}.todo-panel .plan-quadrant.q2{--quadrant:#7856bd}.todo-panel .plan-quadrant.q3{--quadrant:#a26416}.todo-panel .plan-quadrant.q4{--quadrant:#737785}
+.calendar-chip[data-pending=true]{outline:2px solid var(--purple);outline-offset:-2px}
+.calendar-state-badge{position:absolute;right:4px;top:2px;font-size:9px;padding:0 3px;border-radius:3px}
+.calendar-chip:has(.calendar-state-badge) .calendar-chip-copy small{padding-right:28px}
+.calendar-drag-ghost small{color:var(--text)}
+.calendar-weeks{min-width:960px}
+.calendar-week-section{min-width:0}
+.calendar-week-section+.calendar-week-section{margin-top:16px}
+.calendar-week-caption{position:sticky;left:0;width:fit-content;max-width:calc(100vw - 48px);font-size:12px;font-weight:600;margin:0;padding:8px 2px;color:var(--text)}
+.calendar-heading{flex-wrap:wrap}
+.calendar-heading>div{min-width:0}
+.calendar-heading strong{font-size:13px}
+.calendar-heading nav{margin-left:auto}
+.calendar-scroll{scroll-padding-bottom:8px}
+.calendar-action-slot .calendar-drop-review{background:var(--plan-glass);margin:0}
+@media(max-width:599px){.calendar-month .calendar-chip[data-urgency]{background:var(--urgency-color);border:0}}
+
+/* Deadline markers have no invented duration; keep one marker within an hour row. */
+.calendar-chip-copy{padding:4px 6px;gap:2px;line-height:1.25}
+.calendar-chip-copy small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+.calendar-chip:has(.calendar-state-badge) .calendar-chip-copy small{padding-right:0}
+.calendar-chip-copy strong{line-height:1.25}
+.calendar-all-day,.calendar-all-label{min-height:44px}
+.calendar-heading .calendar-hours-toggle{white-space:nowrap;padding:6px 8px}
+
+.calendar-deadline-anchor{position:absolute;left:1px;width:2px;border-left:1px dotted var(--muted);pointer-events:none}
+.calendar-deadline-anchor::before{content:'';position:absolute;top:0;left:-3px;width:5px;height:5px;border-radius:50%;background:var(--muted)}
+.calendar-selected-day .calendar-chip-copy strong{white-space:normal;overflow:visible;overflow-wrap:anywhere}

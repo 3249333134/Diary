@@ -1,0 +1,966 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "geometry": {
+      "main": {
+        "top": 0,
+        "bottom": 900,
+        "height": 900,
+        "width": 375
+      },
+      "calendar": {
+        "top": 181,
+        "bottom": 831,
+        "height": 650,
+        "width": 333
+      },
+      "panel": {
+        "top": 66,
+        "bottom": 838,
+        "height": 772,
+        "width": 351
+      },
+      "toolbar": {
+        "top": 73,
+        "bottom": 133,
+        "height": 60,
+        "width": 333
+      },
+      "footer": {
+        "top": 846,
+        "bottom": 900,
+        "height": 54,
+        "width": 351
+      },
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "single toolbar, calendar height gain and 8px footer gap",
+        "passed": true
+      },
+      {
+        "name": "all six sidebar views, six ranges with counts, category and add entry",
+        "passed": true
+      },
+      {
+        "name": "filter contains stats, category, legend and hours; reset preserves view",
+        "passed": true
+      },
+      {
+        "name": "empty all-day lanes omitted; full date headers receive drops; no fixed calendar tail",
+        "passed": true
+      },
+      {
+        "name": "empty date header accepts all-day preview without a temporary lane or write",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: fortnight",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: board",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: windows",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: list",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: week",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: month",
+        "passed": true
+      },
+      {
+        "name": "desktop category drop targets work in board and window views",
+        "passed": true
+      },
+      {
+        "name": "fullscreen widens calendar and restores view/filter",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps calendar, footer and new-task actions reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "geometry": {
+      "main": {
+        "top": 0,
+        "bottom": 900,
+        "height": 900,
+        "width": 375
+      },
+      "calendar": {
+        "top": 181,
+        "bottom": 831,
+        "height": 650,
+        "width": 333
+      },
+      "panel": {
+        "top": 66,
+        "bottom": 838,
+        "height": 772,
+        "width": 351
+      },
+      "toolbar": {
+        "top": 73,
+        "bottom": 133,
+        "height": 60,
+        "width": 333
+      },
+      "footer": {
+        "top": 846,
+        "bottom": 900,
+        "height": 54,
+        "width": 351
+      },
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "single toolbar, calendar height gain and 8px footer gap",
+        "passed": true
+      },
+      {
+        "name": "all six sidebar views, six ranges with counts, category and add entry",
+        "passed": true
+      },
+      {
+        "name": "filter contains stats, category, legend and hours; reset preserves view",
+        "passed": true
+      },
+      {
+        "name": "empty all-day lanes omitted; full date headers receive drops; no fixed calendar tail",
+        "passed": true
+      },
+      {
+        "name": "empty date header accepts all-day preview without a temporary lane or write",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: fortnight",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: board",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: windows",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: list",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: week",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: month",
+        "passed": true
+      },
+      {
+        "name": "desktop category drop targets work in board and window views",
+        "passed": true
+      },
+      {
+        "name": "fullscreen widens calendar and restores view/filter",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps calendar, footer and new-task actions reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 624,
+    "theme": "light",
+    "geometry": {
+      "main": {
+        "top": 0,
+        "bottom": 1195,
+        "height": 1195,
+        "width": 624
+      },
+      "calendar": {
+        "top": 181,
+        "bottom": 1126,
+        "height": 945,
+        "width": 582
+      },
+      "panel": {
+        "top": 66,
+        "bottom": 1133,
+        "height": 1067,
+        "width": 600
+      },
+      "toolbar": {
+        "top": 73,
+        "bottom": 133,
+        "height": 60,
+        "width": 582
+      },
+      "footer": {
+        "top": 1141,
+        "bottom": 1195,
+        "height": 54,
+        "width": 600
+      },
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "single toolbar, calendar height gain and 8px footer gap",
+        "passed": true
+      },
+      {
+        "name": "all six sidebar views, six ranges with counts, category and add entry",
+        "passed": true
+      },
+      {
+        "name": "filter contains stats, category, legend and hours; reset preserves view",
+        "passed": true
+      },
+      {
+        "name": "empty all-day lanes omitted; full date headers receive drops; no fixed calendar tail",
+        "passed": true
+      },
+      {
+        "name": "empty date header accepts all-day preview without a temporary lane or write",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: fortnight",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: board",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: windows",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: list",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: week",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: month",
+        "passed": true
+      },
+      {
+        "name": "desktop category drop targets work in board and window views",
+        "passed": true
+      },
+      {
+        "name": "fullscreen widens calendar and restores view/filter",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps calendar, footer and new-task actions reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 624,
+    "theme": "dark",
+    "geometry": {
+      "main": {
+        "top": 0,
+        "bottom": 1195,
+        "height": 1195,
+        "width": 624
+      },
+      "calendar": {
+        "top": 181,
+        "bottom": 1126,
+        "height": 945,
+        "width": 582
+      },
+      "panel": {
+        "top": 66,
+        "bottom": 1133,
+        "height": 1067,
+        "width": 600
+      },
+      "toolbar": {
+        "top": 73,
+        "bottom": 133,
+        "height": 60,
+        "width": 582
+      },
+      "footer": {
+        "top": 1141,
+        "bottom": 1195,
+        "height": 54,
+        "width": 600
+      },
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "single toolbar, calendar height gain and 8px footer gap",
+        "passed": true
+      },
+      {
+        "name": "all six sidebar views, six ranges with counts, category and add entry",
+        "passed": true
+      },
+      {
+        "name": "filter contains stats, category, legend and hours; reset preserves view",
+        "passed": true
+      },
+      {
+        "name": "empty all-day lanes omitted; full date headers receive drops; no fixed calendar tail",
+        "passed": true
+      },
+      {
+        "name": "empty date header accepts all-day preview without a temporary lane or write",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: fortnight",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: board",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: windows",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: list",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: week",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: month",
+        "passed": true
+      },
+      {
+        "name": "desktop category drop targets work in board and window views",
+        "passed": true
+      },
+      {
+        "name": "fullscreen widens calendar and restores view/filter",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps calendar, footer and new-task actions reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "geometry": {
+      "main": {
+        "top": 0,
+        "bottom": 900,
+        "height": 900,
+        "width": 768
+      },
+      "calendar": {
+        "top": 181,
+        "bottom": 831,
+        "height": 650,
+        "width": 726
+      },
+      "panel": {
+        "top": 66,
+        "bottom": 838,
+        "height": 772,
+        "width": 744
+      },
+      "toolbar": {
+        "top": 73,
+        "bottom": 133,
+        "height": 60,
+        "width": 726
+      },
+      "footer": {
+        "top": 846,
+        "bottom": 900,
+        "height": 54,
+        "width": 744
+      },
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "single toolbar, calendar height gain and 8px footer gap",
+        "passed": true
+      },
+      {
+        "name": "all six sidebar views, six ranges with counts, category and add entry",
+        "passed": true
+      },
+      {
+        "name": "filter contains stats, category, legend and hours; reset preserves view",
+        "passed": true
+      },
+      {
+        "name": "empty all-day lanes omitted; full date headers receive drops; no fixed calendar tail",
+        "passed": true
+      },
+      {
+        "name": "empty date header accepts all-day preview without a temporary lane or write",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: fortnight",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: board",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: windows",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: list",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: week",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: month",
+        "passed": true
+      },
+      {
+        "name": "desktop category drop targets work in board and window views",
+        "passed": true
+      },
+      {
+        "name": "fullscreen widens calendar and restores view/filter",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps calendar, footer and new-task actions reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "geometry": {
+      "main": {
+        "top": 0,
+        "bottom": 900,
+        "height": 900,
+        "width": 768
+      },
+      "calendar": {
+        "top": 181,
+        "bottom": 831,
+        "height": 650,
+        "width": 726
+      },
+      "panel": {
+        "top": 66,
+        "bottom": 838,
+        "height": 772,
+        "width": 744
+      },
+      "toolbar": {
+        "top": 73,
+        "bottom": 133,
+        "height": 60,
+        "width": 726
+      },
+      "footer": {
+        "top": 846,
+        "bottom": 900,
+        "height": 54,
+        "width": 744
+      },
+      "overflow": false
+    },
+    "checks": [
+      {
+        "name": "single toolbar, calendar height gain and 8px footer gap",
+        "passed": true
+      },
+      {
+        "name": "all six sidebar views, six ranges with counts, category and add entry",
+        "passed": true
+      },
+      {
+        "name": "filter contains stats, category, legend and hours; reset preserves view",
+        "passed": true
+      },
+      {
+        "name": "empty all-day lanes omitted; full date headers receive drops; no fixed calendar tail",
+        "passed": true
+      },
+      {
+        "name": "empty date header accepts all-day preview without a temporary lane or write",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: fortnight",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: board",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: windows",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: list",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: week",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: month",
+        "passed": true
+      },
+      {
+        "name": "desktop category drop targets work in board and window views",
+        "passed": true
+      },
+      {
+        "name": "fullscreen widens calendar and restores view/filter",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps calendar, footer and new-task actions reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1280,
+    "theme": "light",
+    "geometry": {
+      "main": {
+        "top": 0,
+        "bottom": 900,
+        "height": 900,
+        "width": 884
+      },
+      "calendar": {
+        "top": 77,
+        "bottom": 819,
+        "height": 742,
+        "width": 842
+      },
+      "panel": {
+        "top": 8,
+        "bottom": 828,
+        "height": 820,
+        "width": 860
+      },
+      "toolbar": {
+        "top": 17,
+        "bottom": 77,
+        "height": 60,
+        "width": 842
+      },
+      "footer": {
+        "top": 836,
+        "bottom": 888,
+        "height": 52,
+        "width": 860
+      },
+      "overflow": false,
+      "minimumHeightGain": 317.5
+    },
+    "checks": [
+      {
+        "name": "single toolbar, calendar height gain and 8px footer gap",
+        "passed": true
+      },
+      {
+        "name": "all six sidebar views, six ranges with counts, category and add entry",
+        "passed": true
+      },
+      {
+        "name": "filter contains stats, category, legend and hours; reset preserves view",
+        "passed": true
+      },
+      {
+        "name": "empty all-day lanes omitted; full date headers receive drops; no fixed calendar tail",
+        "passed": true
+      },
+      {
+        "name": "empty date header accepts all-day preview without a temporary lane or write",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: fortnight",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: board",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: windows",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: list",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: week",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: month",
+        "passed": true
+      },
+      {
+        "name": "desktop category drop targets work in board and window views",
+        "passed": true
+      },
+      {
+        "name": "fullscreen widens calendar and restores view/filter",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps calendar, footer and new-task actions reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1280,
+    "theme": "dark",
+    "geometry": {
+      "main": {
+        "top": 0,
+        "bottom": 900,
+        "height": 900,
+        "width": 884
+      },
+      "calendar": {
+        "top": 77,
+        "bottom": 819,
+        "height": 742,
+        "width": 842
+      },
+      "panel": {
+        "top": 8,
+        "bottom": 828,
+        "height": 820,
+        "width": 860
+      },
+      "toolbar": {
+        "top": 17,
+        "bottom": 77,
+        "height": 60,
+        "width": 842
+      },
+      "footer": {
+        "top": 836,
+        "bottom": 888,
+        "height": 52,
+        "width": 860
+      },
+      "overflow": false,
+      "minimumHeightGain": 317.5
+    },
+    "checks": [
+      {
+        "name": "single toolbar, calendar height gain and 8px footer gap",
+        "passed": true
+      },
+      {
+        "name": "all six sidebar views, six ranges with counts, category and add entry",
+        "passed": true
+      },
+      {
+        "name": "filter contains stats, category, legend and hours; reset preserves view",
+        "passed": true
+      },
+      {
+        "name": "empty all-day lanes omitted; full date headers receive drops; no fixed calendar tail",
+        "passed": true
+      },
+      {
+        "name": "empty date header accepts all-day preview without a temporary lane or write",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: fortnight",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: board",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: windows",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: list",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: week",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: month",
+        "passed": true
+      },
+      {
+        "name": "desktop category drop targets work in board and window views",
+        "passed": true
+      },
+      {
+        "name": "fullscreen widens calendar and restores view/filter",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps calendar, footer and new-task actions reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "geometry": {
+      "main": {
+        "top": 0,
+        "bottom": 900,
+        "height": 900,
+        "width": 990
+      },
+      "calendar": {
+        "top": 77,
+        "bottom": 819,
+        "height": 742,
+        "width": 948
+      },
+      "panel": {
+        "top": 8,
+        "bottom": 828,
+        "height": 820,
+        "width": 966
+      },
+      "toolbar": {
+        "top": 17,
+        "bottom": 77,
+        "height": 60,
+        "width": 948
+      },
+      "footer": {
+        "top": 836,
+        "bottom": 888,
+        "height": 52,
+        "width": 966
+      },
+      "overflow": false,
+      "minimumHeightGain": 317.5
+    },
+    "checks": [
+      {
+        "name": "single toolbar, calendar height gain and 8px footer gap",
+        "passed": true
+      },
+      {
+        "name": "all six sidebar views, six ranges with counts, category and add entry",
+        "passed": true
+      },
+      {
+        "name": "filter contains stats, category, legend and hours; reset preserves view",
+        "passed": true
+      },
+      {
+        "name": "empty all-day lanes omitted; full date headers receive drops; no fixed calendar tail",
+        "passed": true
+      },
+      {
+        "name": "empty date header accepts all-day preview without a temporary lane or write",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: fortnight",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: board",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: windows",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: list",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: week",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: month",
+        "passed": true
+      },
+      {
+        "name": "desktop category drop targets work in board and window views",
+        "passed": true
+      },
+      {
+        "name": "fullscreen widens calendar and restores view/filter",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps calendar, footer and new-task actions reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "geometry": {
+      "main": {
+        "top": 0,
+        "bottom": 900,
+        "height": 900,
+        "width": 990
+      },
+      "calendar": {
+        "top": 77,
+        "bottom": 819,
+        "height": 742,
+        "width": 948
+      },
+      "panel": {
+        "top": 8,
+        "bottom": 828,
+        "height": 820,
+        "width": 966
+      },
+      "toolbar": {
+        "top": 17,
+        "bottom": 77,
+        "height": 60,
+        "width": 948
+      },
+      "footer": {
+        "top": 836,
+        "bottom": 888,
+        "height": 52,
+        "width": 966
+      },
+      "overflow": false,
+      "minimumHeightGain": 317.5
+    },
+    "checks": [
+      {
+        "name": "single toolbar, calendar height gain and 8px footer gap",
+        "passed": true
+      },
+      {
+        "name": "all six sidebar views, six ranges with counts, category and add entry",
+        "passed": true
+      },
+      {
+        "name": "filter contains stats, category, legend and hours; reset preserves view",
+        "passed": true
+      },
+      {
+        "name": "empty all-day lanes omitted; full date headers receive drops; no fixed calendar tail",
+        "passed": true
+      },
+      {
+        "name": "empty date header accepts all-day preview without a temporary lane or write",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: fortnight",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: board",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: windows",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: list",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: week",
+        "passed": true
+      },
+      {
+        "name": "canvas and toolbar remain inside viewport: month",
+        "passed": true
+      },
+      {
+        "name": "desktop category drop targets work in board and window views",
+        "passed": true
+      },
+      {
+        "name": "fullscreen widens calendar and restores view/filter",
+        "passed": true
+      },
+      {
+        "name": "short viewport keeps calendar, footer and new-task actions reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  }
+]

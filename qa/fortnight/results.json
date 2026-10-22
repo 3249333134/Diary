@@ -1,0 +1,402 @@
+[
+  {
+    "width": 375,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "default landing, two complete weeks, shared scroll and range navigation",
+        "passed": true
+      },
+      {
+        "name": "quadrant tints are consistent across all task views",
+        "passed": true
+      },
+      {
+        "name": "direct single choices, keyboard, always visible actions and resized viewport",
+        "passed": true
+      },
+      {
+        "name": "edit recurrence scope, independent priority and fixed actions",
+        "passed": true
+      },
+      {
+        "name": "fortnight: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "fortnight: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "week: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "week: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "month: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "month: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 375,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "default landing, two complete weeks, shared scroll and range navigation",
+        "passed": true
+      },
+      {
+        "name": "quadrant tints are consistent across all task views",
+        "passed": true
+      },
+      {
+        "name": "direct single choices, keyboard, always visible actions and resized viewport",
+        "passed": true
+      },
+      {
+        "name": "edit recurrence scope, independent priority and fixed actions",
+        "passed": true
+      },
+      {
+        "name": "fortnight: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "fortnight: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "week: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "week: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "month: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "month: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "partial conflict keeps committed changes and unsubmitted previews for retry",
+        "passed": true
+      },
+      {
+        "name": "refresh failures after committed batch never restore old deadlines",
+        "passed": true
+      },
+      {
+        "name": "external changes still conflict without overwriting remote fields",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 624,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "default landing, two complete weeks, shared scroll and range navigation",
+        "passed": true
+      },
+      {
+        "name": "quadrant tints are consistent across all task views",
+        "passed": true
+      },
+      {
+        "name": "direct single choices, keyboard, always visible actions and resized viewport",
+        "passed": true
+      },
+      {
+        "name": "edit recurrence scope, independent priority and fixed actions",
+        "passed": true
+      },
+      {
+        "name": "fortnight: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "fortnight: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "week: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "week: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "month: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "month: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 624,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "default landing, two complete weeks, shared scroll and range navigation",
+        "passed": true
+      },
+      {
+        "name": "quadrant tints are consistent across all task views",
+        "passed": true
+      },
+      {
+        "name": "direct single choices, keyboard, always visible actions and resized viewport",
+        "passed": true
+      },
+      {
+        "name": "edit recurrence scope, independent priority and fixed actions",
+        "passed": true
+      },
+      {
+        "name": "fortnight: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "fortnight: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "week: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "week: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "month: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "month: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "default landing, two complete weeks, shared scroll and range navigation",
+        "passed": true
+      },
+      {
+        "name": "quadrant tints are consistent across all task views",
+        "passed": true
+      },
+      {
+        "name": "direct single choices, keyboard, always visible actions and resized viewport",
+        "passed": true
+      },
+      {
+        "name": "edit recurrence scope, independent priority and fixed actions",
+        "passed": true
+      },
+      {
+        "name": "fortnight: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "fortnight: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "week: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "week: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "month: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "month: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "default landing, two complete weeks, shared scroll and range navigation",
+        "passed": true
+      },
+      {
+        "name": "quadrant tints are consistent across all task views",
+        "passed": true
+      },
+      {
+        "name": "direct single choices, keyboard, always visible actions and resized viewport",
+        "passed": true
+      },
+      {
+        "name": "edit recurrence scope, independent priority and fixed actions",
+        "passed": true
+      },
+      {
+        "name": "fortnight: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "fortnight: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "week: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "week: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "month: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "month: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "default landing, two complete weeks, shared scroll and range navigation",
+        "passed": true
+      },
+      {
+        "name": "quadrant tints are consistent across all task views",
+        "passed": true
+      },
+      {
+        "name": "direct single choices, keyboard, always visible actions and resized viewport",
+        "passed": true
+      },
+      {
+        "name": "edit recurrence scope, independent priority and fixed actions",
+        "passed": true
+      },
+      {
+        "name": "fortnight: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "fortnight: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "week: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "week: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "month: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "month: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "default landing, two complete weeks, shared scroll and range navigation",
+        "passed": true
+      },
+      {
+        "name": "quadrant tints are consistent across all task views",
+        "passed": true
+      },
+      {
+        "name": "direct single choices, keyboard, always visible actions and resized viewport",
+        "passed": true
+      },
+      {
+        "name": "edit recurrence scope, independent priority and fixed actions",
+        "passed": true
+      },
+      {
+        "name": "fortnight: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "fortnight: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "week: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "week: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "month: multiple previews, repeated adjustment, single rollback and cancel all",
+        "passed": true
+      },
+      {
+        "name": "month: one confirmation saves the batch once with fresh versions",
+        "passed": true
+      },
+      {
+        "name": "partial conflict keeps committed changes and unsubmitted previews for retry",
+        "passed": true
+      },
+      {
+        "name": "refresh failures after committed batch never restore old deadlines",
+        "passed": true
+      },
+      {
+        "name": "external changes still conflict without overwriting remote fields",
+        "passed": true
+      }
+    ],
+    "errors": []
+  }
+]
