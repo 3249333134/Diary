@@ -54,3 +54,14 @@
 .plan-edit-dialog::backdrop { background:rgba(0,0,0,.4); }
 .plan-edit-dialog .todo-modal { max-width:none; box-shadow:none; animation:none; }
 @media(max-width:480px) { .todo-panel .todo-stat-chip { font-size:12px; padding:12px 2px; } .todo-modal-footer { flex-wrap:wrap; } }
+
+/* Manual capture and AI share the existing footer slot, including its safe area. */
+.capture-mobile-bar[data-manual-action] { flex-wrap:nowrap; height:52px; gap:8px; }
+.capture-mobile-bar .workspace-create-button { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; gap:4px; min-width:96px; min-height:44px; padding:8px 12px; border:1px solid transparent; border-radius:14px; background:var(--purple-strong); color:white; font:inherit; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; }
+.capture-mobile-bar[data-manual-action] .capture-mobile-trigger { position:relative; min-width:0; gap:6px; padding:8px; font-size:14px; white-space:nowrap; }
+.capture-mobile-bar[data-manual-action] .capture-mobile-trigger>svg { flex-shrink:0; }
+.capture-mobile-bar[data-manual-action] .capture-mobile-trigger small { position:absolute; right:5px; top:3px; font-size:9px; line-height:1.1; }
+.capture-mobile-bar[data-manual-action] .capture-fullscreen-btn { flex:0 0 46px; width:46px; min-height:44px; }
+.workspace-create-button:disabled { opacity:.5; cursor:default; }
+.workspace-create-button:focus-visible { outline:2px solid var(--purple); outline-offset:2px; }
+@media(max-width:899px) { .capture-mobile-bar[data-manual-action] { height:46px; } }

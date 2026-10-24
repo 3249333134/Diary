@@ -15,7 +15,6 @@
 .plan-main-toolbar .plan-view-switch button { min-height:44px; }
 .plan-main-toolbar .plan-view-switch [aria-pressed=true] { background:var(--purple-soft); color:var(--purple-ink); font-weight:600; }
 .plan-toolbar-actions { display:flex; gap:2px; flex-shrink:0; }
-.plan-toolbar-actions .plan-add-button { min-width:44px; width:44px; height:44px; background:var(--plan-primary); color:white; }
 .plan-main-toolbar .plan-filter-trigger { position:relative; }
 .plan-main-toolbar .plan-filter-dot { position:absolute; right:7px; top:7px; width:6px; height:6px; border-radius:50%; background:var(--purple); }
 .plan-filter-trigger[data-restricted=true],.compact-browse-context[data-restricted=true] { color:var(--purple-ink); background:var(--purple-soft); }

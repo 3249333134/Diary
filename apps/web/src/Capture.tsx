@@ -3,9 +3,10 @@ import {FieldHint} from './FieldHint';
 import {GlassSelect} from './GlassSelect';
 import {GlassChoices} from './GlassChoices';
 import { PlanEntityFields, type EntityContext } from './PlanEntities';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState,type RefObject } from 'react';
+import {SharedScope} from './Social';
 import { captureDraftSchema, type CaptureDraft, type RecordRef } from '@diary/contracts';
-import { Sparkles, X, Maximize2, Minimize2 } from 'lucide-react';
+import { Sparkles, Plus, X, Maximize2, Minimize2 } from 'lucide-react';
 import { api } from './api';
 import { planClock } from './planFilters';
 import './capture.css';
@@ -25,7 +26,7 @@ export function DraftFields({ draft, onChange, diaryOnly = false, disabled = fal
     </div>
     <label>{draft.kind === 'plan' ? '计划标题' : '正文'}<textarea rows={3} value={draft.content} onChange={e => patch({ content: e.target.value })} /><FieldHint path={draft.kind==='plan'?'todos.0.title':'content'} limit={draft.kind==='plan'?undefined:fieldLimit(captureDraftSchema,'content')} value={draft.content}/></label>
     {draft.kind === 'plan' && <><label>说明<textarea rows={2} value={draft.description} onChange={e => patch({ description: e.target.value })} /><FieldHint path="todos.0.description" value={draft.description}/></label><div className="capture-row"><div className="plan-choice-field"><span>优先级</span><GlassChoices label="优先级" value={draft.priority} options={[{value:'high',label:'高'},{value:'medium',label:'中'},{value:'low',label:'低'}]} onChange={priority=>patch({priority:priority as CaptureDraft['priority']})}/></div><label>清单<input value={draft.list} onChange={e => patch({ list: e.target.value })} /></label></div></>}
-    {draft.kind === 'plan' && <ClassificationFields value={draft} onChange={patch} />}
+    {draft.kind === 'plan' && <><SharedScope value={draft.windowId} onChange={windowId=>patch({windowId:windowId||undefined})}/><ClassificationFields hideCategory={!!draft.windowId} value={draft} onChange={patch} /></>}
     {draft.kind === 'plan' && <RepeatFields value={draft.repeat} onChange={repeat=>patch({repeat})}/>}
     {draft.kind !== 'plan' && <SharedTagInput value={draft.tags} onChange={tags => patch({ tags })} />}
     <section aria-label="人物、地点、活动与食物">{entityContext ? <PlanEntityFields includeThings={false} context={entityContext} value={Object.values(draft.entities).flat()} onChange={value => patch({entities:{people:value.filter(e=>e.type==='person').map(e=>({...e,type:'person' as const})),places:value.filter(e=>e.type==='place').map(e=>({...e,type:'place' as const})),activities:value.filter(e=>e.type==='activity').map(e=>({...e,type:'activity' as const})),foods:value.filter(e=>e.type==='food').map(e=>({...e,type:'food' as const}))}})}/> : <p>实体标签编辑需要加载标签候选，请刷新后重试。</p>}</section>
@@ -34,7 +35,7 @@ export function DraftFields({ draft, onChange, diaryOnly = false, disabled = fal
 }
 
 type Row = { draft: CaptureDraft; submitted?: CaptureDraft; state: 'draft' | 'saving' | 'saved' | 'error'; error?: string; ref?: RecordRef };
-export function UnifiedCapture({ onSave, onOpen, hidden = false, bottomNav = false, entityContext, fullscreen, onToggleFullscreen, compactDesktop = false }: { compactDesktop?:boolean; entityContext?: EntityContext; hidden?: boolean; bottomNav?: boolean; onSave: (draft: CaptureDraft) => Promise<RecordRef>; onOpen: (ref: RecordRef) => void; fullscreen?: boolean; onToggleFullscreen?: () => void }) {
+export function UnifiedCapture({ onSave, onOpen, hidden = false, bottomNav = false, entityContext, fullscreen, onToggleFullscreen, compactDesktop = false, primaryAction,headless=false,openRequest=0,onDraftChange,externalTrigger }: {headless?:boolean;openRequest?:number;onDraftChange?:(hasDraft:boolean)=>void;externalTrigger?:RefObject<HTMLButtonElement|null>; primaryAction?:{label:string;name:string;disabled:boolean;onPress:()=>void}; compactDesktop?:boolean; entityContext?: EntityContext; hidden?: boolean; bottomNav?: boolean; onSave: (draft: CaptureDraft) => Promise<RecordRef>; onOpen: (ref: RecordRef) => void; fullscreen?: boolean; onToggleFullscreen?: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [smallScreen, setMobile] = useState(() => window.matchMedia('(max-width: 899px)').matches);
   const mobile=smallScreen||compactDesktop;
@@ -46,7 +47,8 @@ export function UnifiedCapture({ onSave, onOpen, hidden = false, bottomNav = fal
     media.addEventListener('change', update); return () => media.removeEventListener('change', update);
   }, []);
   useEffect(() => { if (hidden) setExpanded(false); }, [hidden]);
-  const close = () => { setExpanded(false); trigger.current?.focus(); };
+  const close = () => { setExpanded(false); (externalTrigger?.current||trigger.current)?.focus(); };
+  useEffect(()=>{if(openRequest)setExpanded(true);},[openRequest]);
   useEffect(() => {
     if (!mobile || !expanded || hidden) return;
     const overflow = document.body.style.overflow; document.body.style.overflow = 'hidden';
@@ -67,6 +69,7 @@ export function UnifiedCapture({ onSave, onOpen, hidden = false, bottomNav = fal
   const [rows, setRows] = useState<Row[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  useEffect(()=>{onDraftChange?.(!!text||rows.some(r=>r.state!=='saved'));},[text,rows,onDraftChange]);
   const [listening,setListening]=useState(false);
   const parse = async (input=text) => {
     const defaultClock=planClock();
@@ -84,10 +87,11 @@ export function UnifiedCapture({ onSave, onOpen, hidden = false, bottomNav = fal
     catch (e) { update({ state: 'error', error: validationMessage(e,'保存失败，草稿仍保留') }); }
   };
   return <div className={`capture-shell${bottomNav ? ' has-bottom-nav' : ''}${expanded ? ' capture-expanded' : ''}${compactDesktop?' capture-plan-docked':''}`} hidden={hidden}>
-    <div className="capture-mobile-bar">
-      <button ref={trigger} type="button" className="capture-mobile-trigger" aria-expanded={expanded} aria-controls="capture-panel" onClick={() => setExpanded(true)}><Sparkles size={19} /><span>AI · 记一句话 / 建计划</span>{(text || rows.some(r => r.state !== 'saved')) && <small>有草稿</small>}</button>
+    {!headless&&<div className="capture-mobile-bar" data-manual-action={!!primaryAction||undefined}>
+      {primaryAction&&<button type="button" className="workspace-create-button" aria-label={primaryAction.name} disabled={primaryAction.disabled} onClick={primaryAction.onPress}><Plus size={19}/><span>{primaryAction.label}</span></button>}
+      <button ref={trigger} type="button" className="capture-mobile-trigger" aria-expanded={expanded} aria-controls="capture-panel" onClick={() => setExpanded(true)}><Sparkles size={19} /><span>{primaryAction?'AI 记一句话':'AI · 记一句话 / 建计划'}</span>{(text || rows.some(r => r.state !== 'saved')) && <small>有草稿</small>}</button>
       {onToggleFullscreen && <button type="button" className="capture-fullscreen-btn" aria-pressed={fullscreen} aria-label={fullscreen ? '退出全屏' : '全屏显示'} title={fullscreen ? '退出全屏' : '全屏显示'} onClick={onToggleFullscreen}>{fullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}</button>}
-    </div>
+    </div>}
     {mobile && expanded && <button className="capture-backdrop" aria-label="收起 AI 录入" tabIndex={-1} onClick={close} />}
     <section ref={panel} id="capture-panel" className="unified-capture" aria-labelledby="capture-title" role={mobile && expanded ? 'dialog' : undefined} aria-modal={mobile && expanded ? true : undefined}>
     <button type="button" className="capture-mobile-close quiet-button" onClick={close}><X size={18} />收起</button>

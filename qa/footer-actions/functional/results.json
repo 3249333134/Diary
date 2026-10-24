@@ -1,0 +1,187 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "measurements": [
+      {
+        "key": "facts",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 333
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 351
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 333
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 351
+        },
+        "overflow": false
+      },
+      {
+        "key": "learn",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 333
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 351
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 333
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 351
+        },
+        "overflow": false
+      },
+      {
+        "key": "input",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 333
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 351
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 333
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 351
+        },
+        "overflow": false
+      },
+      {
+        "key": "idea",
+        "body": {
+          "top": 133,
+          "bottom": 763,
+          "height": 630,
+          "width": 333
+        },
+        "root": {
+          "top": 66,
+          "bottom": 770,
+          "height": 704,
+          "width": 351
+        },
+        "toolbar": {
+          "top": 73,
+          "bottom": 133,
+          "height": 60,
+          "width": 333
+        },
+        "footer": {
+          "top": 778,
+          "bottom": 900,
+          "height": 122,
+          "width": 351
+        },
+        "overflow": false
+      }
+    ],
+    "checks": [
+      {
+        "name": "bottom create is disabled during initial plan loading",
+        "passed": true
+      },
+      {
+        "name": "matching compact panels, content starts early and footer gap is 8px",
+        "passed": true
+      },
+      {
+        "name": "each information action edits its own metadata and restores focus",
+        "passed": true
+      },
+      {
+        "name": "empty receipt returns to facts and creates an expanded event",
+        "passed": true
+      },
+      {
+        "name": "bottom add opens and focuses facts; text drafts survive tabs, workspace and receipts",
+        "passed": true
+      },
+      {
+        "name": "quick facts create a real entry",
+        "passed": true
+      },
+      {
+        "name": "populated columns default collapsed, keep scroll and match the compact shell",
+        "passed": true
+      },
+      {
+        "name": "date navigation, calendar cancellation and today return work",
+        "passed": true
+      },
+      {
+        "name": "fullscreen and return keep the new toolbar and column operations",
+        "passed": true
+      },
+      {
+        "name": "one footer row owns global create in every diary column and plan view",
+        "passed": true
+      },
+      {
+        "name": "AI original text and edited draft survive manual create and focus restores",
+        "passed": true
+      },
+      {
+        "name": "manual task create saves once, disables while submitting and restores focus",
+        "passed": true
+      },
+      {
+        "name": "compressed hour explanation opens settings and arrows track scrolling and previews",
+        "passed": true
+      },
+      {
+        "name": "new diary entry keeps selected date; special pages have no extra create",
+        "passed": true
+      },
+      {
+        "name": "validation and 400 errors open the metadata field without losing the text",
+        "passed": true
+      },
+      {
+        "name": "short visible viewport keeps record editors and footer reachable",
+        "passed": true
+      }
+    ],
+    "errors": []
+  }
+]

@@ -22,7 +22,6 @@
 .diary-toolbar-count b { font-weight:500; font-variant-numeric:tabular-nums; }
 .diary-toolbar-count small { font-size:11px; }
 .diary-toolbar-actions { display:flex; align-items:center; gap:4px; margin-left:auto; flex-shrink:0; }
-.diary-main-toolbar .diary-create,.compact-browse-bar .diary-navigation-create { background:var(--purple-strong); color:white; }
 .diary-main-toolbar .diary-save-control { background:var(--purple-soft); color:var(--purple-ink); position:relative; }
 .diary-save-control[data-status=saved] { color:var(--green); background:var(--green-soft); }
 .diary-save-control[data-status=error],.diary-save-control[data-status=conflict] { color:var(--red); background:var(--red-soft); }

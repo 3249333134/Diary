@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { visibleWeekHours } from './calendarHours';
-import { HOUR_WIDTH, DEADLINE_WIDTH, LANE_HEIGHT, timelineMarkers, timelineOffset, timelineTime } from './calendarTimeline';
+import { HOUR_WIDTH, DEADLINE_WIDTH, LANE_HEIGHT, timelineMarkers, timelineOffset, timelineTime, hiddenHourRanges, offscreenDirection } from './calendarTimeline';
 import type { ActionRow } from './api';
 import { planState, planDueTime, planClock } from './planFilters';
 import { usePlanCategories } from './PlanCategories';
@@ -16,11 +16,12 @@ import './schedule-refinements.css';
 type Target=CalendarTarget;
 type GestureMode='decide'|'drag'|'scrub'|'scroll';
 type Gesture={row:ActionRow;x:number;y:number;startX:number;startY:number;lastX:number;lastY:number;offsetX:number;offsetY:number;width:number;startTop:number;mode:GestureMode;timer?:number;pointer:number;el:HTMLElement;target?:Target;date:string;startMinutes:number;minutes:number;edgeTick:number};
+type CanvasPan={pointer:number;x:number;y:number;left:number;top:number;el:HTMLDivElement;moved:boolean};
 const minutesOf=(time:string)=>{const[h,m]=time.split(':').map(Number);return(h||0)*60+(m||0);};
 const formatMinutes=(minutes:number)=>`${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;
 /** 滑动调时间时使用完整 24 小时刻度，卡片位置才能与时间线性对应，可自由向更早/更晚拖动 */
 const ALL_HOURS=Array.from({length:24},(_,hour)=>hour);
-export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,active=true,showAllHours=false,onInteractionChange}:{view:CalendarView;anchor:string;showAllHours?:boolean;onInteractionChange?:(state:{dragging:boolean;pending:boolean;saving:boolean})=>void;rows:ActionRow[];busy:boolean;onEdit:(row:ActionRow)=>void;onMove:(row:ActionRow,target:Target)=>Promise<boolean>;onToggle:(row:ActionRow)=>void;active?:boolean}) {
+export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,active=true,showAllHours=false,onInteractionChange,onOpenHoursSettings}:{onOpenHoursSettings:()=>void;view:CalendarView;anchor:string;showAllHours?:boolean;onInteractionChange?:(state:{dragging:boolean;pending:boolean;saving:boolean})=>void;rows:ActionRow[];busy:boolean;onEdit:(row:ActionRow)=>void;onMove:(row:ActionRow,target:Target)=>Promise<boolean>;onToggle:(row:ActionRow)=>void;active?:boolean}) {
   const range=calendarRange(anchor,view),days=Array.from({length:view==='month'?42:view==='fortnight'?14:7},(_,i)=>shiftDate(range.from,i));
   const {categories}=usePlanCategories();const scroll=useRef<HTMLDivElement>(null);
   const ghost=useRef<HTMLDivElement>(null);
@@ -30,6 +31,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   const [submitting,setSubmitting]=useState(false),[progress,setProgress]=useState({current:0,total:0}),[batchMessage,setBatchMessage]=useState('');
   const [frozen,setFrozen]=useState<{hours:number[];heights:Record<string,number>;allDay:boolean}>();
   const [viewportWidth,setViewportWidth]=useState(0);
+  const [offscreen,setOffscreen]=useState<Record<string,{left:number;right:number}>>({});
   const saving=useRef(false);
   const moveCallback=useRef(onMove);moveCallback.current=onMove;
   const lastPreview=useRef<string|undefined>(undefined);
@@ -52,10 +54,68 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   const anchorShift=useRef<number|null>(null);
   useEffect(()=>{if(anchorShift.current===null)return;const box=scroll.current;if(box)box.scrollLeft+=anchorShift.current;anchorShift.current=null;},[frozen]);
   useEffect(()=>{const box=scroll.current;if(!box)return;const observer=new ResizeObserver(()=>setViewportWidth(box.clientWidth));observer.observe(box);return()=>observer.disconnect();},[]);
+  useEffect(()=>{
+    const box=scroll.current;if(!box||!active||view==='month')return;
+    let frame=0;
+    const measure=()=>{
+      frame=0;if(!box.clientWidth)return;const viewport=box.getBoundingClientRect(),next:Record<string,{left:number;right:number}>={};
+      box.querySelectorAll<HTMLElement>('.calendar-timeline-row').forEach(row=>{
+        const date=row.dataset.date!,label=row.querySelector<HTMLElement>('.timeline-date')!,visibleLeft=Math.max(viewport.left,label.getBoundingClientRect().right);
+        const counts={left:0,right:0};
+        row.querySelectorAll<HTMLElement>('.calendar-chip').forEach(card=>{const rect=card.getBoundingClientRect(),direction=offscreenDirection(rect.left,rect.right,visibleLeft,viewport.left+box.clientWidth);if(direction)counts[direction]++;});
+        if(counts.left||counts.right)next[date]=counts;
+      });
+      setOffscreen(old=>JSON.stringify(old)===JSON.stringify(next)?old:next);
+    };
+    const schedule=()=>{if(!frame)frame=requestAnimationFrame(measure);};
+    box.addEventListener('scroll',schedule,true);schedule();
+    return()=>{box.removeEventListener('scroll',schedule,true);cancelAnimationFrame(frame);};
+  },[view,anchor,active,showAllHours,viewportWidth,rows,pending,frozen,drag]);
   const gesture=useRef<Gesture|undefined>(undefined);
+  const pan=useRef<CanvasPan|undefined>(undefined);
+  const suppressGestureClick=useRef(false);
+  const [panning,setPanning]=useState(false);
+  const endPan=()=>{
+    const current=pan.current;pan.current=undefined;
+    if(current?.moved)suppressGestureClick.current=true;
+    if(current?.el.hasPointerCapture(current.pointer))current.el.releasePointerCapture(current.pointer);
+    setPanning(false);
+  };
+  const beginPan=(e:PointerEvent<HTMLDivElement>)=>{
+    if(!active||view==='month'||pan.current||gesture.current||!e.isPrimary||e.button!==0)return;
+    const target=e.target as HTMLElement;
+    if(target.closest('.calendar-chip,button,input,select,textarea,a,summary,[role=button]'))return;
+    const surface=target.closest<HTMLElement>('.timeline-timed-cell,.timeline-all-day');
+    if(!surface||!e.currentTarget.contains(surface))return;
+    // Leave native scrollbars and all card controls to their own interactions.
+    for(const box of [surface,e.currentTarget]){
+      const rect=box.getBoundingClientRect();
+      if(e.clientX>=rect.left+box.clientLeft+box.clientWidth||e.clientY>=rect.top+box.clientTop+box.clientHeight)return;
+    }
+    const el=e.currentTarget;
+    pan.current={pointer:e.pointerId,x:e.clientX,y:e.clientY,left:el.scrollLeft,top:el.scrollTop,el,moved:false};
+    el.setPointerCapture(e.pointerId);
+  };
+  const movePan=(e:PointerEvent<HTMLDivElement>)=>{
+    const current=pan.current;if(!current||current.pointer!==e.pointerId)return;
+    const dx=e.clientX-current.x,dy=e.clientY-current.y;
+    if(!current.moved){if(Math.hypot(dx,dy)<=6)return;current.moved=true;setPanning(true);}
+    e.preventDefault();
+    current.el.scrollLeft=current.left-dx;
+    current.el.scrollTop=current.top-dy;
+  };
+  const releasePan=(e:PointerEvent<HTMLDivElement>)=>{if(pan.current?.pointer===e.pointerId)endPan();};
+  useEffect(()=>{endPan();},[view,anchor,active]);
+  useEffect(()=>()=>{const current=pan.current;pan.current=undefined;if(current?.el.hasPointerCapture(current.pointer))current.el.releasePointerCapture(current.pointer);},[]);
   const hoursRef=useRef<number[]>([]);hoursRef.current=hours;
   const initialScroll=useRef('');
   const end=(retainHours=false)=>{const g=gesture.current;if(g){window.clearTimeout(g.timer);if(g.el.hasPointerCapture(g.pointer))g.el.releasePointerCapture(g.pointer);}gesture.current=undefined;setDrag(undefined);if(!retainHours)setFrozen(undefined);};
+  useEffect(()=>{
+    const allowed=new Set(rows.filter(row=>!row.readOnly).map(calendarRowKey));
+    const kept=pending.filter(p=>!p.row.windowId||allowed.has(calendarRowKey(p.row)));
+    if(kept.length!==pending.length){setPending(kept);setBatchMessage('共享窗口或权限已变化，对应未确认改期已撤销。');if(!kept.length)setFrozen(undefined);}
+    if(gesture.current?.row.windowId&&!allowed.has(calendarRowKey(gesture.current.row)))end(false);
+  },[rows]);
   /** Dragging near the timeline edge grows the frozen hour axis so deadlines can pass the visible range. */
   const extendHoursTo=(hour:number)=>{
     if(hour<0||hour>23)return;
@@ -84,7 +144,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     const frame=requestAnimationFrame(()=>{if(scroll.current){scroll.current.scrollTop=0;scroll.current.scrollLeft=showAllHours?Math.max(0,(times.filter(Boolean).length?Math.min(...times.filter(Boolean).map(t=>Number(t.slice(0,2)))):9)-1)*HOUR_WIDTH:0;}});
     return()=>cancelAnimationFrame(frame);
   },[view,anchor,showAllHours]);
-  useEffect(()=>{const key=(e:KeyboardEvent)=>{if(e.key==='Escape')cancel();};window.addEventListener('keydown',key);return()=>{window.removeEventListener('keydown',key);window.clearTimeout(gesture.current?.timer);};},[]);
+  useEffect(()=>{const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){endPan();cancel();}};window.addEventListener('keydown',key);return()=>{window.removeEventListener('keydown',key);window.clearTimeout(gesture.current?.timer);};},[]);
   useEffect(()=>{
     if(!drag)return;
     const timer=window.setInterval(()=>{
@@ -108,7 +168,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   },[!!drag]);
   const begin=(e:PointerEvent<HTMLDivElement>,row:ActionRow)=>{
     if(gesture.current)end(!!pending.length);
-    if(blocked||saving.current||!active)return;
+    if(blocked||saving.current||!active||row.readOnly)return;
     if(row.task.done||row.task.status==='done'||row.task.status==='cancelled'||row.task.deletedAt)return;
     if(e.pointerType==='mouse'&&e.button!==0)return;
     setBatchMessage('');
@@ -164,6 +224,8 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   const release=(e:PointerEvent<HTMLDivElement>)=>{
     const g=gesture.current;if(!g||e.pointerId!==g.pointer)return;
     if(g.mode==='decide'){const row=g.row;end(!!pending.length);cancel();onEdit(rows.find(r=>calendarRowKey(r)===calendarRowKey(row))||row);return;}
+    // A released drag can otherwise click a checkbox now under the moved card.
+    suppressGestureClick.current=true;
     if(g.mode==='scroll'){end(!!pending.length);return;}
     const next=updateCalendarPreviews(pending,g.row,g.target);
     lastPreview.current=calendarRowKey(g.row);setPending(next);
@@ -188,14 +250,14 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   const chip=(row:ActionRow,timed=false)=>{
     const key=calendarRowKey(row);
     const marker=timed?markersFor(row.task.dueDate||row.task.plannedDate||'').get(key):undefined;
-    const c=categories.find(c=>c.id===row.task.category),t=planDueTime(row.task),isPending=pendingKeys.has(key);
+    const c=row.windowName?{name:`共享 · ${row.windowName}`} :categories.find(c=>c.id===row.task.category),t=planDueTime(row.task),isPending=pendingKeys.has(key);
     const previewing=!!drag&&calendarRowKey(drag.row)===key;
     const scrubbing=previewing&&gesture.current?.mode==='scrub';
     const shownTime=previewing&&drag!.target?drag!.target.time:t;
     const done=row.task.done||row.task.status==='done';
     return <div key={key} data-record-id={row.task.id} data-preview-key={key} data-pending={isPending||undefined} data-dragging={previewing||undefined} data-scrubbing={scrubbing||undefined} data-urgency={urgency(row.task)?.id||'unclassified'} title={`${row.task.title} · 截止 ${row.task.dueDate||row.task.plannedDate||'未安排'} ${shownTime||'全天'} · ${c?.name||'待分类'} · ${urgency(row.task)?.label||'象限待分类'}`} className={`calendar-chip state-${planState(row.task)}`} style={{...urgencyStyle(row.task),...(timed?{left:scrubbing&&drag!.target?.time?timelineOffset(drag!.target.time,hours):marker?.anchor??timelineOffset(t||'00:00',hours),top:scrubbing?gesture.current?.startTop??(marker?.lane||0)*LANE_HEIGHT+4:(marker?.lane||0)*LANE_HEIGHT+4,width:DEADLINE_WIDTH}: {})}} onPointerDown={e=>begin(e,row)} onPointerMove={move} onPointerUp={release} onPointerCancel={()=>end(!!pending.length)}>
       <label className="calendar-chip-check" data-done={done||undefined} onPointerDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()}>
-        <input type="checkbox" checked={done} disabled={busy} aria-label={`完成：${row.task.title}`} onChange={()=>onToggle(row)}/>
+        <input type="checkbox" checked={done} disabled={busy||row.readOnly} aria-label={`完成：${row.task.title}`} onChange={()=>onToggle(row)}/>
       </label>
       <button type="button" className="calendar-chip-copy" disabled={blocked} onClick={()=>{cancel();onEdit(rows.find(r=>calendarRowKey(r)===key)||row);}}><small>截止 {shownTime||'全天'} · {c?.name||'待分类'}{row.task.seriesId||row.task.recurrenceAnchor?' · 重复':''}{row.task.checkins?` · 打卡${row.task.checkins}次`:''}{isPending?' · 待确认':''}</small><strong>{row.task.title}</strong>{planState(row.task)!=='neutral'&&<span className={'calendar-state-badge badge-'+planState(row.task)}>{({done:'已完成',overdue:'已超期',soon:'即将到期',neutral:''})[planState(row.task)]}</span>}</button>
     </div>;
@@ -207,10 +269,10 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     <div className="calendar-timeline-heading">
       <div className="timeline-corner">截止日期</div>
       {allDay&&<div className="timeline-all-heading">全天</div>}
-      <div className="timeline-hour-axis" aria-label="截止小时刻度">{hours.map(hour=><span key={hour} style={{left:hours.indexOf(hour)*HOUR_WIDTH}}>{String(hour).padStart(2,'0')}:00</span>)}{!hours.length&&<span className="timeline-no-hours">暂无定时日程</span>}</div>
+      <div className="timeline-hour-axis" aria-label="截止小时刻度">{hours.map(hour=><span key={hour} style={{left:hours.indexOf(hour)*HOUR_WIDTH}}>{String(hour).padStart(2,'0')}:00</span>)}{hiddenHourRanges(hours).map(gap=><button type="button" key={'gap'+gap.index} className="timeline-hour-gap" style={{left:gap.index*HOUR_WIDTH-44}} aria-label={`空白时段已隐藏：${gap.from} 至 ${gap.to}，打开时段设置`} title={`已隐藏 ${gap.from}—${gap.to}，点击设置显示时段`} aria-haspopup="dialog" onClick={onOpenHoursSettings}>⋯</button>)}{!hours.length&&<span className="timeline-no-hours">暂无定时日程</span>}</div>
     </div>
     {days.map(date=><div className="calendar-timeline-row" data-date={date} key={date} style={{height:rowHeight(date)}}>
-      <button type="button" className="timeline-date" data-calendar-date={date} data-drop-active={drag?.target?.date===date&&!drag.target.time||undefined} title={`${date} · 可拖入全天日程`} onClick={()=>setExpanded(expanded===date?undefined:date)} aria-label={`查看 ${date} 的日程`} aria-expanded={expanded===date}><strong>{date.slice(5)}</strong><small>{date.slice(0,4)} · 周{['日','一','二','三','四','五','六'][new Date(date+'T00:00:00Z').getUTCDay()]}</small><small>{dayRows(date).length} 项</small></button>
+      <button type="button" className="timeline-date" data-today={date===planClock().date||undefined} data-calendar-date={date} data-drop-active={drag?.target?.date===date&&!drag.target.time||undefined} title={`${date} · 可拖入全天日程`} onClick={()=>setExpanded(expanded===date?undefined:date)} aria-label={`查看 ${date} 的日程`} aria-expanded={expanded===date} aria-describedby={offscreen[date]?`timeline-offscreen-${date}`:undefined}><strong>{date.slice(5)}</strong><small>{date.slice(0,4)} · 周{['日','一','二','三','四','五','六'][new Date(date+'T00:00:00Z').getUTCDay()]}</small><small>{!!offscreen[date]?.left&&<span className="timeline-outside" aria-hidden="true">← </span>}{dayRows(date).length} 项{!!offscreen[date]?.right&&<span className="timeline-outside" aria-hidden="true"> →</span>}</small>{offscreen[date]&&<span className="sr-only" id={`timeline-offscreen-${date}`}>{offscreen[date].left?`左侧还有 ${offscreen[date].left} 项。`:''}{offscreen[date].right?`右侧还有 ${offscreen[date].right} 项。`:''}点击日期查看当天全部日程。</span>}</button>
       {allDay&&<div className="timeline-all-day" data-calendar-date={date} data-drop-active={drag?.target?.date===date&&!drag.target.time||undefined}>{dayRows(date).filter(row=>!planDueTime(row.task)).map(row=>chip(row))}</div>}
       <div className="timeline-timed-cell" data-calendar-date={date} data-timed="true" data-drop-active={drag?.target?.date===date&&!!drag.target.time||undefined} style={{backgroundSize:`${HOUR_WIDTH}px 100%`}}><div className="timeline-markers" style={{height:contentHeight(date)}}>{dayRows(date).filter(row=>!!planDueTime(row.task)).map(row=>chip(row,true))}</div></div>
     </div>)}
@@ -221,7 +283,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     {drag&&<p className="calendar-feedback" role="status">{gesture.current?.mode==='scrub'?'左右滑动调整':'拖动'}「{drag.row.task.title}」{drag.target?` → ${drag.target.date} ${drag.target.time||'全天'}`:'到目标日期'} · Escape 取消</p>}
 
     {batchMessage&&<p className="calendar-batch-message" role="status">{batchMessage}</p>}
-    <div ref={scroll} className="calendar-scroll" data-view={view}>
+    <div ref={scroll} className="calendar-scroll" data-view={view} data-panning={panning||undefined} onPointerDownCapture={()=>{suppressGestureClick.current=false;}} onClickCapture={e=>{if(suppressGestureClick.current&&e.detail>0){suppressGestureClick.current=false;e.preventDefault();e.stopPropagation();}}} onPointerDown={beginPan} onPointerMove={movePan} onPointerUp={releasePan} onPointerCancel={releasePan} onLostPointerCapture={releasePan}>
       {expanded&&view!=='month'&&<section className="calendar-expanded calendar-selected-day"><header><h3>{expanded} · {dayRows(expanded).length} 项</h3><button type="button" onClick={()=>setExpanded(undefined)}>收起</button></header>{dayRows(expanded).map(r=>chip(r))}</section>}
       {view==='month'?<div className="calendar-month">{['一','二','三','四','五','六','日'].map(d=><div className="calendar-weekday" key={d}>周{d}</div>)}{days.map(date=><section key={date} data-calendar-date={date} data-drop-active={drag?.target?.date===date} data-other-month={date.slice(0,7)!==anchor.slice(0,7)} data-selected={agendaDate===date||undefined} className="calendar-day"><button type="button" className="calendar-date" aria-label={`查看 ${date} 的日程`} onClick={()=>setExpanded(expanded===date?undefined:date)} aria-expanded={expanded===date}>{Number(date.slice(-2))}<small>{dayRows(date).length||''}</small></button>{monthRows(date).map(r=>chip(r))}{dayRows(date).length>3&&<button type="button" className="calendar-more" onClick={()=>setExpanded(date)}>查看全部 {dayRows(date).length} 项</button>}</section>)}</div>:renderTimeline()}
       {view==='month'&&!!unarranged.length&&<section className="calendar-expanded"><h3>未安排</h3>{unarranged.map(row=>chip(row))}</section>}

@@ -12,13 +12,13 @@ import { DateTimeField } from './DateTimeField';
 
 export type Classification = Pick<Todo, 'category' | 'important' | 'urgent' | 'startDate' | 'startTime'>;
 export function quadrant(task: Classification) {
-  return task.category && typeof task.important === 'boolean' && typeof task.urgent === 'boolean'
+  return typeof task.important === 'boolean' && typeof task.urgent === 'boolean'
     ? QUADRANTS.find(q => q.important === task.important && q.urgent === task.urgent)?.id : 'unclassified';
 }
-export function ClassificationFields({ value, onChange, start = true }: { value: Classification; onChange: (patch: Classification) => void; start?: boolean }) {
+export function ClassificationFields({ value, onChange, start = true,hideCategory=false }: { value: Classification; onChange: (patch: Classification) => void; start?: boolean;hideCategory?:boolean }) {
   const {categories}=usePlanCategories();
   return <div className="plan-classification-fields">
-    <div className="plan-choice-field"><span>事项类别</span><GlassChoices label="事项类别" value={value.category||''} options={[{value:'',label:'待分类'},...categories.map(c=>({value:c.id,label:c.name,color:c.color}))]} onChange={category=>onChange({category:category?category as Todo['category']:null})}/></div>
+    {!hideCategory&&<div className="plan-choice-field"><span>事项类别</span><GlassChoices label="事项类别" value={value.category||''} options={[{value:'',label:'待分类'},...categories.map(c=>({value:c.id,label:c.name,color:c.color}))]} onChange={category=>onChange({category:category?category as Todo['category']:null})}/></div>}
     <div className="plan-choice-field"><span>四象限</span><GlassChoices label="四象限" value={typeof value.important==='boolean'&&typeof value.urgent==='boolean'?QUADRANTS.find(q=>q.important===value.important&&q.urgent===value.urgent)?.id||'':''} options={[{value:'',label:'待分类'},...QUADRANTS.map(q=>({value:q.id,label:q.label,color:q.color}))]} onChange={id=>{const q=QUADRANTS.find(q=>q.id===id);onChange({important:q?.important??null,urgent:q?.urgent??null});}}/></div>
     {start && <DateTimeField label="原定开始时间" date={value.startDate||''} time={value.startTime||''} onChange={(startDate,startTime)=>onChange({startDate,startTime})}/>}
   </div>;

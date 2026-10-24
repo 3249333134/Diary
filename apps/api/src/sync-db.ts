@@ -1,15 +1,20 @@
 import { pool } from './db.js';
 import { databaseContext } from './db-context.js';
+let sqliteTransactions=Promise.resolve();
 
 export async function syncTransaction<T>(work: () => Promise<T>): Promise<T> {
   if (databaseContext.getStore()) return work();
+  let releaseSqlite:(()=>void)|undefined;
+  if(typeof pool.getConnection!=='function'){
+    const previous=sqliteTransactions;sqliteTransactions=new Promise<void>(resolve=>{releaseSqlite=resolve;});await previous;
+  }
   const connection: any = typeof pool.getConnection === 'function' ? await pool.getConnection() : pool;
   try {
     await connection.query('BEGIN');
     const result = await databaseContext.run(connection, work);
     await connection.query('COMMIT'); return result;
   } catch (error) { await connection.query('ROLLBACK'); throw error; }
-  finally { if (connection !== pool) connection.release(); }
+  finally { if (connection !== pool) connection.release();releaseSqlite?.(); }
 }
 export const syncSetting = (key: string) => /^weekly-(?:summary|material):\d{4}-W\d{2}$/.test(key) || /\/(?:plan-categories|plan-views|shared-tags|tags)\.json$/.test(key);
 export async function recordSyncChange(userId: number, kind: 'diary' | 'setting', key: string, version: string) {

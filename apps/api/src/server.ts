@@ -1,5 +1,6 @@
 import { registerObsidianSync } from "./obsidian-sync.js";
 import { ensureSyncTables } from "./sync-db.js";
+import {registerSocial} from './social.js';
 import Fastify from "fastify";
 import { captureRequestSchema, validationIssues, DIARY_BODY_LIMIT } from '@diary/contracts';
 import { parseCapture } from './capture.js';
@@ -74,6 +75,7 @@ export async function buildServer() {
     }
     return idx;
   };
+  await registerSocial(app,userId=>indexes.delete(userId));
 
   /* ── 认证路由 ── */
   app.post<{ Body: { username: string; password: string } }>("/api/auth/register", async (request, reply) => {
@@ -111,7 +113,7 @@ export async function buildServer() {
   });
 
   app.get("/api/auth/me", async (request, reply) => {
-    if(config.demoDatabase&&config.host==='127.0.0.1')return {id:1,username:'本地演示'};
+    if(config.demoDatabase&&config.host==='127.0.0.1'&&!getSessionToken(request))return {id:1,username:'本地演示'};
     const token = getSessionToken(request);
     if (!token) return reply.code(401).send({ error: "未登录" });
     const userId = await verifySession(token);

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode, type PointerEvent } from 'react';
-import { GripVertical, Plus, Plus as PlusIcon } from 'lucide-react';
+import { GripVertical, Plus, Plus as PlusIcon,Users } from 'lucide-react';
 import type { ActionRow } from './api';
-import type { PlanCategory } from '@diary/contracts';
+import type { PlanCategory,SharedWindow } from '@diary/contracts';
 import type { Classification } from './PlanFields';
 
 type DropResult = { windowId: string; insertBefore: HTMLElement | null };
@@ -47,6 +47,7 @@ export function PlanWindows({
   onCreate,
   onAddCategory,
   onReorder,
+  sharedWindows=[],onAddShared,onManageShared,scopeLabel,onShowAll,
 }: {
   rows: ActionRow[];
   categories: PlanCategory[];
@@ -56,6 +57,8 @@ export function PlanWindows({
   onCreate: (categoryId: string) => void;
   onAddCategory: () => void;
   onReorder: (ids: string[]) => Promise<void>;
+  sharedWindows?:SharedWindow[];onAddShared?:()=>void;onManageShared?:(window:SharedWindow)=>void;
+  scopeLabel?:string;onShowAll?:()=>void;
 }) {
   const [dragTarget, setDragTarget] = useState<string>();
   const press = useRef<DragState | undefined>(undefined);
@@ -386,24 +389,30 @@ export function PlanWindows({
   };
 
   // 构建窗口列表
-  const windows: { id: string; name: string; color: string; items: ActionRow[] }[] = [
+  const windows: { id: string; name: string; color: string; items: ActionRow[];shared?:SharedWindow }[] = [
     ...categories.map((c) => ({
       id: c.id,
       name: c.name,
       color: c.color,
-      items: rows.filter((r) => r.task.category === c.id),
+      items: rows.filter((r) => !r.windowId&&r.task.category === c.id),
     })),
-    {
+    ...(categories.length||rows.some(r=>!r.windowId)?[{
       id: '__unclassified__',
       name: '待分类',
       color: '#9296a3',
-      items: rows.filter((r) => !r.task.category),
-    },
+      items: rows.filter((r) => !r.windowId&&!r.task.category),
+    }]:[]),
+    ...sharedWindows.map(w=>({id:'shared:'+w.id,name:w.name,color:w.color,items:rows.filter(r=>r.windowId===w.id),shared:w})),
   ];
+
+  const jumpTo=(id:string)=>{
+    const area=scroll.current,target=Array.from(area?.querySelectorAll<HTMLElement>('.plan-window')||[]).find(el=>el.dataset.windowKey===id);
+    if(area&&target)area.scrollTo({left:area.scrollLeft+target.getBoundingClientRect().left-area.getBoundingClientRect().left,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+  };
 
   return (
     <div className="plan-windows">
-      <div className="plan-windows-controls"><span>按类别整理 · 拖动手柄调整分类</span><button type="button" onClick={onAddCategory} disabled={busy}><PlusIcon size={16}/>新建窗口</button></div>
+      <div className="plan-windows-controls">{scopeLabel?<div className="plan-window-scope"><span title={scopeLabel}>仅显示：{scopeLabel}</span><button type="button" onClick={onShowAll} disabled={busy}>显示全部窗口</button></div>:<nav className="plan-window-jumps" aria-label="快速定位窗口">{windows.map(w=><button key={w.id} type="button" title={w.name} aria-label={`定位${w.name}窗口`} onClick={()=>jumpTo(w.id)}><i style={{background:w.color}}/><span>{w.name}</span><small>{w.items.length}</small></button>)}</nav>}<div className="plan-window-create"><button type="button" aria-label="私人窗口" title="新建私人类别" onClick={onAddCategory} disabled={busy}><PlusIcon size={16}/><span>私人</span></button>{onAddShared&&<button type="button" aria-label="新建共享窗口" onClick={onAddShared} disabled={busy}><Users size={16}/><span>共享</span></button>}</div></div>
       <div ref={scroll} className="plan-windows-scroll" role="region" aria-label="窗口模式看板">
       <div className="plan-windows-track">
         {windows.map((w) => {
@@ -413,30 +422,32 @@ export function PlanWindows({
           return (
             <section
               key={w.id}
+              data-window-key={w.id}
               className={`plan-window${dragTarget === `category:${w.id}` ? ' drop-active' : ''}${isWinDropBefore ? ' drop-target-before' : ''}${isWinDropAfter ? ' drop-target-after' : ''}`}
-              data-plan-drop={`category:${w.id}`}
-              data-window-id={isUnclassified ? undefined : w.id}
+              data-plan-drop={w.shared?undefined:`category:${w.id}`}
+              data-window-id={isUnclassified||w.shared ? undefined : w.id}
               aria-label={`${w.name} 窗口，共 ${w.items.length} 项`}
             >
               <header
                 className="plan-window-header"
                 style={{ borderTopColor: w.color, background: `color-mix(in srgb, ${w.color} 12%, transparent)` }}
-                onPointerDown={isUnclassified ? undefined : (e) => beginWindow(e, w.id, w.name)}
-                role={isUnclassified ? undefined : 'button'}
-                aria-label={isUnclassified ? undefined : `拖动排序：${w.name}`}
+                onPointerDown={isUnclassified||w.shared ? undefined : (e) => beginWindow(e, w.id, w.name)}
+                role={isUnclassified||w.shared ? undefined : 'button'}
+                aria-label={isUnclassified||w.shared ? undefined : `拖动排序：${w.name}`}
               >
-                {!isUnclassified && <GripVertical size={16} className="plan-window-reorder-handle" />}
+                {!isUnclassified&&!w.shared && <GripVertical size={16} className="plan-window-reorder-handle" />}
                 <span className="plan-window-dot" style={{ background: w.color }} />
                 <h3 className="plan-window-name">{w.name}</h3>
                 <span className="plan-window-count">
                   {w.items.length} 项
                 </span>
+                {w.shared&&<button className="quiet-button" aria-label={`${w.name}成员管理`} onClick={()=>onManageShared?.(w.shared!)}><Users size={15}/>{w.shared.members.filter(m=>m.status==='active').length}</button>}
               </header>
               <ul className="todo-list plan-window-list">
                 {w.items.map((row) =>
                   render(
                     row,
-                    <button
+                    w.shared?undefined:<button
                       className="plan-drag-handle"
                       disabled={busy || !!row.task.deletedAt}
                       aria-label={`拖动到其他窗口：${row.task.title}`}
@@ -450,7 +461,7 @@ export function PlanWindows({
               </ul>
               <button
                 className="plan-window-add"
-                disabled={busy}
+                disabled={busy||w.shared?.role==='viewer'}
                 onClick={() => onCreate(isUnclassified ? '' : w.id)}
               >
                 <Plus size={16} />添加待办

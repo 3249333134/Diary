@@ -14,6 +14,8 @@
 .timeline-all-day .calendar-chip { height:60px; box-sizing:border-box; margin:4px 0 0; }
 .timeline-timed-cell { isolation:isolate; grid-column:3; position:relative; min-width:0; overflow:auto; background-image:linear-gradient(to right,var(--line) 1px,transparent 1px); scrollbar-width:thin; }
 .timeline-markers { position:relative; min-height:100%; }
+.timeline-timed-cell,.timeline-all-day { touch-action:pinch-zoom; cursor:grab; user-select:none; -webkit-user-select:none; }
+.calendar-scroll[data-panning=true],.calendar-scroll[data-panning=true] * { cursor:grabbing; }
 .timeline-timed-cell .calendar-chip { position:absolute; height:60px; box-sizing:border-box; margin:0; }
 .timeline-timed-cell .calendar-chip::before { content:''; position:absolute; left:-3px; top:6px; width:5px; height:5px; border-radius:50%; background:var(--urgency-color,var(--purple)); }
 .timeline-timed-cell .calendar-chip-copy,.timeline-all-day .calendar-chip-copy { padding:5px 4px 5px 7px; align-content:center; gap:4px; }
@@ -34,3 +36,8 @@
 @media(max-width:899px) { .calendar-timeline-canvas { --timeline-date-width:84px; } }
 
 @media(max-width:599px) { .calendar-timeline-canvas { --timeline-date-width:72px; --timeline-all-column-width:112px; } }
+
+.timeline-hour-gap { position:absolute; top:0; display:grid; place-items:center; width:44px; height:44px; padding:0; border:0; background:transparent; color:var(--purple-ink); font:inherit; font-size:22px; cursor:pointer; }
+.timeline-hour-gap:hover { background:var(--purple-soft); }
+.timeline-outside { color:var(--purple-ink); font-size:12px; font-weight:600; }
+.timeline-timed-cell .calendar-chip-copy strong,.timeline-all-day .calendar-chip-copy strong { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; white-space:normal; overflow:hidden; overflow-wrap:anywhere; line-height:1.25; max-height:30px; }

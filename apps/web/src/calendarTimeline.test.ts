@@ -1,5 +1,18 @@
 import { expect,it } from 'vitest';
 import { timelineMarkers,timelineOffset,timelineTime,HOUR_WIDTH,DEADLINE_WIDTH } from './calendarTimeline';
+import { hiddenHourRanges,offscreenDirection } from './calendarTimeline';
+
+it('explains only omitted hour ranges, including day boundaries',()=>{
+  expect(hiddenHourRanges([0,1,15,23])).toEqual([{index:2,from:'02:00',to:'14:59'},{index:3,from:'16:00',to:'22:59'}]);
+  expect(hiddenHourRanges([])).toEqual([]);
+  expect(hiddenHourRanges(Array.from({length:24},(_,i)=>i))).toEqual([]);
+});
+it('counts only wholly hidden cards outside the fixed date and visible right edge',()=>{
+  expect(offscreenDirection(20,90,90,300)).toBe('left');
+  expect(offscreenDirection(300,448,90,300)).toBe('right');
+  expect(offscreenDirection(89,237,90,300)).toBeUndefined();
+  expect(offscreenDirection(200,348,90,300)).toBeUndefined();
+});
 
 it('maps the shared horizontal scale to deadline instants with quarter hour snapping',()=>{
   const hours=[10,15,23];

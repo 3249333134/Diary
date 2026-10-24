@@ -1,4 +1,5 @@
 import { z } from "zod";
+export type {WindowRole,SocialPerson,FriendRequest,WindowMember,SharedWindow,SocialNotice,SocialSnapshot} from './social.js';
 
 export const entityTypes = ["person", "place", "activity", "food", "thing"] as const;
 export const entityTypeSchema = z.enum(entityTypes);
@@ -11,7 +12,7 @@ export const taggedEntitySchema = z.object({
 });
 export type TaggedEntity = z.infer<typeof taggedEntitySchema>;
 
-export const recordRefSchema = z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), kind: z.enum(['facts', 'learn', 'input', 'idea', 'todo']), id: z.string().regex(/^[a-zA-Z0-9-]+$/).max(80), summary: z.string().max(2000) });
+export const recordRefSchema = z.object({ windowId:z.string().uuid().optional(), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), kind: z.enum(['facts', 'learn', 'input', 'idea', 'todo']), id: z.string().regex(/^[a-zA-Z0-9-]+$/).max(80), summary: z.string().max(2000) });
 export type RecordRef = z.infer<typeof recordRefSchema>;
 
 export const attachmentSchema = z.object({ path: z.string().max(500), name: z.string().max(200).default('') });
@@ -283,6 +284,7 @@ export function entityKey(type: EntityType, name: string): string {
 
 const captureDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$|^$/);
 export const captureDraftSchema = z.object({
+  windowId:z.string().uuid().optional(),
   repeat: todoRepeatSchema.default(null),
   category: planCategoryIdSchema.nullable().optional(), important: z.boolean().nullable().optional(), urgent: z.boolean().nullable().optional(),
   startDate: captureDate.optional(), startTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$|^$/).optional(),

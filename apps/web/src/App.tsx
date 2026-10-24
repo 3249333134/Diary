@@ -1,4 +1,4 @@
-import {ObsidianDevices} from "./ObsidianDevices";
+import {SocialContext,useSocialState,MainNavigation,CreateMenu,Communications,MyAccount,type MainPage} from './Social';
 import {useGlassConfirm} from './GlassConfirm';
 import {GlassDialog,GlassComboBox} from './GlassUI';
 import {diaryPresets} from './diaryPresets';
@@ -9,7 +9,7 @@ import {validateDiary,fieldLimit,diaryDocumentSchema,type FieldIssue} from '@dia
 import { EntityField, type EntityFieldProps } from './EntityField';
 import { CompactDiaryTools } from './CompactDiaryTools';
 import { DiaryPanel, DiaryInformation, DiaryControlsContext, type DiaryControls } from './DiaryPanel';
-import { DiaryToolbar, WorkspaceNavigation, type SaveStatus } from './WorkspaceTools';
+import { DiaryToolbar, type SaveStatus } from './WorkspaceTools';
 import { UnifiedCapture } from './Capture';
 import { planClock } from './planFilters';
 import { SharedTagInput } from './PlanFields';
@@ -664,7 +664,7 @@ function TextEntries({ label, kind, document, update,createRequest }: { label: s
             </article>;
           })}
         </div>}
-    {(composing||!entries.length||newText.length>0)&&<form className="diary-entry-composer" onSubmit={e => { e.preventDefault(); if (!newText.trim() || newText.length>(fieldLimit(diaryDocumentSchema,'entries.input.0.content')||50000)) return; const entry: TextEntry = { id: crypto.randomUUID(), content: newText.trim(), time: currentMinute(), sources: [], tags: [], attachments: [] }; change([...entries, entry]); setExpanded(prev => new Set([...prev, entry.id])); setNewText('');setComposing(false); }}>
+    {(composing||!entries.length||newText.length>0)&&<form className="diary-entry-composer" onSubmit={e => { e.preventDefault(); if (!newText.trim() || newText.length>(fieldLimit(diaryDocumentSchema,'entries.input.0.content')||50000)) return; const entry: TextEntry = { id: crypto.randomUUID(), content: newText.trim(), time: currentMinute(), sources: [], tags: [], attachments: [] }; change([...entries, entry]); setExpanded(prev => new Set([...prev, entry.id])); setNewText('');setComposing(false);requestAnimationFrame(()=>window.document.querySelector<HTMLButtonElement>('.workspace-create-button')?.focus({preventScroll:true})); }}>
       <label className="field"><span>新建一条{label}</span><textarea ref={newTextRef} rows={3} value={newText} onChange={e => setNewText(e.target.value)} placeholder={`写一条${label.toLowerCase()}...`} /></label>
       <FieldHint path="entries.input.0.content" value={newText}/><button className="quiet-button" disabled={!newText.trim()||newText.length>(fieldLimit(diaryDocumentSchema,'entries.input.0.content')||50000)}><Plus size={17} />新建{label}</button>
     </form>}
@@ -730,6 +730,7 @@ export function App() {
   const issues=localIssues.length?localIssues:serverIssues;
   const focusIssue=(issue?:FieldIssue)=>{
     if(!issue)return;
+    setSocialPage(undefined);
     setShowReceipts(false);setShowTodos(false);
     const tab=issue.path.startsWith('learn')||issue.path.startsWith('entries.learn')?1:issue.path.startsWith('input')||issue.path.startsWith('entries.input')?2:issue.path.startsWith('idea')||issue.path.startsWith('entries.idea')?3:0;
     selectTab(tab);
@@ -757,6 +758,11 @@ export function App() {
   const [activeTab, setActiveTab] = useState(0);
   // ── 登录态 ──
   const [authState, setAuthState] = useState<{ checking: boolean; user: { id: number; username: string } | null }>({ checking: true, user: null });
+  const social=useSocialState(authState.user?.id);
+  useEffect(()=>{window.dispatchEvent(new Event('diary-account-change'));},[authState.user?.id]);
+  const [socialPage,setSocialPage]=useState<'communications'|'mine'>();
+  const [createMenu,setCreateMenu]=useState(false),[captureRequest,setCaptureRequest]=useState(0),[hasCaptureDraft,setHasCaptureDraft]=useState(false);
+  const globalCreate=useRef<HTMLButtonElement>(null);
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -773,6 +779,7 @@ export function App() {
   const handleLogout = async () => {
     try { await api.auth.logout(); } catch { /* ignore */ }
     setAuthState({ checking: false, user: null });
+    setDiary(emptyDiary(date));setEntities([]);setTags(EMPTY_TAGS);setFocusRecord(undefined);setActionSource(undefined);setSocialPage(undefined);
   };
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -839,7 +846,13 @@ export function App() {
         const remote = await api.loadDiary(date);
         remote.document = ensureEntries(remote.document);
         if (cancelled) return;
-        const key = `diary.draft.${date}`;
+        const key = `diary.draft.${authState.user!.id}.${date}`;
+        const legacyOwner=localStorage.getItem('diary.legacyDraftOwner');
+        if(!legacyOwner)localStorage.setItem('diary.legacyDraftOwner',String(authState.user!.id));
+        if((!legacyOwner||legacyOwner===String(authState.user!.id))&&!localStorage.getItem(key)){
+          const legacy=localStorage.getItem(`diary.draft.${date}`);
+          if(legacy){localStorage.setItem(key,legacy);localStorage.removeItem(`diary.draft.${date}`);}
+        }
         const stored = localStorage.getItem(key);
         const draft = stored ? JSON.parse(stored) as { document: DiaryDocument; baseVersion: string } : null;
         if (draft) { draft.document = ensureEntries(draft.document); draft.document.todos ||= []; draft.document.todosExtra ||= ''; draft.document.facts.events = draft.document.facts.events.map((event) => ({ ...event, time: event.time || "", remark: event.remark || "" })); }
@@ -866,7 +879,7 @@ export function App() {
     saving.current = true; setSaveError('');setServerIssues([]);setStatus("saving");
     try {
       const result = await api.saveDiary(target, snapshot, expected);
-      const key='diary.draft.'+target;
+      const key=`diary.draft.${authState.user!.id}.${target}`;
       const stored=localStorage.getItem(key);
       try{if(stored){const draft=JSON.parse(stored);if(JSON.stringify(draft.document)===serialized)localStorage.removeItem(key);else localStorage.setItem(key,JSON.stringify({...draft,baseVersion:result.version}));}}catch{ /* Cloud write succeeded; local metadata must not turn it into a save failure. */ }
       if(activeDate.current!==target)return;
@@ -892,7 +905,7 @@ export function App() {
     setServerIssues([]);setSaveError("");
     const serialized = JSON.stringify(diary);
     if (serialized === lastSaved.current) return;
-    localStorage.setItem(`diary.draft.${date}`, JSON.stringify({ document: diary, baseVersion: versionRef.current }));
+    localStorage.setItem(`diary.draft.${authState.user!.id}.${date}`, JSON.stringify({ document: diary, baseVersion: versionRef.current }));
     if (!conflict) setStatus(navigator.onLine ? "dirty" : "offline");
     const timer = window.setTimeout(() => void saveNow(diary), 1500);
     return () => window.clearTimeout(timer);
@@ -926,14 +939,15 @@ export function App() {
     const saved = await api.loadDiary(date); saved.document = ensureEntries(saved.document);
     if (JSON.stringify(diaryRef.current) !== expected || diaryRef.current.date !== date) return;
     lastSaved.current = JSON.stringify(saved.document); versionRef.current = saved.version; setVersion(saved.version); updateDiary(saved.document); setStatus('saved');
-    localStorage.removeItem(`diary.draft.${date}`); await refreshContext(date);
+    localStorage.removeItem(`diary.draft.${authState.user!.id}.${date}`); await refreshContext(date);
   };
+  useEffect(()=>{if(social.revision)void reloadAfterAction().catch(()=>{});},[social.revision]);
   const createFromRecord = async (ref: RecordRef) => {
     try { await prepareAction(); setActionSource(ref); setShowTodos(true); setShowReceipts(false); setActionError(''); }
     catch (e) { setActionError(e instanceof Error ? e.message : '请先保存'); }
   };
   const openRecord = async (ref: RecordRef) => {
-    try { await prepareAction(); const owner = await api.loadDiary(ref.date);
+    try { await prepareAction();setSocialPage(undefined);if(ref.windowId){setFocusRecord(ref);setShowTodos(true);setShowReceipts(false);requestPlanTool('window',ref.windowId);return;} const owner = await api.loadDiary(ref.date);
       if (resolveRecord(owner.document, ref) === undefined) { setActionError(`原记录已删除：${ref.summary}`); return; }
       if (ref.kind !== 'todo') setDate(ref.date); setFocusRecord(ref); setActionSource(undefined); setShowTodos(ref.kind === 'todo'); setShowReceipts(false); setActionError('');
       if (ref.kind !== 'todo') selectTab(Math.max(0, tabs.findIndex(tab => tab.id === ref.kind)));
@@ -956,13 +970,14 @@ export function App() {
     const target = await api.loadDiary(targetDate);
     if (draft.kind === 'plan') {
       const task = todoSchema.parse({ id: draft.id, repeat:draft.repeat, title: draft.content, description: draft.description, category: draft.category, important: draft.important, urgent: draft.urgent, startDate: draft.startDate, startTime: draft.startTime, dueDate: draft.date, dueTime: draft.time, priority: draft.priority, list: draft.list, tags: draft.tags, entities: Object.values(draft.entities).flat() });
-      await api.changeAction({mode:'create',date:targetDate,version:target.version,task,operationId:draft.id});
+      if(draft.windowId){const saved=await api.sharedAction(draft.windowId,{mode:'create',date:targetDate,version:'0',task,operationId:draft.id});if(saved.refreshWarning)setRefreshWarning(saved.refreshWarning);}
+      else await api.changeAction({mode:'create',date:targetDate,version:target.version,task,operationId:draft.id});
     } else {
       const document = appendCapture(target.document, draft);
       await api.saveDiary(targetDate, document, target.version);
     }
-    await reloadAfterAction();
-    return {date:targetDate,kind:draft.kind === 'plan' ? 'todo' : draft.kind,id:draft.id,summary:draft.content.slice(0,2000)};
+    await reloadAfterAction().catch(()=>setRefreshWarning('记录已保存，列表或关联信息刷新失败'));
+    return {windowId:draft.kind==='plan'?draft.windowId:undefined,date:targetDate,kind:draft.kind === 'plan' ? 'todo' : draft.kind,id:draft.id,summary:draft.content.slice(0,2000)};
   };
   const applyCapture = (note: string, split: SplitDraft, time: string, category: string, tags: string[], location?: { name: string; lat?: number; lng?: number }) => {
     if (category === 'learn' || category === 'input' || category === 'idea') {
@@ -1011,55 +1026,56 @@ export function App() {
     return <Login onAuth={async () => { try { const me = await api.auth.me(); setAuthState({ checking: false, user: me }); } catch { setAuthState({ checking: false, user: null }); } }} />;
   }
 
-  const recordWorkspace=!showTodos&&!showReceipts&&activeTab<4;
+  const recordWorkspace=!socialPage&&!showTodos&&!showReceipts&&activeTab<4;
   const diaryLabel=tabs[Math.min(activeTab,3)].label;
   const informationLabel=['编辑今日信息','编辑来源','编辑输入信息','编辑标签'][Math.min(activeTab,3)];
   const diaryCount=diary.date!==date?0:activeTab===0?diary.facts.events.length:activeTab<4?(diary.entries?.[tabs[activeTab].id as TextKind]?.length||0):0;
-  const openDiaryInformation=()=>invokeDiary(Math.min(activeTab,3),'information');
-  const createDiaryEntry=()=>invokeDiary(Math.min(activeTab,3),'create');
-  const toggleTheme=()=>setTheme(theme==='light'?'dark':'light');
-  return <DiaryControlsContext.Provider value={{register:registerDiaryControls,onReceipts:()=>setShowReceipts(true)}}><RecordContext.Provider value={{ create: ref => void createFromRecord(ref), open: ref => void openRecord(ref), focus: focusRecord }}><div className="app-shell">
+  const openDiaryInformation=()=>activeTab<4?invokeDiary(activeTab,'information'):setDiaryTools(true);
+    const toggleTheme=()=>setTheme(theme==='light'?'dark':'light');
+  const navigate=(page:MainPage)=>{setCreateMenu(false);if(page!=='diary')setPrintedReceipts([]);if(page==='plan'||page==='diary'){setSocialPage(undefined);setShowTodos(page==='plan');}else setSocialPage(page);};
+  const closeCreate=()=>{setCreateMenu(false);requestAnimationFrame(()=>globalCreate.current?.focus());};
+  const startDiary=(index:number)=>{setCreateMenu(false);navigate('diary');setShowReceipts(false);selectTab(index);requestAnimationFrame(()=>invokeDiary(index,'create'));};
+  const diaryColumnSelector=<div className="diary-column-selector"><GlassSelect label="日记栏目" value={String(activeTab)} options={[...tabs.map((t,i)=>({value:String(i),label:`${t.label}${i===activeTab&&i<4?'·'+diaryCount:''}`})),{value:'information',label:informationLabel},{value:'today',label:'回到今天'},{value:'fullscreen',label:fullscreen?'退出全屏':'全屏显示'}]} onChange={value=>{if(value==='information')openDiaryInformation();else if(value==='today')setDate(today());else if(value==='fullscreen')setFullscreen(f=>!f);else selectTab(Number(value));}}/></div>;
+  return <SocialContext.Provider value={social}><DiaryControlsContext.Provider value={{register:registerDiaryControls,onReceipts:()=>setShowReceipts(true)}}><RecordContext.Provider value={{ create: ref => void createFromRecord(ref), open: ref => void openRecord(ref), focus: focusRecord }}><div className="app-shell social-app" data-main-page={socialPage||(showTodos?'plan':'diary')}>
     <a className="skip-link" href="#main-content">跳到日记内容</a>
     <aside className="date-rail" aria-label="日期导航">
       <div className="brand"><span><Feather /></span><div><strong>独立日记</strong><small>云端存储</small></div></div>
-      <nav className="workspace-switch" aria-label="主要功能"><button aria-pressed={!showTodos} onClick={() => setShowTodos(false)}>日记</button><button aria-pressed={showTodos} onClick={() => setShowTodos(true)}>计划</button></nav><div hidden={showTodos}><div className="rail-today"><CalendarDays /><div><strong>{todayLabel}</strong><span>{date}</span></div></div>
+      <div hidden={showTodos||!!socialPage}><div className="rail-today"><CalendarDays /><div><strong>{todayLabel}</strong><span>{date}</span></div></div>
       <div className="week-list">{currentWeekDates.map((item) => <button type="button" key={item} className={item === date ? "active" : ""} onClick={() => setDate(item)}><span>{shortDate(item)}</span>{recordedDates.has(item) && <i aria-label="已有日记" />}</button>)}</div>
       <button type="button" className="today-button" onClick={() => setDate(initialDate)}>回到今天</button>
-      </div>{!mobileLayout&&!showTodos&&!showReceipts&&activeTab<4&&diaryNavigation}{showTodos&&<PlanNavigation state={planNavigation} onAction={requestPlanTool}/>}<ObsidianDevices/><div className="rail-note"><strong>{authState.user?.username}</strong><span>已登录云端</span></div>
+      </div>{!mobileLayout&&!socialPage&&!showTodos&&!showReceipts&&diaryNavigation}{!socialPage&&showTodos&&<PlanNavigation state={planNavigation} onAction={requestPlanTool}/>}<div className="rail-note"><strong>{authState.user?.username}</strong><span>已登录云端</span></div>
     </aside>
 
-    <main ref={browseRef} id="main-content" className="main-content" data-record-workspace={recordWorkspace||undefined} data-fullscreen={fullscreen||undefined} data-compact={compactBrowse.compact} data-workspace={showTodos ? 'plan' : showReceipts ? 'receipts' : tabs[activeTab].id}>
-      <WorkspaceNavigation plan={showTodos} onWorkspace={setShowTodos} informationLabel={showTodos?'筛选计划':recordWorkspace?informationLabel:'日期与今日信息'} restricted={showTodos&&planNavigation?.restricted} onInformation={()=>showTodos?requestPlanTool('filters'):recordWorkspace?openDiaryInformation():setDiaryTools(true)} theme={theme} onTheme={toggleTheme} createLabel={showTodos?'新增计划':`新增${diaryLabel}`} createDisabled={!showTodos&&(status==='loading'||diary.date!==date)} onCreate={()=>showTodos?requestPlanTool('create'):createDiaryEntry()} onLogout={()=>void handleLogout()} username={authState.user?.username}/>
+    <main ref={browseRef} id="main-content" className="main-content" data-record-workspace={recordWorkspace||undefined} data-fullscreen={fullscreen||undefined} data-compact={compactBrowse.compact} data-workspace={socialPage|| (showTodos ? 'plan' : showReceipts ? 'receipts' : tabs[activeTab].id)}>
       {diaryTools && <CompactDiaryTools date={date} onDate={setDate} diary={diary} update={updateDiary} onClose={()=>setDiaryTools(false)} onExpand={()=>{setDiaryTools(false);compactBrowse.expand();}} onReceipts={()=>{setDiaryTools(false);setShowReceipts(true);}}/>}
-      <nav hidden={recordWorkspace} className="workspace-switch mobile-workspace-switch" aria-label="主要功能"><button aria-pressed={!showTodos} onClick={() => setShowTodos(false)}>日记</button><button aria-pressed={showTodos} onClick={() => setShowTodos(true)}>计划</button></nav>
-      <header className="topbar" hidden={showTodos||recordWorkspace}><div hidden={showTodos} className="date-control"><button type="button" onClick={() => setDate(addDays(date, -1))} aria-label="前一天"><ChevronLeft /></button><GlassDate label="日记日期" dateOnly required date={date} onChange={d=>{if(d)setDate(d);}}/><button type="button" onClick={() => setDate(addDays(date, 1))} aria-label="后一天"><ChevronRight /></button></div><div className="top-actions"><div hidden={showTodos} className="desktop-status"><StatusBadge status={status} /></div><button type="button" className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={theme === "light" ? "切换到深色主题" : "切换到浅色主题"}>{theme === "light" ? <Moon /> : <Sun />}</button><button hidden={showTodos} type="button" className="save-button" onClick={() => void saveNow(diaryRef.current,true)} disabled={status === "saving" || status === "loading" || status === "conflict"}><Save />立即保存</button></div></header>
-      <div hidden={showTodos||recordWorkspace} className="mobile-status"><StatusBadge status={status} /></div>
+      <header className="topbar" hidden={!!socialPage||showTodos||recordWorkspace}><div hidden={showTodos} className="date-control"><button type="button" onClick={() => setDate(addDays(date, -1))} aria-label="前一天"><ChevronLeft /></button><GlassDate label="日记日期" dateOnly required date={date} onChange={d=>{if(d)setDate(d);}}/><button type="button" onClick={() => setDate(addDays(date, 1))} aria-label="后一天"><ChevronRight /></button></div><div className="top-actions"><div hidden={showTodos} className="desktop-status"><StatusBadge status={status} /></div><button type="button" className="icon-button" onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={theme === "light" ? "切换到深色主题" : "切换到浅色主题"}>{theme === "light" ? <Moon /> : <Sun />}</button><button hidden={showTodos} type="button" className="save-button" onClick={() => void saveNow(diaryRef.current,true)} disabled={status === "saving" || status === "loading" || status === "conflict"}><Save />立即保存</button></div></header>
+      <div hidden={!!socialPage||showTodos||recordWorkspace} className="mobile-status"><StatusBadge status={status} /></div>
       {!showTodos&&(saveError||issues.length>0)&&<div className="save-problem" role="alert"><p>{saveError||'内容未通过校验，草稿已保留'}</p>{issues.slice(0,5).map(issue=><button key={issue.path} type="button" className="quiet-button" onClick={()=>focusIssue(issue)}>{issue.message}</button>)}{saveError&&!issues.length&&<button className="quiet-button" onClick={()=>void saveNow(diaryRef.current,true)}>重试保存</button>}</div>}
       {!showTodos&&refreshWarning&&<div className="refresh-warning" role="status">{refreshWarning}<button className="quiet-button" onClick={()=>void refreshContext(date).then(()=>setRefreshWarning('')).catch(()=>{})}>重试刷新</button></div>}
       {reauth&&<GlassDialog label="重新登录" onClose={()=>setReauth(false)}><p className="reauth-note">登录已失效，编辑内容已保留。请使用原账号重新登录。</p><Login onAuth={async()=>{const me=await api.auth.me();if(me.id!==authState.user?.id){await api.auth.logout();setSaveError('请登录原账号后继续保存');return;}setReauth(false);await saveNow();}}/></GlassDialog>}
       {actionError && <p role="alert">{actionError}</p>}
-      <div className="workspace-footer">
-        <UnifiedCapture compactDesktop={showTodos||recordWorkspace} entityContext={common} hidden={!showTodos && !showReceipts && activeTab === 4} bottomNav={!showTodos && !showReceipts} onSave={saveCapture} onOpen={ref => void openRecord(ref)} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} />
-        {mobileLayout&&!showTodos&&!showReceipts&&diaryNavigation}
-      </div>
-      <div className="workspace-root plan-workspace" hidden={!showTodos}><TodoPanel theme={theme==='dark'?'dark':'light'} onTheme={()=>setTheme(theme==='light'?'dark':'light')} active={showTodos} onNavigationChange={setPlanNavigation} entityContext={common} toolbarAction={planToolbarAction} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} date={planClock().date} source={actionSource} revision={actionsRevision} focusId={focusRecord?.kind === 'todo' ? focusRecord.id : undefined} prepare={prepareAction} changed={reloadAfterAction} onOpen={ref => void openRecord(ref)} onClose={() => setShowTodos(false)} /></div>
-      <div className="workspace-root diary-workspace" data-record-workspace={recordWorkspace||undefined} hidden={showTodos}>
-      {recordWorkspace&&<DiaryToolbar date={date} onDate={setDate} label={diaryLabel} count={diaryCount} status={status} onSave={()=>void saveNow(diaryRef.current,true)} onInformation={openDiaryInformation} informationLabel={informationLabel} onCreate={createDiaryEntry} theme={theme} onTheme={toggleTheme} disabled={status==='loading'||diary.date!==date} navigation={!mobileLayout&&fullscreen?diaryNavigation:undefined}/>}
+      {createMenu&&<CreateMenu onClose={closeCreate} planDisabled={!!planNavigation?.createDisabled} diaryDisabled={status==='loading'||status==='saving'||diary.date!==date} onPlan={()=>{setCreateMenu(false);navigate('plan');requestPlanTool('create');}} onDiary={startDiary} onAi={()=>{setCreateMenu(false);setCaptureRequest(n=>n+1);}}/>}
+      <div className="workspace-footer"><MainNavigation page={socialPage||(showTodos?'plan':'diary')} onPage={navigate} onCreate={()=>setCreateMenu(true)} trigger={globalCreate} hasDraft={hasCaptureDraft}/><UnifiedCapture headless openRequest={captureRequest} onDraftChange={setHasCaptureDraft} externalTrigger={globalCreate} compactDesktop entityContext={common} onSave={saveCapture} onOpen={ref=>void openRecord(ref)}/></div>
+      <div className="workspace-root plan-workspace" hidden={!showTodos||!!socialPage}><TodoPanel theme={theme==='dark'?'dark':'light'} onTheme={toggleTheme} active={showTodos&&!socialPage} onNavigationChange={setPlanNavigation} entityContext={common} toolbarAction={planToolbarAction} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} date={planClock().date} source={actionSource} revision={actionsRevision} focusId={focusRecord?.kind === 'todo' ? focusRecord.id : undefined} prepare={prepareAction} changed={reloadAfterAction} onOpen={ref => void openRecord(ref)} onClose={() => setShowTodos(false)} /></div>
+      <div className="workspace-root diary-workspace" data-record-workspace={recordWorkspace||undefined} hidden={showTodos||!!socialPage}>
+      {!showReceipts&&<DiaryToolbar compact={mobileLayout} date={date} onDate={setDate} label={diaryLabel} count={diaryCount} status={status} onSave={()=>void saveNow(diaryRef.current,true)} onInformation={openDiaryInformation} informationLabel={informationLabel} theme={theme} onTheme={toggleTheme} fullscreen={fullscreen} onToggleFullscreen={mobileLayout?undefined:()=>setFullscreen(f=>!f)} navigation={mobileLayout?diaryColumnSelector:fullscreen?diaryNavigation:undefined}/>}
 
       {showReceipts && (status === 'loading' || diary.date !== date ? <p role="status">正在整理这一天的小票…</p> : <ReceiptCollection key={date} diary={diary} saved={status === 'saved'} onClose={() => setShowReceipts(false)} onWrite={()=>{setShowReceipts(false);selectTab(0);requestAnimationFrame(()=>window.document.dispatchEvent(new Event("diary-add-event")));}} />)}
-      {!showReceipts&&conflict && <ConflictBanner conflict={conflict} onRemote={() => { updateDiary(conflict.remote); versionRef.current = conflict.remoteVersion; setVersion(conflict.remoteVersion); lastSaved.current = JSON.stringify(conflict.remote); localStorage.removeItem(`diary.draft.${date}`); conflictRef.current = null; setConflict(null); setStatus("saved"); }} onLocal={() => { versionRef.current = conflict.remoteVersion; setVersion(conflict.remoteVersion); updateDiary(conflict.local); conflictRef.current = null; setConflict(null); setStatus("dirty"); }} />}
+      {!showReceipts&&conflict && <ConflictBanner conflict={conflict} onRemote={() => { updateDiary(conflict.remote); versionRef.current = conflict.remoteVersion; setVersion(conflict.remoteVersion); lastSaved.current = JSON.stringify(conflict.remote); localStorage.removeItem(`diary.draft.${authState.user!.id}.${date}`); conflictRef.current = null; setConflict(null); setStatus("saved"); }} onLocal={() => { versionRef.current = conflict.remoteVersion; setVersion(conflict.remoteVersion); updateDiary(conflict.local); conflictRef.current = null; setConflict(null); setStatus("dirty"); }} />}
       <div className="workspace-layout" hidden={showReceipts}>
         {!mobileLayout&&activeTab===4&&diaryNavigation}
         <div className="workspace-track" ref={trackRef} onScroll={onTrackScroll}>{tabs.map((tab, index) => <div id={`panel-${tab.id}`} role="tabpanel" aria-hidden={activeTab !== index} inert={activeTab !== index} tabIndex={activeTab === index ? 0 : -1} data-active={activeTab === index} className={`workspace-panel${index === 4 ? " full-page" : ""}`} key={tab.id}>{panel(index)}</div>)}</div>
       </div>
       </div>
+      {socialPage==='communications'&&<Communications onOpenWindow={(windowId,taskId)=>{navigate('plan');requestPlanTool('window',windowId);if(taskId)setFocusRecord({date:date,kind:'todo',id:taskId,summary:'',windowId});}}/>}
+      {socialPage==='mine'&&<MyAccount username={authState.user.username} theme={theme} onTheme={toggleTheme} onLogout={()=>void handleLogout()} onDemo={async code=>{await prepareAction();if(hasCaptureDraft)throw new Error('请先保存 AI 草稿，再切换演示身份');await api.demoAccount(code);window.location.reload();}}/>}
     </main>
 
-    <aside className="context-rail" aria-label="本周概览">
+    {!showTodos&&!socialPage&&<aside className="context-rail" aria-label="本周概览">
       <section><div className="context-title"><CalendarDays /><h2>本周</h2></div><div className="week-stats"><strong>{week?.entries.length || 0}</strong><span>天有记录</span></div><div className="mini-days">{currentWeekDates.map((item) => <button type="button" key={item} className={item === date ? "active" : ""} onClick={() => setDate(item)}><span>{new Date(`${item}T00:00:00Z`).getUTCDate()}</span><i className={recordedDates.has(item) ? "filled" : ""} /></button>)}</div></section>
       <section><div className="context-title"><Sparkles /><h2>周复盘</h2></div><p>汇总共享的每日记录，结果写入独立子目录，不覆盖项目方舟。</p><button type="button" className="summary-button" disabled={summaryLoading} onClick={async () => { setSummaryLoading(true); setSummaryMessage(""); try { const result = await api.summarize(date, true); setSummaryMessage(result.ok ? `已生成${result.mode === "ai" ? " AI" : "规则版"}周复盘` : result.reason || "未生成"); } catch (error) { setSummaryMessage(error instanceof Error ? error.message : "生成失败"); } finally { setSummaryLoading(false); } }}><Sparkles />{summaryLoading ? "正在整理" : "生成本周复盘"}</button>{summaryMessage && <p className="summary-message" role="status">{summaryMessage}</p>}</section>
       <section><div className="context-title"><Link2 /><h2>线索库</h2></div><p><strong>{entities.length}</strong> 个实体已经可以反查。</p><div className="type-counts">{entityTypes.map((type) => <span key={type}>{TYPE_LABEL[type]} <b>{entities.filter((entity) => entity.type === type).length}</b></span>)}</div></section>
-    </aside>
-    {printedReceipts.length > 0 && <ReceiptNotice key={`${printedReceipts[0].date}:${printedReceipts[0].id}`} receipts={printedReceipts} onClose={() => setPrintedReceipts([])} onOpen={() => { setDate(printedReceipts[0].date); setShowReceipts(true); setPrintedReceipts([]); }} />}
-  </div></RecordContext.Provider></DiaryControlsContext.Provider>;
+    </aside>}
+    {!socialPage&&!showTodos&&printedReceipts.length > 0 && <ReceiptNotice key={`${printedReceipts[0].date}:${printedReceipts[0].id}`} receipts={printedReceipts} onClose={() => setPrintedReceipts([])} onOpen={() => { setDate(printedReceipts[0].date); setShowReceipts(true); setPrintedReceipts([]); }} />}
+  </div></RecordContext.Provider></DiaryControlsContext.Provider></SocialContext.Provider>;
 }

@@ -9,10 +9,15 @@ export function planState(task: Todo, now = planClock()) {
   const tomorrow = new Date(`${now.date}T00:00:00Z`); tomorrow.setUTCDate(tomorrow.getUTCDate()+1);
   return due && (due === now.date || due === tomorrow.toISOString().slice(0,10)) ? 'soon' : 'neutral';
 }
+const clockFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+let cachedMinute:number|undefined,cachedClock:{date:string;time:string}|undefined;
 export function planClock(now = new Date()) {
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(now);
+  const minute=Math.floor(now.getTime()/60000);
+  if(cachedClock&&minute===cachedMinute)return cachedClock;
+  const parts = clockFormatter.formatToParts(now);
   const get = (key: string) => parts.find(p => p.type === key)!.value;
-  return { date: `${get('year')}-${get('month')}-${get('day')}`, time: `${get('hour')}:${get('minute')}` };
+  cachedMinute=minute;
+  return cachedClock={ date: `${get('year')}-${get('month')}-${get('day')}`, time: `${get('hour')}:${get('minute')}` };
 }
 export function matchesPlan(task: Todo, filter: PlanFilter, now = planClock()) {
   if(task.occurrenceSuppressed)return false;

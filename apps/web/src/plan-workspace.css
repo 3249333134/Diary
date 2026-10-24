@@ -6,7 +6,6 @@
 .plan-rail-navigation button small { color:var(--muted); font-variant-numeric:tabular-nums; }
 .plan-rail-navigation button:hover { background:var(--glass-item); }
 .plan-rail-navigation button[aria-pressed=true] { background:var(--purple-soft); color:var(--purple-ink); font-weight:600; }
-.plan-rail-navigation .plan-rail-create { background:var(--purple); color:white; justify-content:center; }
 .plan-rail-group h2 { font-size:12px; font-weight:500; color:var(--muted); margin:0 12px 8px; }
 .plan-rail-dot { width:8px; height:8px; flex:none; border-radius:50%; background:var(--purple); }
 .plan-rail-caption { color:var(--muted); font-size:10px; padding:0 12px; }

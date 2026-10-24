@@ -80,7 +80,7 @@ export function registerAuth(server: FastifyInstance) {
     const url = request.url;
     if (url.startsWith("/api/auth/") || url === "/api/health") return;
     if (!url.startsWith("/api/")) return;
-    if(config.demoDatabase && config.host==='127.0.0.1'){request.userId=1;return;}
+    if(config.demoDatabase && config.host==='127.0.0.1'&&!getSessionToken(request)){request.userId=1;return;}
 
     if(url.startsWith('/api/obsidian-sync/v1/')) {
       const token=request.headers.authorization?.match(/^Bearer (.+)$/)?.[1]||'';

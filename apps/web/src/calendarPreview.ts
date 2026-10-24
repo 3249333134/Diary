@@ -2,7 +2,7 @@ import type {ActionRow} from './api';
 import {planDueTime} from './planFilters';
 export type CalendarTarget={date:string;time:string};
 export type CalendarPreview={row:ActionRow;target:CalendarTarget};
-export const calendarRowKey=(row:ActionRow)=>`${row.date}:${row.task.id}`;
+export const calendarRowKey=(row:ActionRow)=>`${row.windowId?row.windowId+':':''}${row.date}:${row.task.id}`;
 export const sameCalendarTarget=(row:ActionRow,target:CalendarTarget)=>(row.task.dueDate||row.task.plannedDate||'')===target.date&&(planDueTime(row.task)||'')===target.time;
 /** A display-only projection: the saved row and its occurrence identity stay intact. */
 export function previewCalendarRows(rows:ActionRow[],previews:readonly CalendarPreview[]=[]):ActionRow[]{

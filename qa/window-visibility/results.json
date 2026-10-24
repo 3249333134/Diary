@@ -1,0 +1,68 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "privateWindows": [
+      "工作",
+      "个人生活"
+    ],
+    "privateTaskCount": 160,
+    "sharedWindow": "共享演示 · 一起安排",
+    "passed": true
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "privateWindows": [
+      "工作",
+      "个人生活"
+    ],
+    "privateTaskCount": 160,
+    "sharedWindow": "共享演示 · 一起安排",
+    "passed": true
+  },
+  {
+    "width": 887,
+    "theme": "light",
+    "privateWindows": [
+      "工作",
+      "个人生活"
+    ],
+    "privateTaskCount": 160,
+    "sharedWindow": "共享演示 · 一起安排",
+    "passed": true
+  },
+  {
+    "width": 887,
+    "theme": "dark",
+    "privateWindows": [
+      "工作",
+      "个人生活"
+    ],
+    "privateTaskCount": 160,
+    "sharedWindow": "共享演示 · 一起安排",
+    "passed": true
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "privateWindows": [
+      "工作",
+      "个人生活"
+    ],
+    "privateTaskCount": 160,
+    "sharedWindow": "共享演示 · 一起安排",
+    "passed": true
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "privateWindows": [
+      "工作",
+      "个人生活"
+    ],
+    "privateTaskCount": 160,
+    "sharedWindow": "共享演示 · 一起安排",
+    "passed": true
+  }
+]

@@ -1,0 +1,601 @@
+[
+  {
+    "width": 375,
+    "landing": 1670,
+    "views": [
+      {
+        "label": "窗口",
+        "ms": 1378,
+        "dom": 24085,
+        "cards": 254
+      },
+      {
+        "label": "列表",
+        "ms": 2017,
+        "dom": 22553,
+        "cards": 254
+      },
+      {
+        "label": "四象限",
+        "ms": 2013,
+        "dom": 24865,
+        "cards": 254
+      },
+      {
+        "label": "两周",
+        "ms": 1385,
+        "dom": 1082,
+        "cards": 32
+      }
+    ],
+    "details": {
+      "longTasks": [
+        100,
+        52,
+        82,
+        58,
+        53,
+        76,
+        237,
+        676,
+        870,
+        570,
+        852,
+        573,
+        231
+      ],
+      "totalLong": 4430,
+      "nodes": 1082
+    },
+    "requests": [
+      {
+        "path": "/api/auth/me",
+        "ms": 2,
+        "bytes": "34"
+      },
+      {
+        "path": "/api/plan-categories",
+        "ms": 1,
+        "bytes": "142"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 8,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 9,
+        "bytes": "5281"
+      },
+      {
+        "path": "/api/quick-facts",
+        "ms": 12,
+        "bytes": "492"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 8,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/social",
+        "ms": 8,
+        "bytes": "3484"
+      },
+      {
+        "path": "/api/plan-categories",
+        "ms": 8,
+        "bytes": "142"
+      },
+      {
+        "path": "/api/diaries/2026-10-24",
+        "ms": 9,
+        "bytes": "316"
+      },
+      {
+        "path": "/api/schedule",
+        "ms": 11,
+        "bytes": "16610"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 13,
+        "bytes": "10256"
+      },
+      {
+        "path": "/api/entities",
+        "ms": 13,
+        "bytes": "9351"
+      },
+      {
+        "path": "/api/tags",
+        "ms": 17,
+        "bytes": "1608"
+      },
+      {
+        "path": "/api/weeks",
+        "ms": 17,
+        "bytes": "54"
+      },
+      {
+        "path": "/api/diaries/2026-10-24",
+        "ms": 11,
+        "bytes": "316"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 12,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 13,
+        "bytes": "5281"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 6,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/entities",
+        "ms": 5,
+        "bytes": "9351"
+      },
+      {
+        "path": "/api/tags",
+        "ms": 9,
+        "bytes": "1608"
+      },
+      {
+        "path": "/api/weeks",
+        "ms": 10,
+        "bytes": "54"
+      },
+      {
+        "path": "/api/schedule",
+        "ms": 7,
+        "bytes": "16610"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 9,
+        "bytes": "10256"
+      },
+      {
+        "path": "/api/social",
+        "ms": 2,
+        "bytes": "3484"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 6,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/diaries/2026-10-24",
+        "ms": 2,
+        "bytes": "316"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 5,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 6,
+        "bytes": "5281"
+      },
+      {
+        "path": "/api/entities",
+        "ms": 1,
+        "bytes": "9351"
+      },
+      {
+        "path": "/api/tags",
+        "ms": 4,
+        "bytes": "1608"
+      },
+      {
+        "path": "/api/weeks",
+        "ms": 5,
+        "bytes": "54"
+      },
+      {
+        "path": "/api/schedule",
+        "ms": 9,
+        "bytes": "16610"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 12,
+        "bytes": "10256"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 6,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 5,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 6,
+        "bytes": "5281"
+      },
+      {
+        "path": "/api/schedule",
+        "ms": 22,
+        "bytes": "134569"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 31,
+        "bytes": "91846"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 5,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 6,
+        "bytes": "5281"
+      },
+      {
+        "path": "/api/schedule",
+        "ms": 16,
+        "bytes": "134569"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 24,
+        "bytes": "91846"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 5,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 6,
+        "bytes": "5281"
+      },
+      {
+        "path": "/api/schedule",
+        "ms": 20,
+        "bytes": "134569"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 33,
+        "bytes": "91846"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 5,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 6,
+        "bytes": "5281"
+      },
+      {
+        "path": "/api/schedule",
+        "ms": 6,
+        "bytes": "16610"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 8,
+        "bytes": "10256"
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "landing": 1596,
+    "views": [
+      {
+        "label": "窗口",
+        "ms": 1369,
+        "dom": 24073,
+        "cards": 254
+      },
+      {
+        "label": "列表",
+        "ms": 2090,
+        "dom": 22541,
+        "cards": 254
+      },
+      {
+        "label": "四象限",
+        "ms": 2067,
+        "dom": 24853,
+        "cards": 254
+      },
+      {
+        "label": "两周",
+        "ms": 1373,
+        "dom": 1048,
+        "cards": 32
+      }
+    ],
+    "details": {
+      "longTasks": [
+        51,
+        51,
+        240,
+        627,
+        949,
+        530,
+        878,
+        494,
+        165,
+        64
+      ],
+      "totalLong": 4049,
+      "nodes": 1048
+    },
+    "requests": [
+      {
+        "path": "/api/auth/me",
+        "ms": 2,
+        "bytes": "34"
+      },
+      {
+        "path": "/api/plan-categories",
+        "ms": 1,
+        "bytes": "142"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 5,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 5,
+        "bytes": "5281"
+      },
+      {
+        "path": "/api/quick-facts",
+        "ms": 8,
+        "bytes": "492"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 4,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/social",
+        "ms": 5,
+        "bytes": "3484"
+      },
+      {
+        "path": "/api/plan-categories",
+        "ms": 5,
+        "bytes": "142"
+      },
+      {
+        "path": "/api/diaries/2026-10-24",
+        "ms": 5,
+        "bytes": "316"
+      },
+      {
+        "path": "/api/schedule",
+        "ms": 7,
+        "bytes": "16610"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 9,
+        "bytes": "10256"
+      },
+      {
+        "path": "/api/entities",
+        "ms": 8,
+        "bytes": "9351"
+      },
+      {
+        "path": "/api/tags",
+        "ms": 10,
+        "bytes": "1608"
+      },
+      {
+        "path": "/api/weeks",
+        "ms": 10,
+        "bytes": "54"
+      },
+      {
+        "path": "/api/diaries/2026-10-24",
+        "ms": 6,
+        "bytes": "316"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 7,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 8,
+        "bytes": "5281"
+      },
+      {
+        "path": "/api/entities",
+        "ms": 3,
+        "bytes": "9351"
+      },
+      {
+        "path": "/api/tags",
+        "ms": 6,
+        "bytes": "1608"
+      },
+      {
+        "path": "/api/weeks",
+        "ms": 6,
+        "bytes": "54"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 5,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/schedule",
+        "ms": 7,
+        "bytes": "16610"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 8,
+        "bytes": "10256"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 5,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/social",
+        "ms": 2,
+        "bytes": "3484"
+      },
+      {
+        "path": "/api/diaries/2026-10-24",
+        "ms": 1,
+        "bytes": "316"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 5,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 5,
+        "bytes": "5281"
+      },
+      {
+        "path": "/api/entities",
+        "ms": 1,
+        "bytes": "9351"
+      },
+      {
+        "path": "/api/tags",
+        "ms": 3,
+        "bytes": "1608"
+      },
+      {
+        "path": "/api/weeks",
+        "ms": 3,
+        "bytes": "54"
+      },
+      {
+        "path": "/api/schedule",
+        "ms": 6,
+        "bytes": "16610"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 8,
+        "bytes": "10256"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 5,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 5,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 6,
+        "bytes": "5281"
+      },
+      {
+        "path": "/api/schedule",
+        "ms": 19,
+        "bytes": "134569"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 27,
+        "bytes": "91846"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 5,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 5,
+        "bytes": "5281"
+      },
+      {
+        "path": "/api/schedule",
+        "ms": 13,
+        "bytes": "134569"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 21,
+        "bytes": "91846"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 5,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 6,
+        "bytes": "5281"
+      },
+      {
+        "path": "/api/schedule",
+        "ms": 13,
+        "bytes": "134569"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 21,
+        "bytes": "91846"
+      },
+      {
+        "path": "/api/actions",
+        "ms": 5,
+        "bytes": "29194"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 6,
+        "bytes": "5281"
+      },
+      {
+        "path": "/api/schedule",
+        "ms": 7,
+        "bytes": "16610"
+      },
+      {
+        "path": "/api/shared-tasks",
+        "ms": 8,
+        "bytes": "10256"
+      }
+    ]
+  }
+]

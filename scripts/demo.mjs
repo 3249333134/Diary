@@ -90,6 +90,27 @@ if(!await readJson('demo-schedule-v1',false,1)) {
 if(process.argv.includes('--init-only')){mock.close();console.log('演示知识库已初始化（重复运行不会重复生成）');process.exit(0);}
 const { buildServer }=await import('../apps/api/dist/server.js');
 const app=await buildServer();
+if(!await readJson('demo-social-v1',false,1)){
+  const {socialSnapshot,socialProfile,requestFriend,respondFriend,createWindow,inviteMember,changeMember,changeSharedTask,listSharedTasks}=await import('../apps/api/dist/social.js');
+  const {queryRows}=await import('../apps/api/dist/db.js');
+  const peers=await Promise.all(['演示好友小林','演示好友小周'].map(async username=>(await queryRows('SELECT id FROM users WHERE username = ?',[username]))[0].id));
+  for(const id of peers){
+    const profile=await socialProfile(id);let state=await socialSnapshot(1);
+    if(!state.friends.some(f=>f.code===profile.code)){
+      if(!state.requests.some(r=>r.person.code===profile.code))await requestFriend(1,profile.code);
+      state=await socialSnapshot(1);const request=state.requests.find(r=>r.person.code===profile.code);if(request)await respondFriend(request.direction==='outgoing'?id:1,request.id,'accept');
+    }
+  }
+  const name='共享演示 · 一起安排';const win=(await socialSnapshot(1)).windows.find(w=>w.name===name)||await createWindow(1,{name,color:'#7963bd'});
+  for(const [index,id]of peers.entries()){
+    const code=(await socialProfile(id)).code,membership=(await socialSnapshot(1)).windows.find(w=>w.id===win.id).members.find(m=>m.code===code);
+    if(!membership)await inviteMember(win.id,1,code,index===0?'editor':'viewer');
+    if(index===0&&!(await socialSnapshot(id)).windows.some(w=>w.id===win.id))await changeMember(win.id,id,'accept');
+  }
+  const examples=[['demo-shared-reading','一起阅读与复盘','20:00',{type:'daily',interval:1}],['demo-shared-weekend','准备周末共同安排','15:00',null]];
+  for(const [id,title,time,repeat]of examples)if(!(await listSharedTasks(1)).some(r=>r.task.id===id))await changeSharedTask(win.id,1,{mode:'create',date:dateAt(),version:'0',operationId:randomUUID(),task:todoSchema.parse({id,title,dueDate:dateAt(),dueTime:time,startDate:dateAt(),startTime:time,repeat,important:true,urgent:false,description:'本地共享演示：切换到“演示好友小林”可验证协作；小周需先接受邀请。'})});
+  await writeJson('demo-social-v1',{windowId:win.id},1);
+}
 await app.listen({host:'127.0.0.1',port:4320});
 console.log('演示入口：http://127.0.0.1:4320/ · 独立知识库 · 本地模拟 AI');
 const shutdown=async()=>{await app.close();mock.close();process.exit(0);};

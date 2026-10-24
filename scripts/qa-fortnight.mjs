@@ -4,14 +4,14 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import {emptyDiary,todoSchema} from '../packages/contracts/dist/index.js';
 const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
-const date=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const date='2026-10-20';
 const shift=(date,n)=>{const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
 let next=shift(date,1),later=shift(date,2);const names=['计划甲','计划乙','计划丙'];
 const fixture=()=>Array.from({length:9},(_,i)=>({date,version:'v0',task:todoSchema.parse({id:'batch-'+i,title:names[i]||'其他日程 '+i,dueDate:i>3?next:date,dueTime:['10:00','14:00','17:00','15:00','10:00','14:00','17:00','18:00',''][i],startDate:date,startTime:'09:00',category:i===2?null:i===6?'cat-00000000-0000-0000-0000-000000000000':i%2?'personal':'work',important:i===8?null:i%4<2,urgent:i===8?null:i%2===0,...(i<3?{seriesId:'series-'+i,occurrenceDate:date}:{}),...(i===3?{done:true,status:'done'}:{})}),sourceExists:false,completionExists:false}));
 await mkdir('qa/fortnight',{recursive:true});const results=[];
 try{for(const width of [375,624,768,1440])for(const theme of ['light','dark']){
  if(process.env.QA_WIDTH&&Number(process.env.QA_WIDTH)!==width||process.env.QA_THEME&&process.env.QA_THEME!==theme)continue;
- const page=await browser.newPage({viewport:{width,height:width===624?1195:900},hasTouch:width<900});page.setDefaultTimeout(8000);
+ const page=await browser.newPage({viewport:{width,height:width===624?1195:900},hasTouch:width<900});page.setDefaultTimeout(8000);await page.clock.install({time:new Date(date+'T04:00:00Z')});
  let rows=fixture(),version=0,failId='',refreshFails=false,externalAfterFirst=false;const writes=[],checks=[],errors=[],locations=new Map();
  page.on('pageerror',e=>errors.push(e.message));await page.addInitScript(theme=>localStorage.setItem('diary.theme',theme),theme);
  await page.route('**/api/**',async route=>{
@@ -35,7 +35,7 @@ try{for(const width of [375,624,768,1440])for(const theme of ['light','dark']){
  });
  const check=async(name,fn)=>{if(process.env.QA_FORM_ONLY&&!name.startsWith('direct single'))return;if(process.env.QA_PARTIAL_ONLY&&!name.startsWith('partial conflict'))return;try{await fn();checks.push({name,passed:true});console.log(width,theme,'PASS',name);}catch(e){checks.push({name,passed:false,error:e.stack});console.log(width,theme,'FAIL',name,e.message);await page.mouse.up();await page.keyboard.press('Escape');}};
  const view=page.getByRole('navigation',{name:'计划视图'});
- async function reset(mode){next=shift(date,mode==='fortnight'?7:1);later=shift(date,mode==='fortnight'?8:2);rows=fixture();version=0;failId='';refreshFails=false;externalAfterFirst=false;writes.length=0;locations.clear();await page.goto('http://127.0.0.1:4320');await page.getByRole('button',{name:'计划',exact:true}).click();await view.getByRole('button',{name:mode==='fortnight'?'两周':mode!=='month'?'周':'月',exact:true}).click();await page.locator('.calendar-scroll').waitFor();await page.waitForTimeout(120);}
+ async function reset(mode){next=shift(date,mode==='fortnight'?7:1);later=shift(date,mode==='fortnight'?8:2);rows=fixture();version=0;failId='';refreshFails=false;externalAfterFirst=false;writes.length=0;locations.clear();await page.goto('http://127.0.0.1:4320');await page.getByRole('navigation',{name:'主导航'}).getByRole('button',{name:'日程',exact:true}).click();await view.getByRole('button',{name:mode==='fortnight'?'两周':mode!=='month'?'周':'月',exact:true}).click();await page.locator('.calendar-scroll').waitFor();await page.waitForTimeout(120);}
  async function drag(id,targetDate,time,mode,invalid=false){
   const sourceDate=locations.get(id)?.date||rows.find(r=>r.task.id===id).task.dueDate;
   await dragCalendar(page,{id,title:names[Number(id.slice(-1))],targetDate,time,month:mode==='month',touch:width<900,invalid,sourceDate});
@@ -49,7 +49,7 @@ try{for(const width of [375,624,768,1440])for(const theme of ['light','dark']){
   await page.reload();await page.locator('.calendar-scroll[data-view=fortnight]').waitFor();assert.equal(await view.getByRole('button',{name:'两周',exact:true}).getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('.calendar-timeline-row').count(),14);assert.equal(await page.locator('.calendar-timeline-heading').count(),1);
   const monday=shift(date,-((new Date(date+'T00:00:00Z').getUTCDay()+6)%7));assert.equal(await page.locator('button.timeline-date[data-calendar-date]').first().getAttribute('data-calendar-date'),monday);
-  const area=page.locator('.calendar-scroll');await area.evaluate(el=>el.scrollLeft=230);assert(await area.evaluate(el=>el.scrollLeft>0));
+  const area=page.locator('.calendar-scroll');await area.evaluate(el=>el.scrollLeft=230);assert(await area.evaluate(el=>el.scrollWidth>el.clientWidth?el.scrollLeft>0:el.scrollLeft===0));
   const lefts=await page.locator('.timeline-date').evaluateAll(es=>es.map(e=>e.getBoundingClientRect().left));assert(lefts.every(left=>Math.abs(left-lefts[0])<1));
   await page.getByRole('button',{name:'下一期',exact:true}).click();assert.equal(await page.locator('button.timeline-date[data-calendar-date]').first().getAttribute('data-calendar-date'),shift(monday,14));await page.getByRole('button',{name:'今天',exact:true}).click();
   assert.equal(await page.locator('button.timeline-date[data-calendar-date]').first().getAttribute('data-calendar-date'),monday);
@@ -66,7 +66,7 @@ try{for(const width of [375,624,768,1440])for(const theme of ['light','dark']){
  });
  await reset('fortnight');
  await check('direct single choices, keyboard, always visible actions and resized viewport',async()=>{
-  await page.getByRole('button',{name:'新增计划',exact:true}).click();const modal=page.locator('.plan-task-dialog');await modal.waitFor();
+  await page.getByRole('button',{name:'新建日程或日记',exact:true}).click();await page.getByRole('dialog',{name:'新建',exact:true}).getByRole('button',{name:/^新建日程/}).click();const modal=page.locator('.plan-task-dialog');await modal.waitFor();
   for(const label of ['事项类别','四象限','优先级','重复频率'])await modal.getByRole('radiogroup',{name:label,exact:true}).waitFor();
   const group=modal.getByRole('radiogroup',{name:'四象限',exact:true});await group.getByRole('radio',{name:'重要紧急',exact:true}).locator('xpath=ancestor::label[1]').click();await page.keyboard.press('ArrowRight');assert.equal(await group.getByRole('radio',{name:'重要不紧急',exact:true}).isChecked(),true);
   await group.getByRole('radio',{name:'待分类',exact:true}).locator('xpath=ancestor::label[1]').click();assert.equal(await group.getByRole('radio',{checked:true}).count(),1);
@@ -74,10 +74,10 @@ try{for(const width of [375,624,768,1440])for(const theme of ['light','dark']){
   const input=modal.getByRole('textbox').first();await input.fill('新的两周计划');
   const footer=modal.locator('.plan-action-dock');const first=await footer.boundingBox();assert(first.y+first.height<=await page.evaluate(()=>innerHeight));
   const body=modal.locator('.todo-modal-body');await body.evaluate(el=>el.scrollTop=el.scrollHeight);const last=await footer.boundingBox();assert(Math.abs(first.y-last.y)<1);
-  assert.equal(await modal.locator('.glass-select').count(),0);assert.equal(await modal.getByRole('button',{name:'确认创建',exact:true}).isEnabled(),true);
+  assert.equal(await modal.locator('.plan-classification-fields select').count(),0);assert.equal(await modal.getByRole('button',{name:'确认创建',exact:true}).isEnabled(),true);
   if(!process.env.QA_FUNCTIONAL_ONLY){await page.screenshot({path:`qa/fortnight/${width}-${theme}-form.png`});await body.evaluate(el=>el.scrollTop=0);await page.screenshot({path:`qa/fortnight/${width}-${theme}-form-top.png`});}
   const oldHeight=page.viewportSize().height;await page.setViewportSize({width,height:560});await page.waitForTimeout(70);const resized=await footer.boundingBox();assert(resized.y+resized.height<=560);await page.setViewportSize({width,height:oldHeight});
-  await footer.getByRole('button',{name:'取消',exact:true}).click();assert.equal(writes.length,0);await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='新增计划');
+  await footer.getByRole('button',{name:'取消',exact:true}).click();assert.equal(writes.length,0);await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='新建日程或日记');
  });
 
  await check('edit recurrence scope, independent priority and fixed actions',async()=>{
@@ -90,7 +90,7 @@ try{for(const width of [375,624,768,1440])for(const theme of ['light','dark']){
   await reset(mode);
   await check(mode+': multiple previews, repeated adjustment, single rollback and cancel all',async()=>{
    const hours=await page.locator('.timeline-hour-axis').allTextContents();await drag('batch-0',next,'14:15',mode);await drag('batch-1',next,'17:15',mode);assert.equal(writes.length,0);if(mode!=='month'){const boxes=await page.locator(`.timeline-timed-cell[data-calendar-date="${next}"] .calendar-chip`).evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right};}));for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++)assert(boxes[i].bottom<=boxes[j].top||boxes[j].bottom<=boxes[i].top||boxes[i].right<=boxes[j].left||boxes[j].right<=boxes[i].left,'dense markers must not overlap');}assert.deepEqual(await pendingIds(),['batch-0','batch-1']);assert((await page.locator('.calendar-drop-review').innerText()).includes('2 项日程'));
-   assert.equal(await page.locator('.calendar-chip[data-record-id=batch-2] .calendar-drag-handle').first().isDisabled(),false);assert.equal(await page.locator('.calendar-chip[data-record-id=batch-3] .calendar-drag-handle').first().isDisabled(),true);
+   assert.equal(await page.locator('.calendar-chip[data-record-id=batch-2] .calendar-chip-copy').first().isDisabled(),false);assert.equal(await page.locator('.calendar-chip[data-record-id=batch-3] input[type=checkbox]').first().isChecked(),true);
    await drag('batch-0',later,'17:30',mode);assert.deepEqual(await pendingIds(),['batch-0','batch-1']);assert.deepEqual(await page.locator('.timeline-hour-axis').allTextContents(),hours);
    await drag('batch-0',date,'10:00',mode);assert.deepEqual(await pendingIds(),['batch-1']);await drag('batch-0',next,'14:15',mode);await drag('batch-0',date,'10:00',mode,true);assert.deepEqual(await pendingIds(),['batch-1']);
    await drag('batch-0',next,'14:15',mode);await page.getByRole('button',{name:'取消',exact:true}).click();locations.clear();assert.deepEqual(await pendingIds(),[]);assert.equal(writes.length,0);assert.equal(rows[0].task.dueDate,date);assert.equal(rows[1].task.dueDate,date);
@@ -99,9 +99,9 @@ try{for(const width of [375,624,768,1440])for(const theme of ['light','dark']){
   await check(mode+': one confirmation saves the batch once with fresh versions',async()=>{
    await drag('batch-0',next,'14:15',mode);await drag('batch-1',next,'17:15',mode);assert.equal(writes.length,0);if(mode!=='month'){const boxes=await page.locator(`.timeline-timed-cell[data-calendar-date="${next}"] .calendar-chip`).evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right};}));for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++)assert(boxes[i].bottom<=boxes[j].top||boxes[j].bottom<=boxes[i].top||boxes[i].right<=boxes[j].left||boxes[j].right<=boxes[i].left,'dense markers must not overlap');}
    if(!process.env.QA_FUNCTIONAL_ONLY)await page.screenshot({path:`qa/fortnight/${width}-${theme}-${mode}-pending.png`});
-   await page.getByRole('button',{name:'确认改期（2项）',exact:true}).evaluate(button=>{button.click();button.click();});await page.getByRole('button',{name:'正在保存…',exact:true}).waitFor();assert.equal(await page.locator('.calendar-drag-handle:not([disabled])').count(),0);await page.keyboard.press('Escape');
+   await page.getByRole('button',{name:'确认改期（2项）',exact:true}).evaluate(button=>{button.click();button.click();});await page.getByRole('button',{name:'正在保存…',exact:true}).waitFor();assert.equal(await page.locator('.calendar-chip-copy:not([disabled])').count(),0);await page.keyboard.press('Escape');
    await page.locator('.calendar-drop-review').waitFor({state:'hidden'});assert.equal(writes.length,2);assert.deepEqual(writes.map(w=>w.version),['v0','v1']);assert.deepEqual(await pendingIds(),[]);assert.equal(rows[0].task.dueDate,next);assert.equal(rows[1].task.dueDate,next);assert.equal(rows[0].task.startTime,'09:00');assert.equal(rows[0].task.occurrenceDate,date);assert.equal(rows[1].task.dueTime,mode!=='month'?'17:15':'14:00');assert((await page.locator('.calendar-batch-message').innerText()).includes('已保存 2 项'));
-   await page.reload();await page.getByRole('button',{name:'计划',exact:true}).click();await view.getByRole('button',{name:mode==='fortnight'?'两周':mode!=='month'?'周':'月',exact:true}).click();await page.waitForTimeout(120);assert.equal(await page.locator(`${mode!=='month'?'.timeline-timed-cell':'.calendar-month .calendar-day'}[data-calendar-date="${date}"] [data-record-id=batch-0]`).count(),0);
+   await page.reload();await page.getByRole('navigation',{name:'主导航'}).getByRole('button',{name:'日程',exact:true}).click();await view.getByRole('button',{name:mode==='fortnight'?'两周':mode!=='month'?'周':'月',exact:true}).click();await page.waitForTimeout(120);assert.equal(await page.locator(`${mode!=='month'?'.timeline-timed-cell':'.calendar-month .calendar-day'}[data-calendar-date="${date}"] [data-record-id=batch-0]`).count(),0);
   });
  }
  if((width===375||width===1440)&&theme==='light'){

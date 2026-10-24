@@ -1,0 +1,87 @@
+/* Shared navigation occupies one measured slot; the calendar keeps the available height. */
+.app-shell.social-app { height:var(--app-height,100dvh);min-height:0;overflow:hidden; }
+.social-app>.main-content { display:flex;flex-direction:column;height:var(--app-height,100dvh);min-height:0;overflow:hidden;gap:8px;padding:8px 12px max(8px,env(safe-area-inset-bottom));box-sizing:border-box; }
+.social-app .main-content>.workspace-footer { position:relative;display:block;order:3;flex:0 0 60px;height:60px;padding:0;margin:0;background:none;border:0; }
+.social-app .main-content>.workspace-root { flex:1;min-height:0;overflow:hidden; }
+.social-app .main-content>.workspace-root[hidden] { display:none; }
+.global-navigation { height:60px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;align-items:center;gap:4px;padding:3px 5px;box-sizing:border-box;border:1px solid var(--glass-edge);border-radius:16px;background:var(--glass);backdrop-filter:var(--glass-blur); }
+.global-navigation>button { position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:44px;min-height:48px;border:0;border-radius:12px;background:transparent;color:var(--muted);font:inherit;cursor:pointer;padding:4px; }
+.global-navigation>button[aria-current=page] { color:var(--purple-ink);background:var(--purple-soft);font-weight:600; }
+.global-navigation>button:hover { background:var(--glass-item); }
+.global-navigation>button:focus-visible { outline:2px solid var(--purple);outline-offset:-2px; }
+.global-navigation>button.global-create { width:52px;min-width:52px;height:52px;justify-self:center;padding:0;background:var(--purple-strong);color:white; }
+.global-navigation small { font-size:11px;line-height:1.1; }
+.global-nav-icon { position:relative;display:flex; }
+.nav-badge { position:absolute;bottom:12px;left:16px;min-width:15px;padding:2px 3px;box-sizing:border-box;border-radius:8px;background:var(--red);color:white;font-size:9px;line-height:1.1; }
+.draft-dot { position:absolute;top:5px;right:5px;width:7px;height:7px;background:#ffdc85;border-radius:50%; }
+.create-menu-dialog { width:min(440px,calc(100vw - 24px)); }
+.create-menu-options { display:grid;gap:8px; }
+.create-menu-options>button { display:flex;align-items:center;gap:12px;min-height:60px;padding:12px;border:0;border-radius:12px;background:var(--glass-item);color:var(--text);font:inherit;text-align:left;cursor:pointer; }
+.create-menu-options>button>span { flex:1; }
+.create-menu-options>button small { display:block;margin-top:4px;color:var(--muted);font-size:12px; }
+.create-menu-options>button:disabled { opacity:.5;cursor:default; }
+.social-workspace { display:flex;flex-direction:column;min-height:0;flex:1;border:1px solid var(--glass-edge);border-radius:16px;padding:16px;background:var(--glass);backdrop-filter:var(--glass-blur);overflow:hidden; }
+.social-heading { display:flex;justify-content:space-between;align-items:center;gap:12px;flex:none;margin-bottom:12px; }
+.social-heading h1 { font-size:22px;margin:0; }
+.social-heading small { display:block;font-size:12px;color:var(--muted);margin-top:5px; }
+.social-body { flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding-bottom:8px; }
+.social-body h2,.shared-window-sheet h3 { font-size:14px;margin:22px 0 10px; }
+.social-tabs { display:flex;gap:4px;flex:none;overflow:auto;margin-bottom:12px; }
+.social-tabs button { border:0;border-radius:10px;min-height:44px;white-space:nowrap;padding:8px 12px;background:transparent;color:var(--muted);font:inherit;font-size:13px;cursor:pointer; }
+.social-tabs [aria-pressed=true] { background:var(--purple-soft);color:var(--purple-ink);font-weight:600; }
+.friend-add { display:flex;align-items:end;gap:8px; }
+.friend-add label { flex:1;min-width:0;display:grid;gap:6px;font-size:12px; }
+.social-workspace input:not([type=color]),.shared-window-sheet input:not([type=color]) { box-sizing:border-box;min-width:0;width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);padding:10px;font:inherit; }
+.social-workspace input::placeholder { color:var(--muted); }
+.social-list { list-style:none;padding:0;margin:0; }
+.social-list>li { display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line); }
+.social-avatar { display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border-radius:12px;background:var(--purple-soft);color:var(--purple-ink);font-weight:600; }
+.social-list>li>div,.social-row-link { flex:1;min-width:0; }
+.social-list strong { font-size:14px;font-weight:600;overflow-wrap:anywhere; }
+.social-list small,.social-help { display:block;color:var(--muted);font-size:12px;line-height:1.5;margin-top:4px; }
+.social-list button { flex-shrink:0; }
+.social-row-link { border:0;background:transparent;color:var(--text);font:inherit;text-align:left;cursor:pointer;min-height:44px; }
+.social-empty { display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);padding:16px 0;line-height:1.7; }
+.social-empty svg { flex-shrink:0;color:var(--purple-ink);width:22px; }
+.social-section-heading { display:flex;align-items:center;justify-content:space-between; }
+.notices-list li[data-unread=true] strong::before { content:'•';color:var(--purple-ink);margin-right:6px; }
+.shared-invite { display:grid;gap:10px; }
+.shared-window-sheet>.social-list { max-height:260px;overflow:auto; }
+.shared-window-sheet .social-list .glass-select { max-width:120px; }
+.shared-window-sheet input[type=color] { width:50px;min-height:44px;padding:3px; }
+.shared-scope { display:grid;gap:6px;margin-bottom:12px; }
+.shared-scope small { font-size:12px;color:var(--muted);font-weight:400;line-height:1.5; }
+.shared-task-label { color:var(--purple-ink);font-size:11px; }
+.account-identity { display:flex;align-items:center;gap:12px;margin:8px 0 24px; }
+.account-identity .social-avatar { width:52px;height:52px;flex-basis:52px;font-size:22px; }
+.account-identity h2 { font-size:20px;margin:0 0 5px; }
+.account-identity>div,.social-heading>div,.shared-window-sheet header>div { min-width:0;overflow-wrap:anywhere; }
+.account-identity small,.account-section p { color:var(--muted);font-size:13px;line-height:1.6; }
+.account-section { border-top:1px solid var(--line);padding-bottom:20px; }
+.friend-code { display:flex;gap:8px;align-items:center; }
+.friend-code input { letter-spacing:.12em; }
+.friend-code button { display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;white-space:nowrap;min-width:76px; }
+.account-row { display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;min-height:48px;border:0;background:transparent;color:var(--text);font:inherit;font-size:14px;cursor:pointer;text-align:left; }
+.account-row span { color:var(--muted);font-size:12px; }
+.account-logout { margin-top:20px;display:inline-flex;align-items:center;gap:8px; }
+.social-app .plan-main-toolbar .plan-toolbar-actions { display:flex; }
+.social-app .plan-main-toolbar .plan-view-switch { flex:1; }
+.social-app .diary-main-toolbar .diary-date-tools .glass-date-trigger { width:114px;min-width:114px;white-space:nowrap; }
+.diary-column-selector { width:80px;min-width:80px;flex-shrink:0; }
+.diary-column-selector .glass-select { width:100%; }
+.social-app .diary-main-toolbar .diary-column-selector button { padding:6px;gap:4px; }
+.diary-column-selector .glass-select-trigger>span { white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.social-app .diary-main-toolbar .diary-toolbar-actions { gap:0; }
+.social-app .diary-main-toolbar .diary-desktop-action { display:inline-flex; }
+.social-app .diary-main-toolbar .diary-toolbar-count { display:none; }
+.social-app .diary-main-toolbar { gap:2px; }
+@media(max-width:599px) {
+ .social-app>.main-content { padding:6px 8px max(6px,env(safe-area-inset-bottom)); }
+ .social-workspace { padding:12px; }
+ .social-list>li { gap:6px;flex-wrap:wrap; }
+ .social-list .social-avatar { flex-basis:32px;width:32px;height:32px; }
+ .social-list .quiet-button,.social-list .save-button { padding:8px;font-size:12px; }
+ .social-app .plan-main-toolbar { flex-basis:60px; }
+ .social-app .plan-toolbar-actions>button { padding:5px; }
+ .social-app .diary-main-toolbar .diary-desktop-action { display:none; }
+}

@@ -10,5 +10,7 @@ import "./plan-urgency.css";
 import "./plan-density.css";
 import "./diary-density.css";
 import "./calendar-timeline.css";
+import "./social.css";
+import "./ui-refinement.css";
 
 createRoot(document.getElementById("root")!).render(<StrictMode><I18nProvider locale="zh-CN"><PlanCategoryProvider><App /></PlanCategoryProvider></I18nProvider></StrictMode>);

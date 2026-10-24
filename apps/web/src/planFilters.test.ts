@@ -7,6 +7,11 @@ describe('计划日期与统计', () => {
   it('uses Shanghai date across a month boundary', () => {
     expect(planClock(new Date('2026-09-30T16:05:00Z'))).toEqual({ date: '2026-10-01', time: '00:05' });
   });
+  it('refreshes the cached clock at minute and day boundaries, including backwards time',()=>{
+    expect(planClock(new Date('2026-10-01T15:59:59Z'))).toEqual({date:'2026-10-01',time:'23:59'});
+    expect(planClock(new Date('2026-10-01T16:00:00Z'))).toEqual({date:'2026-10-02',time:'00:00'});
+    expect(planClock(new Date('2026-10-01T15:59:00Z'))).toEqual({date:'2026-10-01',time:'23:59'});
+  });
   it('counts timed today in both today and overdue, prefers dueDate', () => {
     const t = task({ dueDate: now.date, dueTime: '09:00', plannedDate: '2026-10-03' });
     expect(matchesPlan(t, 'today', now)).toBe(true);

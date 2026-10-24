@@ -1,0 +1,352 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "mouse diagonal pan follows pointer, reverse pan and sticky date/hour headers",
+        "passed": true
+      },
+      {
+        "name": "touch horizontal, vertical, diagonal and cancellation pan without changing tasks",
+        "passed": true
+      },
+      {
+        "name": "tap threshold, right mouse and native wheel remain intact",
+        "passed": true
+      },
+      {
+        "name": "week and blank all-day column pan, bounds clamp naturally",
+        "passed": true
+      },
+      {
+        "name": "card drag keeps local preview; panning with pending preview makes no save request",
+        "passed": true
+      },
+      {
+        "name": "date controls, escape cleanup, range switch and short viewport keep canvas usable",
+        "passed": true
+      },
+      {
+        "name": "normal checkbox click and keyboard activation still work after panning",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "mouse diagonal pan follows pointer, reverse pan and sticky date/hour headers",
+        "passed": true
+      },
+      {
+        "name": "touch horizontal, vertical, diagonal and cancellation pan without changing tasks",
+        "passed": true
+      },
+      {
+        "name": "tap threshold, right mouse and native wheel remain intact",
+        "passed": true
+      },
+      {
+        "name": "week and blank all-day column pan, bounds clamp naturally",
+        "passed": true
+      },
+      {
+        "name": "card drag keeps local preview; panning with pending preview makes no save request",
+        "passed": true
+      },
+      {
+        "name": "date controls, escape cleanup, range switch and short viewport keep canvas usable",
+        "passed": true
+      },
+      {
+        "name": "normal checkbox click and keyboard activation still work after panning",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 624,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "mouse diagonal pan follows pointer, reverse pan and sticky date/hour headers",
+        "passed": true
+      },
+      {
+        "name": "touch horizontal, vertical, diagonal and cancellation pan without changing tasks",
+        "passed": true
+      },
+      {
+        "name": "tap threshold, right mouse and native wheel remain intact",
+        "passed": true
+      },
+      {
+        "name": "week and blank all-day column pan, bounds clamp naturally",
+        "passed": true
+      },
+      {
+        "name": "card drag keeps local preview; panning with pending preview makes no save request",
+        "passed": true
+      },
+      {
+        "name": "date controls, escape cleanup, range switch and short viewport keep canvas usable",
+        "passed": true
+      },
+      {
+        "name": "normal checkbox click and keyboard activation still work after panning",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 624,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "mouse diagonal pan follows pointer, reverse pan and sticky date/hour headers",
+        "passed": true
+      },
+      {
+        "name": "touch horizontal, vertical, diagonal and cancellation pan without changing tasks",
+        "passed": true
+      },
+      {
+        "name": "tap threshold, right mouse and native wheel remain intact",
+        "passed": true
+      },
+      {
+        "name": "week and blank all-day column pan, bounds clamp naturally",
+        "passed": true
+      },
+      {
+        "name": "card drag keeps local preview; panning with pending preview makes no save request",
+        "passed": true
+      },
+      {
+        "name": "date controls, escape cleanup, range switch and short viewport keep canvas usable",
+        "passed": true
+      },
+      {
+        "name": "normal checkbox click and keyboard activation still work after panning",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "mouse diagonal pan follows pointer, reverse pan and sticky date/hour headers",
+        "passed": true
+      },
+      {
+        "name": "touch horizontal, vertical, diagonal and cancellation pan without changing tasks",
+        "passed": true
+      },
+      {
+        "name": "tap threshold, right mouse and native wheel remain intact",
+        "passed": true
+      },
+      {
+        "name": "week and blank all-day column pan, bounds clamp naturally",
+        "passed": true
+      },
+      {
+        "name": "card drag keeps local preview; panning with pending preview makes no save request",
+        "passed": true
+      },
+      {
+        "name": "date controls, escape cleanup, range switch and short viewport keep canvas usable",
+        "passed": true
+      },
+      {
+        "name": "normal checkbox click and keyboard activation still work after panning",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "mouse diagonal pan follows pointer, reverse pan and sticky date/hour headers",
+        "passed": true
+      },
+      {
+        "name": "touch horizontal, vertical, diagonal and cancellation pan without changing tasks",
+        "passed": true
+      },
+      {
+        "name": "tap threshold, right mouse and native wheel remain intact",
+        "passed": true
+      },
+      {
+        "name": "week and blank all-day column pan, bounds clamp naturally",
+        "passed": true
+      },
+      {
+        "name": "card drag keeps local preview; panning with pending preview makes no save request",
+        "passed": true
+      },
+      {
+        "name": "date controls, escape cleanup, range switch and short viewport keep canvas usable",
+        "passed": true
+      },
+      {
+        "name": "normal checkbox click and keyboard activation still work after panning",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1280,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "mouse diagonal pan follows pointer, reverse pan and sticky date/hour headers",
+        "passed": true
+      },
+      {
+        "name": "touch horizontal, vertical, diagonal and cancellation pan without changing tasks",
+        "passed": true
+      },
+      {
+        "name": "tap threshold, right mouse and native wheel remain intact",
+        "passed": true
+      },
+      {
+        "name": "week and blank all-day column pan, bounds clamp naturally",
+        "passed": true
+      },
+      {
+        "name": "card drag keeps local preview; panning with pending preview makes no save request",
+        "passed": true
+      },
+      {
+        "name": "date controls, escape cleanup, range switch and short viewport keep canvas usable",
+        "passed": true
+      },
+      {
+        "name": "normal checkbox click and keyboard activation still work after panning",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1280,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "mouse diagonal pan follows pointer, reverse pan and sticky date/hour headers",
+        "passed": true
+      },
+      {
+        "name": "touch horizontal, vertical, diagonal and cancellation pan without changing tasks",
+        "passed": true
+      },
+      {
+        "name": "tap threshold, right mouse and native wheel remain intact",
+        "passed": true
+      },
+      {
+        "name": "week and blank all-day column pan, bounds clamp naturally",
+        "passed": true
+      },
+      {
+        "name": "card drag keeps local preview; panning with pending preview makes no save request",
+        "passed": true
+      },
+      {
+        "name": "date controls, escape cleanup, range switch and short viewport keep canvas usable",
+        "passed": true
+      },
+      {
+        "name": "normal checkbox click and keyboard activation still work after panning",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "checks": [
+      {
+        "name": "mouse diagonal pan follows pointer, reverse pan and sticky date/hour headers",
+        "passed": true
+      },
+      {
+        "name": "touch horizontal, vertical, diagonal and cancellation pan without changing tasks",
+        "passed": true
+      },
+      {
+        "name": "tap threshold, right mouse and native wheel remain intact",
+        "passed": true
+      },
+      {
+        "name": "week and blank all-day column pan, bounds clamp naturally",
+        "passed": true
+      },
+      {
+        "name": "card drag keeps local preview; panning with pending preview makes no save request",
+        "passed": true
+      },
+      {
+        "name": "date controls, escape cleanup, range switch and short viewport keep canvas usable",
+        "passed": true
+      },
+      {
+        "name": "normal checkbox click and keyboard activation still work after panning",
+        "passed": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "checks": [
+      {
+        "name": "mouse diagonal pan follows pointer, reverse pan and sticky date/hour headers",
+        "passed": true
+      },
+      {
+        "name": "touch horizontal, vertical, diagonal and cancellation pan without changing tasks",
+        "passed": true
+      },
+      {
+        "name": "tap threshold, right mouse and native wheel remain intact",
+        "passed": true
+      },
+      {
+        "name": "week and blank all-day column pan, bounds clamp naturally",
+        "passed": true
+      },
+      {
+        "name": "card drag keeps local preview; panning with pending preview makes no save request",
+        "passed": true
+      },
+      {
+        "name": "date controls, escape cleanup, range switch and short viewport keep canvas usable",
+        "passed": true
+      },
+      {
+        "name": "normal checkbox click and keyboard activation still work after panning",
+        "passed": true
+      }
+    ],
+    "errors": []
+  }
+]

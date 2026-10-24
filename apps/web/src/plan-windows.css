@@ -1,6 +1,7 @@
 /* Category windows fill the available frame; cards never shrink to fit it. */
 .plan-windows { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; gap:8px; }
 .plan-windows-controls { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-shrink:0; color:var(--muted); font-size:11px; }
+.plan-windows-controls>span { min-width:0;overflow-wrap:anywhere; }
 .plan-windows-controls button { min-height:44px; padding:8px 12px; border:1px solid var(--line); border-radius:10px; display:flex; align-items:center; gap:6px; background:var(--glass-item); color:var(--purple-ink); font:inherit; font-size:12px; cursor:pointer; }
 .plan-windows-scroll { flex:1; width:100%; min-height:0; overflow-x:auto; overflow-y:hidden; padding-bottom:8px; overscroll-behavior:contain; scrollbar-width:thin; }
 .plan-windows-track { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(288px,1fr); gap:12px; height:100%; min-width:100%; }

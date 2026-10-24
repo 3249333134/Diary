@@ -9,7 +9,7 @@ export const usePlanCategories=()=>useContext(Context);
 const categoryNameLimit=fieldLimit(planCategorySchema,'name')!;
 export function PlanCategoryProvider({children}:{children:ReactNode}) {
   const [categories,setCategories]=useState(defaultPlanCategories);
-  useEffect(()=>{let active=true;void api.planCategories().then(r=>{if(active&&Array.isArray(r.categories))setCategories(r.categories);}).catch(()=>{});return()=>{active=false};},[]);
+  useEffect(()=>{let active=true,epoch=0;const load=()=>{const request=++epoch;setCategories(defaultPlanCategories);void api.planCategories().then(r=>{if(active&&epoch===request&&Array.isArray(r.categories))setCategories(r.categories);}).catch(()=>{});};load();window.addEventListener('diary-account-change',load);return()=>{active=false;window.removeEventListener('diary-account-change',load);};},[]);
   const add=async(name:string,color:string)=>{const result=await api.addPlanCategory(name,color);setCategories(result.categories);};
   const reorder=async(ids:string[])=>{const result=await api.reorderPlanCategories(ids);setCategories(result.categories);};
   return <Context.Provider value={{categories,add,reorder}}>{children}</Context.Provider>;

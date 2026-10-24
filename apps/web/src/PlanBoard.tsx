@@ -37,7 +37,7 @@ export function PlanBoard({ rows, busy, render, onMove }: { rows: ActionRow[]; b
     frame=requestAnimationFrame(auto);return()=>cancelAnimationFrame(frame);
   },[!!drag]);
   const begin=(e:PointerEvent<HTMLButtonElement>,row:ActionRow)=>{
-    if(busy||row.task.deletedAt||e.button!==0)return;
+    if(busy||row.readOnly||row.task.deletedAt||e.button!==0)return;
     const p={row,x:e.clientX,y:e.clientY,active:false,pointer:e.pointerId};press.current=p;
     e.currentTarget.setPointerCapture(e.pointerId);
     const activate=()=>{if(press.current===p){p.active=true;setDrag({style:urgencyStyle(row.task),title:row.task.title,x:p.x,y:p.y});}};

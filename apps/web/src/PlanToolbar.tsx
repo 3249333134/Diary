@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Moon, Plus, SlidersHorizontal, Sun } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Maximize2,Minimize2, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { PlanLayout } from './PlanNavigation';
 import type { PlanFilter } from './planFilters';
@@ -8,10 +8,10 @@ import { WorkspaceToolbar } from './WorkspaceTools';
 
 export const PLAN_LAYOUTS = [['fortnight','两周'],['board','四象限'],['windows','窗口'],['list','列表'],['week','周'],['month','月']] as const;
 
-export function PlanToolbar({layout,onLayout,anchor,onAnchor,filter,filterLabel,restricted,saving,onFilters,onCreate,theme,onTheme}:{
+export function PlanToolbar({layout,onLayout,anchor,onAnchor,filter,filterLabel,restricted,saving,onFilters,theme,onTheme,fullscreen,onToggleFullscreen}:{
   layout:PlanLayout;onLayout:(view:PlanLayout)=>void;anchor:string;onAnchor:(date:string)=>void;
-  filter:PlanFilter;filterLabel:string;restricted:boolean;saving:boolean;onFilters:()=>void;onCreate:()=>void;
-  theme:'light'|'dark';onTheme:()=>void;
+  filter:PlanFilter;filterLabel:string;restricted:boolean;saving:boolean;onFilters:()=>void;
+  theme:'light'|'dark';onTheme:()=>void;fullscreen?:boolean;onToggleFullscreen?:()=>void;
 }) {
   const viewScroller=useRef<HTMLElement>(null);
   useEffect(()=>{
@@ -44,8 +44,7 @@ export function PlanToolbar({layout,onLayout,anchor,onAnchor,filter,filterLabel,
     <nav ref={viewScroller} className="plan-view-switch" aria-label="计划视图">{PLAN_LAYOUTS.map(([key,label])=><button key={key} type="button" aria-pressed={filter==='trash'?key==='list':layout===key} disabled={saving||filter==='trash'&&key!=='list'} onClick={()=>onLayout(key)}>{label}</button>)}</nav>
     <div className="plan-toolbar-actions">
       <button type="button" className="plan-filter-trigger" data-restricted={restricted||undefined} aria-label="筛选计划" title={`筛选：${filterLabel}${restricted?' · 已应用限制':''}`} aria-haspopup="dialog" onClick={onFilters}><SlidersHorizontal size={18}/>{restricted&&<i className="plan-filter-dot" aria-label="已应用筛选"/>}</button>
-      <button type="button" className="plan-add-button" aria-label="新增计划" title="新增计划" onClick={onCreate}><Plus size={21}/></button>
-      <button type="button" aria-label={theme==='light'?'切换到深色主题':'切换到浅色主题'} title="切换主题" onClick={onTheme}>{theme==='light'?<Moon size={20}/>:<Sun size={20}/>}</button>
+      {onToggleFullscreen&&<button type="button" aria-label={fullscreen?'退出全屏':'全屏显示'} title="全屏" onClick={onToggleFullscreen}>{fullscreen?<Minimize2 size={18}/>:<Maximize2 size={18}/>}</button>}
     </div>
   </WorkspaceToolbar>;
 }
