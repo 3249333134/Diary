@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState,type RefObject} from 'react';
-import {ArrowUp,Check,Trash2} from 'lucide-react';
+import {ArrowUp,Trash2} from 'lucide-react';
 import {validationMessage,type RecordRef,type FieldIssue} from '@diary/contracts';
 import {GlassDialog} from './GlassUI';
 import {GlassSegments} from './GlassSegments';
@@ -19,7 +19,7 @@ export type CreationResult={ref:RecordRef;refreshWarning?:string;createdCount?:n
 export function Creation({account,open,request,onClose,trigger,context,onSave,onCreated,onDraftChange,planDisabled,diaryDisabled}:{account:number;open:boolean;request?:CreationRequest;onClose:()=>void;trigger:RefObject<HTMLButtonElement|null>;context:EntityContext;onSave:(draft:CreationDraft)=>Promise<CreationResult>;onCreated:(result:CreationResult)=>void;onDraftChange:(hasDraft:boolean)=>void;planDisabled:boolean;diaryDisabled:boolean}){
  const {data}=useSocial();
  const confirmation=useGlassConfirm();
- const [session,setSession]=useState(()=>{try{return restoreCreationSession(localStorage.getItem(creationStorageKey(account)));}catch{return emptyCreationSession();}});
+ const [session,setSession]=useState(()=>{try{const restored=restoreCreationSession(localStorage.getItem(creationStorageKey(account)));return {...restored,rows:restored.rows.filter(row=>row.state!=='saved')};}catch{return emptyCreationSession();}});
  const [manualKey,setManualKey]=useState(''),[activeRow,setActiveRow]=useState<string>(),[lastDiaryKind,setLastDiaryKind]=useState<CreationKind>('facts');
  const [saving,setSaving]=useState(false),[parsing,setParsing]=useState(false),[uploading,setUploading]=useState(false),[listening,setListening]=useState(false),[error,setError]=useState(''),[storageError,setStorageError]=useState(''),[message,setMessage]=useState(''),[progress,setProgress]=useState({current:0,total:0});
  const guard=useRef(false),parseGuard=useRef(false),mounted=useRef(true),body=useRef<HTMLDivElement>(null),input=useRef<HTMLTextAreaElement>(null);
@@ -80,7 +80,7 @@ export function Creation({account,open,request,onClose,trigger,context,onSave,on
     try{
      const result=await onSave(snapshot);if(!mounted.current)return;last=result;warning ||= result.refreshWarning||'';saved++;
      setSession(old=>{
-      if(rowId)return {...old,rows:old.rows.map(row=>row.draft.id===rowId?{...row,state:'saved',ref:result.ref,error:undefined}:row)};
+      if(rowId){const rows=old.rows.filter(row=>row.draft.id!==rowId);return {...old,rows};}
       const manual={...old.manual},submitted={...old.submitted};delete manual[key];delete submitted[key];return {...old,manual,submitted};
      });
     }catch(e){
@@ -97,8 +97,9 @@ export function Creation({account,open,request,onClose,trigger,context,onSave,on
    }
    if(last)onCreated({...last,createdCount:saved,refreshWarning:warning||undefined});
    if(!failed){
-    if(!activeRow&&pending.length){setActiveRow(pending[0].draft.id);setMessage('已创建手动内容，剩余草稿可一起创建。');}
-    else{onClose();requestAnimationFrame(()=>trigger.current?.focus({preventScroll:true}));}
+    const remaining=pending.filter(row=>!batch.some(item=>item.rowId===row.draft.id));
+    if(remaining.length){setActiveRow(remaining[0].draft.id);if(!activeRow)setMessage('已创建手动内容，剩余草稿可一起创建。');}
+    else{setActiveRow(undefined);onClose();requestAnimationFrame(()=>trigger.current?.focus({preventScroll:true}));}
    }
   }finally{guard.current=false;if(mounted.current)setSaving(false);}
  };
@@ -112,13 +113,13 @@ export function Creation({account,open,request,onClose,trigger,context,onSave,on
   <div className="creation-body" ref={body}>
    <div className="creation-form">
     {draft?.kind!=='plan'&&<GlassSegments label="日记类型" value={draft?.kind||'facts'} options={(['facts','learn','input','idea'] as const).map(value=>({value,label:creationLabels[value]}))} disabled={busy||parsing||!!submitted} onChange={switchKind}/>}
-    {(!!session.rows.length||!!otherManual.length)&&<nav className="creation-queue" aria-label="新增草稿"><button type="button" disabled={busy} aria-pressed={!queueActive} onClick={()=>{setActiveRow(undefined);setError('');}}>手动填写</button>{otherManual.map(([key,draft])=><button type="button" key={key} disabled={busy} onClick={()=>{setManualKey(key);setActiveRow(undefined);setError('');}}>手动草稿 · {creationLabels[draft.kind]} · {draft.content.slice(0,16)||draft.date}</button>)}{session.rows.map((row,i)=><button type="button" disabled={busy} key={row.draft.id} aria-pressed={activeRow===row.draft.id} onClick={()=>{setActiveRow(row.draft.id);setError(row.error||'');}}>{row.state==='saved'&&<Check size={13}/>}草稿 {i+1} · {creationLabels[row.draft.kind]}{row.state==='saved'?' · 已创建':''}</button>)}</nav>}
+    {(!!session.rows.length||!!otherManual.length)&&<nav className="creation-queue" aria-label="新增草稿"><button type="button" disabled={busy} aria-pressed={!queueActive} onClick={()=>{setActiveRow(undefined);setError('');}}>手动填写</button>{otherManual.map(([key,draft])=><button type="button" key={key} disabled={busy} onClick={()=>{setManualKey(key);setActiveRow(undefined);setError('');}}>手动草稿 · {creationLabels[draft.kind]} · {draft.content.slice(0,16)||draft.date}</button>)}{session.rows.map((row,i)=><button type="button" disabled={busy} key={row.draft.id} aria-pressed={activeRow===row.draft.id} onClick={()=>{setActiveRow(row.draft.id);setError(row.error||'');}}>草稿 {i+1} · {creationLabels[row.draft.kind]}</button>)}</nav>}
     {(storageError||error)&&<p className="creation-error" role="alert">{error||storageError}</p>}
     {message&&<p className="creation-message" role="status">{message}</p>}{current?.originalText&&<details className="creation-original"><summary>识别原文</summary><p>{current.originalText}</p></details>}
     {!permitted&&<div className="creation-error" role="status">共享窗口权限已变化，草稿保留，当前无法创建。<button type="button" className="quiet-button" disabled={busy} onClick={()=>patch({windowId:undefined})}>改为私人日程</button></div>}
-    {current?.state==='saved'?<div className="creation-saved"><Check/><p>这条已创建，剩余草稿仍可一起创建。</p><button type="button" className="quiet-button" onClick={()=>{setActiveRow(undefined);setError('');}}>返回手动填写</button></div>:draft&&<fieldset className="creation-fields" disabled={busy||parsing||!!submitted||!permitted}><CreationFields draft={draft} ai={!!activeRow} onChange={patch} context={context} onUploading={setUploading}/></fieldset>}
-    {submitted&&!saving&&current?.state!=='saved'&&<p role="status">已保留上次提交内容。请重试确认结果，避免重复创建。</p>}
-    {queueActive&&current?.state!=='saved'&&!submitted&&<div className="creation-draft-tools"><small>移除后不再参与一起创建</small><button type="button" className="creation-discard" disabled={busy} onClick={()=>{setSession(old=>({...old,rows:old.rows.filter(row=>row.draft.id!==activeRow)}));setActiveRow(undefined);setError('');}}><Trash2 size={16}/>移除当前草稿</button></div>}
+    {draft&&<fieldset className="creation-fields" disabled={busy||parsing||!!submitted||!permitted}><CreationFields draft={draft} ai={!!activeRow} onChange={patch} context={context} onUploading={setUploading}/></fieldset>}
+    {submitted&&!saving&&<p role="status">已保留上次提交内容。请重试确认结果，避免重复创建。</p>}
+    {queueActive&&!submitted&&<div className="creation-draft-tools"><small>移除后不再参与一起创建</small><button type="button" className="creation-discard" disabled={busy} onClick={()=>{setSession(old=>({...old,rows:old.rows.filter(row=>row.draft.id!==activeRow)}));setActiveRow(undefined);setError('');}}><Trash2 size={16}/>移除当前草稿</button></div>}
     {!queueActive&&draft&&creationDirty(draft)&&!submitted&&<div className="creation-draft-tools"><small>仅清除本次未保存内容</small><button type="button" className="creation-discard" aria-label="清空当前草稿" disabled={busy} onClick={()=>void(async()=>{if(await confirmation.confirm('清空当前新增草稿？已保存的记录不会受影响。')){const clock=planClock();setSession(old=>({...old,manual:{...old.manual,[manualKey]:newCreationDraft(draft.kind,draft.kind==='plan'?clock.date:request.date,clock.time)}}));setError('');focusIssue({path:'content',code:'',message:''});}})()}><Trash2 size={16}/>清空草稿</button></div>}
    </div>
   </div>
