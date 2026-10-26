@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type PointerEvent } from 'react';
-import { GripVertical, Plus, Plus as PlusIcon,Users } from 'lucide-react';
+import { GripVertical, Plus,Users } from 'lucide-react';
 import type { ActionRow } from './api';
 import type { PlanCategory,SharedWindow } from '@diary/contracts';
 import type { Classification } from './PlanFields';
 import { createFrameTask } from './frameTask';
+import { GlassSelect } from './GlassSelect';
 
 type DropResult = { windowId: string; insertBefore: HTMLElement | null };
 
@@ -289,6 +290,15 @@ export function PlanWindows({
     };
   }, [categoryIds]);
 
+  // 拖动激活后阻止页面滚动，未激活时横向滑动仍用于切换窗口
+  useEffect(() => {
+    const block = (e: globalThis.TouchEvent) => {
+      if (press.current?.active || winPress.current?.active) e.preventDefault();
+    };
+    document.addEventListener('touchmove', block, { passive: false });
+    return () => document.removeEventListener('touchmove', block);
+  }, []);
+
   // 自动横向 + 纵向滚动
   useEffect(() => {
     if (!dragTarget && !winTarget) return;
@@ -428,7 +438,7 @@ export function PlanWindows({
 
   return (
     <div className="plan-windows">
-      <div className="plan-windows-controls">{scopeLabel?<div className="plan-window-scope"><span title={scopeLabel}>仅显示：{scopeLabel}</span><button type="button" onClick={onShowAll} disabled={busy}>显示全部窗口</button></div>:<nav className="plan-window-jumps" aria-label="快速定位窗口">{windows.map(w=><button key={w.id} type="button" title={w.name} aria-label={`定位${w.name}窗口`} onClick={()=>jumpTo(w.id)}><i style={{background:w.color}}/><span>{w.name}</span><small>{w.items.length}</small></button>)}</nav>}<div className="plan-window-create"><button type="button" aria-label="私人窗口" title="新建私人类别" onClick={onAddCategory} disabled={busy}><PlusIcon size={16}/><span>私人</span></button>{onAddShared&&<button type="button" aria-label="新建共享窗口" onClick={onAddShared} disabled={busy}><Users size={16}/><span>共享</span></button>}</div></div>
+      <div className="plan-windows-controls">{scopeLabel?<div className="plan-window-scope"><span title={scopeLabel}>仅显示：{scopeLabel}</span><button type="button" onClick={onShowAll} disabled={busy}>显示全部窗口</button></div>:<nav className="plan-window-jumps" aria-label="快速定位窗口">{windows.map(w=><button key={w.id} type="button" title={w.name} aria-label={`定位${w.name}窗口`} onClick={()=>jumpTo(w.id)}><i style={{background:w.color}}/><span>{w.name}</span><small>{w.items.length}</small></button>)}</nav>}<div className="plan-window-create"><GlassSelect action label="新建窗口" placeholder="新建窗口" disabled={busy} value="" options={[{value:'private',label:'私人窗口',group:'窗口类型'},{value:'shared',label:'共享窗口',group:'窗口类型',disabled:!onAddShared}]} onChange={kind=>kind==='shared'?onAddShared?.():onAddCategory()}/></div></div>
       <div ref={scroll} className="plan-windows-scroll" role="region" aria-label="窗口模式看板">
       <div className="plan-windows-track">
         {windows.map((w) => {

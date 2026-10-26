@@ -24,7 +24,7 @@
 .todo-list li.plan-card.state-done { border-color:#29805d; }.state-done .plan-card-labels strong { color:#176c48; background:#def3e7; }
 .todo-list li.plan-card.state-overdue { border-color:#c84b59; }.state-overdue .plan-card-labels strong { color:#a12d3d; background:#fce3e6; }
 .todo-list li.plan-card.state-soon { border-color:#b78918; }.state-soon .plan-card-labels strong { color:#77570d; background:#fff1bb; }
-.plan-drag-handle { position:static; flex-shrink:0; height:44px; width:44px; background:transparent; border:0; border-radius:8px; color:inherit; touch-action:none; cursor:grab; }
+.plan-drag-handle { position:static; flex-shrink:0; height:44px; width:44px; background:transparent; border:0; border-radius:8px; color:inherit; touch-action:auto; cursor:grab; }
 
 .todo-list li.plan-card { display:block; padding:12px; border-color:color-mix(in srgb,currentColor 12%,transparent); }
 .plan-card-tools { position:absolute; right:6px; top:12px; display:flex; }
