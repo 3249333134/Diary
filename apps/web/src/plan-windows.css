@@ -12,7 +12,7 @@
 .plan-window-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 .plan-window-name { flex:1; min-width:0; margin:0; font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .plan-window-count { font-size:11px; color:var(--muted); white-space:nowrap; }
-.plan-window-list.todo-list { flex:1; min-height:0; list-style:none; padding:10px; margin:0; display:flex; flex-direction:column; gap:10px; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+.plan-window-list.todo-list { flex:1; min-height:0; list-style:none; padding:10px; margin:0; display:flex; flex-direction:column; gap:10px; overflow-y:auto; overscroll-behavior-y:contain; scrollbar-width:thin; }
 .plan-window-list>li { list-style:none; flex-shrink:0; }
 .plan-window-list .plan-card { padding:12px; border-radius:12px; min-height:104px; }
 .plan-window-list .plan-card-summary { min-width:0; }

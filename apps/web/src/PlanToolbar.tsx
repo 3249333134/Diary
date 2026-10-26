@@ -1,13 +1,13 @@
-import { ChevronLeft, ChevronRight, Maximize2,Minimize2, SlidersHorizontal } from 'lucide-react';
+import { Maximize2,Minimize2, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { PlanLayout } from './PlanNavigation';
 import type { PlanFilter } from './planFilters';
-import { calendarRange, shiftDate } from './calendarDates';
+import { calendarRange } from './calendarDates';
 import { planClock } from './planFilters';
 import { WorkspaceToolbar } from './WorkspaceTools';
 import { GlassSegments } from './GlassSegments';
 
-export const PLAN_LAYOUTS = [['fortnight','两周'],['board','四象限'],['windows','窗口'],['list','列表'],['week','周'],['month','月']] as const;
+export const PLAN_LAYOUTS = [['fortnight','两周'],['month','月'],['week','周'],['windows','窗口'],['list','列表'],['board','四象限']] as const;
 
 export function PlanToolbar({layout,onLayout,anchor,onAnchor,filter,filterLabel,restricted,saving,onFilters,theme,onTheme,fullscreen,onToggleFullscreen}:{
   layout:PlanLayout;onLayout:(view:PlanLayout)=>void;anchor:string;onAnchor:(date:string)=>void;
@@ -27,19 +27,11 @@ export function PlanToolbar({layout,onLayout,anchor,onAnchor,filter,filterLabel,
   const range=calendarRange(anchor,calendar?layout:'fortnight');
   const sameYear=range.from.slice(0,4)===range.to.slice(0,4);
   const label=layout==='month'?anchor.slice(0,7):`${range.from} — ${sameYear?range.to.slice(5):range.to}`;
-  const navigate=(direction:number)=>{
-    if(!calendar)onLayout('fortnight');
-    if(layout==='month'){
-      const date=new Date(`${anchor.slice(0,7)}-01T00:00:00Z`);date.setUTCMonth(date.getUTCMonth()+direction);onAnchor(date.toISOString().slice(0,10));
-    }else onAnchor(shiftDate(anchor,direction*(layout==='week'?7:14)));
-  };
   return <WorkspaceToolbar className="plan-main-toolbar" label="计划工具栏">
     <div className="plan-date-tools">
       <strong className="plan-date-range" title={label} aria-label={`${range.from} 至 ${range.to}`}>{label}</strong>
       <nav aria-label="日历日期">
-        <button type="button" aria-label="上一期" title="上一期" disabled={saving} onClick={()=>navigate(-1)}><ChevronLeft size={18}/></button>
-        <button type="button" disabled={saving} onClick={()=>onAnchor(planClock().date)}>今天</button>
-        <button type="button" aria-label="下一期" title="下一期" disabled={saving} onClick={()=>navigate(1)}><ChevronRight size={18}/></button>
+        <button type="button" disabled={saving} onClick={()=>{if(!calendar)onLayout('fortnight');onAnchor(planClock().date);}}>今天</button>
       </nav>
     </div>
     <nav ref={viewScroller} className="plan-view-switch" aria-label="计划视图"><GlassSegments label="选择计划视图" value={filter==='trash'?'list':layout} options={PLAN_LAYOUTS.map(([value,label])=>({value,label,disabled:filter==='trash'&&value!=='list'}))} onChange={onLayout} disabled={saving}/></nav>
