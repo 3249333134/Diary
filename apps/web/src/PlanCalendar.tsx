@@ -19,12 +19,10 @@ import './schedule-refinements.css';
 
 type Target=CalendarTarget;
 type GestureMode='decide'|'drag'|'scrub'|'scroll';
-type Gesture={row:ActionRow;x:number;y:number;startX:number;startY:number;lastX:number;lastY:number;offsetX:number;offsetY:number;width:number;startTop:number;mode:GestureMode;timer?:number;pointer:number;el:HTMLElement;target?:Target;date:string;startMinutes:number;minutes:number;edgeTick:number};
+type Gesture={row:ActionRow;x:number;y:number;startX:number;startY:number;lastX:number;lastY:number;offsetX:number;offsetY:number;width:number;startTop:number;mode:GestureMode;timer?:number;pointer:number;el:HTMLElement;target?:Target;date:string;minutes:number;edgeTick:number};
 type CanvasPan={pointer:number;x:number;y:number;nextX:number;nextY:number;left:number;top:number;el:HTMLDivElement;moved:boolean};
 const minutesOf=(time:string)=>{const[h,m]=time.split(':').map(Number);return(h||0)*60+(m||0);};
 const formatMinutes=(minutes:number)=>`${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;
-/** 滑动调时间时使用完整 24 小时刻度，卡片位置才能与时间线性对应，可自由向更早/更晚拖动 */
-const ALL_HOURS=Array.from({length:24},(_,hour)=>hour);
 export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,active=true,showAllHours=false,onInteractionChange,onOpenHoursSettings,monthDate,onMonthDate,navigationRevision=0}:{navigationRevision?:number;monthDate?:string;onMonthDate:(date:string)=>void;onOpenHoursSettings:()=>void;view:CalendarView;anchor:string;showAllHours?:boolean;onInteractionChange?:(state:{dragging:boolean;pending:boolean;saving:boolean})=>void;rows:ActionRow[];busy:boolean;onEdit:(row:ActionRow)=>void;onMove:(row:ActionRow,target:Target)=>Promise<boolean>;onToggle:(row:ActionRow)=>void;active?:boolean}) {
   const range=useMemo(()=>calendarRange(anchor,view),[anchor,view]);
   /** 两周视图可在两端继续扩展，滑动即可看到更早/更晚的周 */
@@ -70,10 +68,8 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   const contentHeight=(date:string)=>Math.max(60,...[...markersFor(date).values()].map(marker=>(marker.lane+1)*LANE_HEIGHT+8),(rowsByDate.get(date)||[]).filter(row=>!planDueTime(row.task)).length*LANE_HEIGHT+8);
   const rowHeight=(date:string)=>frozen?.heights[date]||contentHeight(date);
   const axisWidth=Math.max(hours.length*HOUR_WIDTH,...[...markersByDate.values()].flatMap(markers=>[...markers.values()].map(marker=>marker.anchor+DEADLINE_WIDTH+12)));
-  const freeze=(row:ActionRow,allHours=false)=>setFrozen(old=>old||{hours:allHours?ALL_HOURS:hours.length?hours:planDueTime(row.task)?[Number(planDueTime(row.task)!.slice(0,2))]:[],heights:Object.fromEntries(days.map(date=>[date,contentHeight(date)])),allDay:allDay||!planDueTime(row.task)});
-  /** 冻结刻度后补齐横向滚动，让卡片停在手指下方，避免切换 24 小时刻度时位置跳变 */
-  const anchorShift=useRef<number|null>(null);
-  useEffect(()=>{if(anchorShift.current===null)return;const box=scroll.current;if(box)box.scrollLeft+=anchorShift.current;anchorShift.current=null;},[frozen]);
+  const freeze=(row:ActionRow)=>setFrozen(old=>old||{hours:hours.length?hours:planDueTime(row.task)?[Number(planDueTime(row.task)!.slice(0,2))]:[],heights:Object.fromEntries(days.map(date=>[date,contentHeight(date)])),allDay:allDay||!planDueTime(row.task)});
+  /** 冻结刻度后保持原刻度不变，拖动与最终结果都不会跳到另一套时间轴 */
   useEffect(()=>{const box=scroll.current;if(!box)return;const observer=new ResizeObserver(()=>setViewportWidth(box.clientWidth));observer.observe(box);return()=>observer.disconnect();},[]);
   useEffect(()=>{
     const box=scroll.current;if(!box||!active||view==='month')return;
@@ -162,6 +158,13 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     g.target={date:g.date,time:formatMinutes(g.minutes)};
     publishDrag(g);
   };
+  /** 滑动调时间沿用当前刻度（可能是压缩后的可见小时），落点与看到的列一一对应 */
+  const scrubMinutes=(g:Gesture)=>{
+    const cell=scroll.current?.querySelector<HTMLElement>(`[data-timed="true"][data-calendar-date="${g.date}"]`);
+    if(!cell)return g.minutes;
+    const time=timelineTime(g.x-cell.getBoundingClientRect().left,hoursRef.current);
+    return time?minutesOf(time):g.minutes;
+  };
   const publishDrag=(g:Gesture)=>setDrag(old=>old?.row===g.row&&old.target?.date===g.target?.date&&old.target?.time===g.target?.time?old:{row:g.row,target:g.target});
   const cancel=()=>{if(saving.current)return;setPending([]);setBatchMessage('');end();};
   useEffect(()=>{setExpanded(undefined);setPending([]);setBatchMessage('');setMonthFocus('');setWeeks({before:0,after:0});edgeLock.current=performance.now()+700;end();},[view,anchor,active,navigationRevision]);
@@ -199,8 +202,8 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
       g.edgeTick++;
       if(g.mode==='scrub'){
         // Keep pushing the deadline while the pointer hugs the screen edge.
-        if(g.x<r.left+28){box.scrollLeft-=10;if(g.edgeTick%2===0&&g.minutes>0){g.minutes=Math.max(0,g.minutes-15);applyScrub(g);}}
-        else if(g.x>r.right-28){box.scrollLeft+=10;if(g.edgeTick%2===0&&g.minutes<1435){g.minutes=Math.min(1435,g.minutes+15);applyScrub(g);}}
+        if(g.x<r.left+28){box.scrollLeft-=24;if(g.edgeTick%4===0){const hs=hoursRef.current;extendHoursTo((hs.length?hs[0]:1)-1);}g.minutes=scrubMinutes(g);applyScrub(g);}
+        else if(g.x>r.right-28){box.scrollLeft+=24;if(g.edgeTick%4===0){const hs=hoursRef.current;extendHoursTo((hs.length?hs[hs.length-1]:22)+1);}g.minutes=scrubMinutes(g);applyScrub(g);}
         return;
       }
       if(g.mode!=='drag')return;
@@ -221,7 +224,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     const el=e.currentTarget.closest<HTMLElement>('.calendar-chip')!,rect=el.getBoundingClientRect(),minutes=minutesOf(planDueTime(row.task)||'12:00');
     const date=row.task.dueDate||row.task.plannedDate||'';
     const startTop=(markersFor(date).get(calendarRowKey(row))?.lane||0)*LANE_HEIGHT+4;
-    const g:Gesture={row,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,offsetX:Math.min(e.clientX-rect.left,240),offsetY:e.clientY-rect.top,width:Math.max(160,Math.min(rect.width,280)),startTop,mode:'decide',pointer:e.pointerId,el,date,startMinutes:minutes,minutes,edgeTick:0};
+    const g:Gesture={row,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,offsetX:Math.min(e.clientX-rect.left,240),offsetY:e.clientY-rect.top,width:Math.max(160,Math.min(rect.width,280)),startTop,mode:'decide',pointer:e.pointerId,el,date,minutes,edgeTick:0};
     gesture.current=g;
     el.setPointerCapture(e.pointerId);
     if(e.pointerType!=='mouse')g.timer=window.setTimeout(()=>{if(gesture.current!==g||g.mode!=='decide')return;g.mode='drag';freeze(row);setDrag({row});},350);
@@ -238,11 +241,9 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
         g.mode='scroll';window.clearTimeout(g.timer);g.lastX=e.clientX;g.lastY=e.clientY;return;
       }else if(Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)){
         window.clearTimeout(g.timer);
-        const time=planDueTime(g.row.task);
-        if(view!=='month'&&time){
-          // 切换到完整 24 小时刻度，卡片与时间一一对应，可向任意方向拖动
-          anchorShift.current=g.startMinutes/60*HOUR_WIDTH-timelineOffset(time,hoursRef.current);
-          g.mode='scrub';freeze(g.row,true);
+        if(view!=='month'&&planDueTime(g.row.task)){
+          // 保持当前刻度滑动，不切换到完整时间线
+          g.mode='scrub';freeze(g.row);
         }else{g.mode='scroll';g.lastX=e.clientX;g.lastY=e.clientY;return;}
       }else return;
     }
@@ -250,9 +251,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
       g.x=e.clientX;g.y=e.clientY;pointerFrame.schedule();return;
     }
     e.preventDefault();g.x=e.clientX;g.y=e.clientY;
-    if(g.mode==='scrub'){
-      g.minutes=Math.max(0,Math.min(1435,g.startMinutes+Math.round((g.x-g.startX)/HOUR_WIDTH*60/15)*15));
-    }
+    if(g.mode==='scrub')g.minutes=scrubMinutes(g);
     pointerFrame.schedule();
   };
   const updateTarget=()=>{
