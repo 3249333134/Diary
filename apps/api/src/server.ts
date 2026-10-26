@@ -45,7 +45,7 @@ const MIME: Record<string, string> = {
   ".map": "application/json",
 };
 
-import { addSharedTag, tagLibrary, getPlanCategories, addPlanCategory, reorderPlanCategories, getPlanViews, savePlanViews } from './planSettings.js';
+import { addSharedTag, tagLibrary, getPlanCategories, addPlanCategory, reorderPlanCategories, getPlanViews, savePlanViews, getPlanWindowOrder, savePlanWindowOrder } from './planSettings.js';
 
 function safeJoin(root: string, ...parts: string[]) {
   const joined = path.join(root, ...parts);
@@ -241,6 +241,10 @@ export async function buildServer() {
     const userId = request.userId!;
     return reorderPlanCategories(request.body.ids, userId);
   });
+
+  app.get('/api/plan-window-order', async request => ({ ids: await getPlanWindowOrder(request.userId!) }));
+
+  app.put('/api/plan-window-order', async request => savePlanWindowOrder(request.body, request.userId!));
 
   app.get('/api/plan-views', async (request) => {
     const userId = request.userId!;

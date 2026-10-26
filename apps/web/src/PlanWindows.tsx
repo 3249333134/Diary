@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type PointerEvent } from 'react';
 import { GripVertical, Plus,Users } from 'lucide-react';
-import type { ActionRow } from './api';
+import { api, type ActionRow } from './api';
 import type { PlanCategory,SharedWindow } from '@diary/contracts';
 import type { Classification } from './PlanFields';
 import { createFrameTask } from './frameTask';
@@ -48,7 +48,6 @@ export function PlanWindows({
   onMove,
   onCreate,
   onAddCategory,
-  onReorder,
   sharedWindows=[],onAddShared,onManageShared,scopeLabel,onShowAll,
 }: {
   rows: ActionRow[];
@@ -58,7 +57,6 @@ export function PlanWindows({
   onMove: (row: ActionRow, patch: Classification) => void;
   onCreate: (categoryId: string) => void;
   onAddCategory: () => void;
-  onReorder: (ids: string[]) => Promise<void>;
   sharedWindows?:SharedWindow[];onAddShared?:()=>void;onManageShared?:(window:SharedWindow)=>void;
   scopeLabel?:string;onShowAll?:()=>void;
 }) {
@@ -71,13 +69,18 @@ export function PlanWindows({
   const winTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [draggingWinId, setDraggingWinId] = useState<string>();
 
-  const categoryIds = useMemo(() => categories.map((c) => c.id), [categories]);
+  // 窗口顺序保存在服务端，跨设备保持一致
+  const [windowOrder, setWindowOrder] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    api.planWindowOrder().then(r => { if (alive) setWindowOrder(r.ids); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const keysRef = useRef<string[]>([]);
 
   const scroll = useRef<HTMLDivElement>(null);
   const finish = useRef(onMove);
   finish.current = onMove;
-  const reorderFinish = useRef(onReorder);
-  reorderFinish.current = onReorder;
 
   // ── 检测鼠标在哪个窗口的哪个位置 ──
   const findDrop = (x: number, y: number): DropResult | null => {
@@ -255,11 +258,12 @@ export function PlanWindows({
       setDraggingWinId(undefined);
       if (!wasActive || e.type === 'pointercancel') return;
       if (hit && hit.id !== draggedId) {
-        const ordered = categoryIds.filter((id) => id !== draggedId);
-        const insertIdx = ordered.indexOf(hit.id);
+        const keys = keysRef.current.filter((id) => id !== draggedId);
+        const insertIdx = keys.indexOf(hit.id);
         if (insertIdx >= 0) {
-          ordered.splice(hit.position === 'before' ? insertIdx : insertIdx + 1, 0, draggedId);
-          void reorderFinish.current(ordered);
+          keys.splice(hit.position === 'before' ? insertIdx : insertIdx + 1, 0, draggedId);
+          setWindowOrder(keys);
+          void api.savePlanWindowOrder(keys).then(r => setWindowOrder(r.ids)).catch(() => {});
         }
       }
     };
@@ -288,7 +292,7 @@ export function PlanWindows({
       document.removeEventListener('pointercancel', end);
       document.removeEventListener('keydown', cancel);
     };
-  }, [categoryIds]);
+  }, []);
 
   // 拖动激活后阻止页面滚动，未激活时横向滑动仍用于切换窗口
   useEffect(() => {
@@ -373,6 +377,8 @@ export function PlanWindows({
 
   const beginWindow = (e: PointerEvent<HTMLElement>, id: string, name: string) => {
     if (busy || e.button !== 0) return;
+    // 标题栏内的按钮（如共享窗口的成员入口）保持原有点击行为
+    if ((e.target as HTMLElement).closest('button')) return;
     e.preventDefault();
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -414,22 +420,35 @@ export function PlanWindows({
     else activate();
   };
 
-  // 构建窗口列表
-  const windows: { id: string; name: string; color: string; items: ActionRow[];shared?:SharedWindow }[] = [
-    ...categories.map((c) => ({
-      id: c.id,
-      name: c.name,
-      color: c.color,
-      items: rows.filter((r) => !r.windowId&&r.task.category === c.id),
-    })),
-    ...(categories.length||rows.some(r=>!r.windowId)?[{
-      id: '__unclassified__',
-      name: '待分类',
-      color: '#9296a3',
-      items: rows.filter((r) => !r.windowId&&!r.task.category),
-    }]:[]),
-    ...sharedWindows.map(w=>({id:'shared:'+w.id,name:w.name,color:w.color,items:rows.filter(r=>r.windowId===w.id),shared:w})),
-  ];
+  // 构建窗口列表：私人类别在前、待分类固定最后，再套用用户保存的窗口顺序
+  const windows = useMemo(() => {
+    const base: { id: string; name: string; color: string; items: ActionRow[];shared?:SharedWindow }[] = [
+      ...categories.map((c) => ({
+        id: c.id,
+        name: c.name,
+        color: c.color,
+        items: rows.filter((r) => !r.windowId&&r.task.category === c.id),
+      })),
+      ...(categories.length||rows.some(r=>!r.windowId)?[{
+        id: '__unclassified__',
+        name: '待分类',
+        color: '#9296a3',
+        items: rows.filter((r) => !r.windowId&&!r.task.category),
+      }]:[]),
+      ...sharedWindows.map(w=>({id:'shared:'+w.id,name:w.name,color:w.color,items:rows.filter(r=>r.windowId===w.id),shared:w})),
+    ];
+    const rank = new Map(windowOrder.map((key, i) => [key, i]));
+    return base.sort((a, b) => {
+      if (a.id === '__unclassified__') return 1;
+      if (b.id === '__unclassified__') return -1;
+      const ra = rank.get(a.id), rb = rank.get(b.id);
+      if (ra === undefined && rb === undefined) return 0;
+      if (ra === undefined) return 1;
+      if (rb === undefined) return -1;
+      return ra - rb;
+    });
+  }, [categories, rows, sharedWindows, windowOrder]);
+  keysRef.current = windows.filter(w => w.id !== '__unclassified__').map(w => w.id);
 
   const jumpTo=(id:string)=>{
     const area=scroll.current,target=Array.from(area?.querySelectorAll<HTMLElement>('.plan-window')||[]).find(el=>el.dataset.windowKey===id);
@@ -451,17 +470,17 @@ export function PlanWindows({
               data-window-key={w.id}
               className={`plan-window${dragTarget === `category:${w.id}` ? ' drop-active' : ''}${isWinDropBefore ? ' drop-target-before' : ''}${isWinDropAfter ? ' drop-target-after' : ''}`}
               data-plan-drop={w.shared?undefined:`category:${w.id}`}
-              data-window-id={isUnclassified||w.shared ? undefined : w.id}
+              data-window-id={isUnclassified ? undefined : w.id}
               aria-label={`${w.name} 窗口，共 ${w.items.length} 项`}
             >
               <header
                 className="plan-window-header"
                 style={{ borderTopColor: w.color, background: `color-mix(in srgb, ${w.color} 12%, transparent)` }}
-                onPointerDown={isUnclassified||w.shared ? undefined : (e) => beginWindow(e, w.id, w.name)}
-                role={isUnclassified||w.shared ? undefined : 'button'}
-                aria-label={isUnclassified||w.shared ? undefined : `拖动排序：${w.name}`}
+                onPointerDown={isUnclassified ? undefined : (e) => beginWindow(e, w.id, w.name)}
+                role={isUnclassified ? undefined : 'button'}
+                aria-label={isUnclassified ? undefined : `拖动排序：${w.name}`}
               >
-                {!isUnclassified&&!w.shared && <GripVertical size={16} className="plan-window-reorder-handle" />}
+                {!isUnclassified && <GripVertical size={16} className="plan-window-reorder-handle" />}
                 <span className="plan-window-dot" style={{ background: w.color }} />
                 <h3 className="plan-window-name">{w.name}</h3>
                 <span className="plan-window-count">

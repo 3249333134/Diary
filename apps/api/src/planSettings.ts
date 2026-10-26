@@ -66,3 +66,13 @@ export async function reorderPlanCategories(ids: string[], userId: number) {
     return { categories: await getPlanCategories(userId) };
   });
 }
+
+const windowOrderSchema = z.array(z.string().max(80)).max(100);
+export const getPlanWindowOrder = (userId: number) => readJson<string[]>(`${vaultPaths.system}/plan-window-order.json`, [], userId);
+export function savePlanWindowOrder(input: unknown, userId: number) {
+  const ids = windowOrderSchema.parse((input as { ids?: unknown })?.ids);
+  return withVaultLock(userId, async () => {
+    await writeJson(`${vaultPaths.system}/plan-window-order.json`, ids, userId);
+    return { ids };
+  });
+}
