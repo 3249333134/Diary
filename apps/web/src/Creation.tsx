@@ -36,7 +36,7 @@ export function Creation({account,open,request,onClose,trigger,context,onSave,on
  useEffect(()=>{onDraftChange(hasCreationDraft(session));try{if(hasCreationDraft(session))localStorage.setItem(creationStorageKey(account),JSON.stringify(session));else localStorage.removeItem(creationStorageKey(account));setStorageError('');}catch{setStorageError('本地空间不足，暂时只能在当前页面保留草稿，请勿刷新。');}},[session,account,onDraftChange]);
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
  useEffect(()=>{if(body.current)body.current.scrollTop=0;},[manualKey,activeRow]);
- useEffect(()=>{const el=input.current;if(el){el.style.height='auto';el.style.height=Math.min(78,Math.max(44,el.scrollHeight))+'px';}},[session.text,open]);
+ useEffect(()=>{const el=input.current;if(el)el.scrollTop=el.scrollHeight;},[session.text,open]);
  const close=()=>{if(guard.current||uploading)return;onClose();requestAnimationFrame(()=>trigger.current?.focus({preventScroll:true}));};
  const patch=(value:Partial<CreationDraft>)=>{if(guard.current||parsing||submitted)return;setError('');setSession(old=>activeRow?{...old,rows:old.rows.map(row=>row.draft.id===activeRow?{...row,draft:{...row.draft,...value},error:undefined}:row)}:{...old,manual:{...old.manual,[manualKey]:{...old.manual[manualKey],...value,edited:true}}});};
  const switchKind=(kind:CreationKind)=>{
