@@ -27,12 +27,12 @@ const formatMinutes=(minutes:number)=>`${String(Math.floor(minutes/60)).padStart
 const ALL_HOURS=Array.from({length:24},(_,hour)=>hour);
 export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,active=true,showAllHours=false,onInteractionChange,onOpenHoursSettings,monthDate,onMonthDate,navigationRevision=0}:{navigationRevision?:number;monthDate?:string;onMonthDate:(date:string)=>void;onOpenHoursSettings:()=>void;view:CalendarView;anchor:string;showAllHours?:boolean;onInteractionChange?:(state:{dragging:boolean;pending:boolean;saving:boolean})=>void;rows:ActionRow[];busy:boolean;onEdit:(row:ActionRow)=>void;onMove:(row:ActionRow,target:Target)=>Promise<boolean>;onToggle:(row:ActionRow)=>void;active?:boolean}) {
   const range=useMemo(()=>calendarRange(anchor,view),[anchor,view]);
-  const days=useMemo(()=>Array.from({length:view==='month'?42:view==='fortnight'?14:7},(_,i)=>shiftDate(range.from,i)),[range,view]);
+  /** 两周视图可在两端继续扩展，滑动即可看到更早/更晚的周 */
+  const [weeks,setWeeks]=useState({before:0,after:0});
+  const days=useMemo(()=>Array.from({length:view==='fortnight'?14+weeks.before*7+weeks.after*7:view==='month'?42:7},(_,i)=>shiftDate(range.from,view==='fortnight'?i-weeks.before*7:i)),[range,view,weeks]);
   const monthDays=useMemo(()=>monthGridDates(anchor),[anchor.slice(0,7)]);
   const {categories}=usePlanCategories();const scroll=useRef<HTMLDivElement>(null);
-  /** 两周视图按自然周区分，标签相对本周计算（本周/下周/上周…） */
-  const thisWeekStart=(()=>{const date=planClock().date;return shiftDate(date,-((new Date(date+'T00:00:00Z').getUTCDay()+6)%7));})();
-  const weekLabel=(date:string)=>{const diff=Math.round((Date.parse(date)-Date.parse(thisWeekStart))/604800000);return diff===0?'本周':diff===1?'下周':diff===-1?'上周':diff>1?`${diff} 周后`:`${-diff} 周前`;};
+  const edgeLock=useRef(0),edgePending=useRef<{mode:'before'|'after';height:number;top:number}|undefined>(undefined);
   const ghost=useRef<HTMLDivElement>(null);
   const gesture=useRef<Gesture|undefined>(undefined);
   const [expanded,setExpanded]=useState<string>(),[drag,setDrag]=useState<{row:ActionRow;target?:Target}>(),[pending,setPending]=useState<CalendarPreview[]>([]);
@@ -164,7 +164,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   };
   const publishDrag=(g:Gesture)=>setDrag(old=>old?.row===g.row&&old.target?.date===g.target?.date&&old.target?.time===g.target?.time?old:{row:g.row,target:g.target});
   const cancel=()=>{if(saving.current)return;setPending([]);setBatchMessage('');end();};
-  useEffect(()=>{setExpanded(undefined);setPending([]);setBatchMessage('');setMonthFocus('');end();},[view,anchor,active,navigationRevision]);
+  useEffect(()=>{setExpanded(undefined);setPending([]);setBatchMessage('');setMonthFocus('');setWeeks({before:0,after:0});edgeLock.current=performance.now()+700;end();},[view,anchor,active,navigationRevision]);
   useEffect(()=>{
     if(!pending.length)return;
     const frame=requestAnimationFrame(()=>{
@@ -182,6 +182,13 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     const frame=requestAnimationFrame(()=>{if(scroll.current){scroll.current.scrollTop=0;scroll.current.scrollLeft=showAllHours?Math.max(0,(times.filter(Boolean).length?Math.min(...times.filter(Boolean).map(t=>Number(t.slice(0,2)))):9)-1)*HOUR_WIDTH:0;}});
     return()=>cancelAnimationFrame(frame);
   },[view,anchor,showAllHours,navigationRevision]);
+  /** 滑动到两周列表两端时继续向前/向后追加一周，并保持当前内容位置不跳 */
+  const extendWeeks=()=>{
+    const box=scroll.current;if(!box||view!=='fortnight'||performance.now()<edgeLock.current||edgePending.current)return;
+    if(box.scrollTop<=1&&weeks.before<52){edgePending.current={mode:'before',height:box.scrollHeight,top:box.scrollTop};setWeeks(old=>({...old,before:old.before+1}));}
+    else if(box.scrollHeight-box.scrollTop-box.clientHeight<=1&&weeks.after<52){edgePending.current={mode:'after',height:box.scrollHeight,top:box.scrollTop};setWeeks(old=>({...old,after:old.after+1}));}
+  };
+  useLayoutEffect(()=>{const box=scroll.current,pending=edgePending.current;if(!pending||!box)return;edgePending.current=undefined;box.scrollTop=pending.mode==='before'?pending.top+box.scrollHeight-pending.height:pending.top;if(pan.current)pan.current.top=box.scrollTop;},[weeks]);
   useEffect(()=>{const key=(e:KeyboardEvent)=>{if(e.key==='Escape'){endPan();cancel();}};window.addEventListener('keydown',key);return()=>{window.removeEventListener('keydown',key);window.clearTimeout(gesture.current?.timer);};},[]);
   useEffect(()=>{
     if(!drag)return;
@@ -339,8 +346,8 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
       {allDay&&<div className="timeline-all-heading">全天</div>}
       <div className="timeline-hour-axis" aria-label="截止小时刻度">{hours.map(hour=><span key={hour} style={{left:hours.indexOf(hour)*HOUR_WIDTH}}>{String(hour).padStart(2,'0')}:00</span>)}{hiddenHourRanges(hours).map(gap=><button type="button" key={'gap'+gap.index} className="timeline-hour-gap" style={{left:gap.index*HOUR_WIDTH-44}} aria-label={`空白时段已隐藏：${gap.from} 至 ${gap.to}，打开时段设置`} title={`已隐藏 ${gap.from}—${gap.to}，点击设置显示时段`} aria-haspopup="dialog" onClick={onOpenHoursSettings}>⋯</button>)}{!hours.length&&<span className="timeline-no-hours">暂无定时日程</span>}</div>
     </div>
-    {days.map((date,index)=><div className="calendar-timeline-row" data-date={date} data-week={view==='fortnight'?Math.floor(index/7)+1:undefined} data-week-start={view==='fortnight'&&index%7===0||undefined} key={date} style={{height:rowHeight(date)}}>
-      <button type="button" className="timeline-date" data-today={date===planClock().date||undefined} data-calendar-date={date} data-drop-active={drag?.target?.date===date&&!drag.target.time||undefined} title={`${date} · 可拖入全天日程`} onClick={()=>showDay(date)} aria-label={`查看 ${date} 的日程`} aria-expanded={expanded===date} aria-describedby={offscreen[date]?`timeline-offscreen-${date}`:undefined}><strong>{date.slice(5)}</strong>{view==='fortnight'&&index%7===0&&<em className="timeline-week-tag">{weekLabel(date)}</em>}<small>{date.slice(0,4)} · 周{['日','一','二','三','四','五','六'][new Date(date+'T00:00:00Z').getUTCDay()]}</small><small>{!!offscreen[date]?.left&&<span className="timeline-outside" aria-hidden="true">← </span>}{dayRows(date).length} 项{!!offscreen[date]?.right&&<span className="timeline-outside" aria-hidden="true"> →</span>}</small>{offscreen[date]&&<span className="sr-only" id={`timeline-offscreen-${date}`}>{offscreen[date].left?`左侧还有 ${offscreen[date].left} 项。`:''}{offscreen[date].right?`右侧还有 ${offscreen[date].right} 项。`:''}点击日期查看当天全部日程。</span>}</button>
+    {days.map((date,index)=><div className="calendar-timeline-row" data-date={date} data-week-start={view==='fortnight'&&index%7===0&&index>0||undefined} key={date} style={{height:rowHeight(date)}}>
+      <button type="button" className="timeline-date" data-today={date===planClock().date||undefined} data-calendar-date={date} data-drop-active={drag?.target?.date===date&&!drag.target.time||undefined} title={`${date} · 可拖入全天日程`} onClick={()=>showDay(date)} aria-label={`查看 ${date} 的日程`} aria-expanded={expanded===date} aria-describedby={offscreen[date]?`timeline-offscreen-${date}`:undefined}><strong>{date.slice(5)}</strong><small>{date.slice(0,4)} · 周{['日','一','二','三','四','五','六'][new Date(date+'T00:00:00Z').getUTCDay()]}</small><small>{!!offscreen[date]?.left&&<span className="timeline-outside" aria-hidden="true">← </span>}{dayRows(date).length} 项{!!offscreen[date]?.right&&<span className="timeline-outside" aria-hidden="true"> →</span>}</small>{offscreen[date]&&<span className="sr-only" id={`timeline-offscreen-${date}`}>{offscreen[date].left?`左侧还有 ${offscreen[date].left} 项。`:''}{offscreen[date].right?`右侧还有 ${offscreen[date].right} 项。`:''}点击日期查看当天全部日程。</span>}</button>
       {allDay&&<div className="timeline-all-day" data-calendar-date={date} data-drop-active={drag?.target?.date===date&&!drag.target.time||undefined}>{dayRows(date).filter(row=>!planDueTime(row.task)).map(row=>chip(row))}</div>}
       <div className="timeline-timed-cell" data-calendar-date={date} data-timed="true" data-drop-active={drag?.target?.date===date&&!!drag.target.time||undefined} style={{backgroundSize:`${HOUR_WIDTH}px 100%`}}><div className="timeline-markers" style={{height:contentHeight(date)}}>{dayRows(date).filter(row=>!!planDueTime(row.task)).map(row=>chip(row,true))}</div></div>
     </div>)}
@@ -351,7 +358,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     {drag&&<p className="calendar-feedback" role="status">{gesture.current?.mode==='scrub'?'左右滑动调整':'拖动'}「{drag.row.task.title}」{drag.target?` → ${drag.target.date} ${drag.target.time||'全天'}`:'到目标日期'} · Escape 取消</p>}
 
     {batchMessage&&<p className="calendar-batch-message" role="status">{batchMessage}</p>}
-    <div ref={scroll} className="calendar-scroll" data-view={view} data-panning={panning||undefined} onPointerDownCapture={()=>{suppressGestureClick.current=false;}} onClickCapture={e=>{if(suppressGestureClick.current&&e.detail>0){suppressGestureClick.current=false;e.preventDefault();e.stopPropagation();}}} onPointerDown={beginPan} onPointerMove={movePan} onPointerUp={releasePan} onPointerCancel={releasePan} onLostPointerCapture={releasePan}>
+    <div ref={scroll} className="calendar-scroll" data-view={view} data-panning={panning||undefined} onScroll={extendWeeks} onPointerDownCapture={()=>{suppressGestureClick.current=false;}} onClickCapture={e=>{if(suppressGestureClick.current&&e.detail>0){suppressGestureClick.current=false;e.preventDefault();e.stopPropagation();}}} onPointerDown={beginPan} onPointerMove={movePan} onPointerUp={releasePan} onPointerCancel={releasePan} onLostPointerCapture={releasePan}>
       {expanded&&view!=='month'&&<section className="calendar-focused-day calendar-day-agenda" hidden={!!drag} aria-label={`${expanded} 当天日程`}><header><h3 ref={dayHeading} tabIndex={-1}>{expanded} · 周{['日','一','二','三','四','五','六'][new Date(expanded+'T00:00:00Z').getUTCDay()]}</h3><small>{dayRows(expanded).length} 项日程</small><button type="button" onClick={closeDay}>返回{view==='fortnight'?'两周':'周视图'}</button></header>{monthAgendaGroups(dayRows(expanded)).map(group=><section className="month-agenda-group" key={group.time}><h4>{group.time||'全天'}{group.time&&<small>截止</small>}</h4><div>{group.rows.map(row=>chip(row))}</div></section>)}{!dayRows(expanded).length&&<p className="calendar-day-agenda-empty">这天暂无日程，可通过底部＋新增。</p>}</section>}
       {view==='month'?renderMonth():<div className="calendar-timeline-shell" hidden={!!expanded&&!drag}>{renderTimeline()}</div>}
     </div>
