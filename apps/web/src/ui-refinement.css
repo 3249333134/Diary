@@ -28,6 +28,8 @@
 .social-app .plan-window-add { margin:6px 8px 8px;background:var(--surface);border-style:solid; }
 .social-app .plan-windows-controls { flex-wrap:nowrap;gap:8px;padding-bottom:2px; }
 .plan-window-create { display:flex;gap:6px;flex-shrink:0; }
+.plan-window-create .glass-select { width:auto;flex:0 0 auto; }
+.plan-window-create .glass-select-trigger { width:auto;min-width:96px;white-space:nowrap; }
 .plan-window-jumps { display:flex;align-items:center;gap:4px;flex:1;min-width:0;overflow:auto;overscroll-behavior-x:contain;scrollbar-width:thin; }
 .plan-windows-controls .plan-window-jumps button { flex:none;max-width:180px;border-color:transparent;background:transparent;padding:8px;white-space:nowrap;font-size:13px; }
 .plan-window-jumps button>span { min-width:0;overflow:hidden;text-overflow:ellipsis; }
@@ -64,7 +66,7 @@
  .social-app .plan-main-toolbar { gap:4px; }
  .social-app .plan-date-range { font-size:11px; }
  .plan-window-create button { padding-inline:8px;font-size:12px; }
- .plan-window-create button span { display:none; }
+ .plan-window-create .glass-select-trigger span { display:inline; }
  .social-app .plan-windows-controls .plan-window-scope { flex-wrap:wrap; }
  .social-app .plan-window-scope>span { max-width:140px; }
 }
