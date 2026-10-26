@@ -34,3 +34,18 @@ it('完成期次打卡 +1，取消 -1，完成首日根任务也计数', async (
   expect(await rootCheckins()).toBe(1);
   vi.useRealTimers();
 });
+
+it('persists the check-in choice through create and edit, and excludes opted-out completions',async()=>{
+  const date='2026-10-20',id=randomUUID();
+  const created=await changeAction({mode:'create',date,version:'0',task:todoSchema.parse({id,title:'普通重复安排',dueDate:date,repeat:{type:'daily'},checkinEnabled:false}),operationId:randomUUID()},1);
+  let current=created.diary;
+  expect(current.document.todos.find(t=>t.id===id)?.checkinEnabled).toBe(false);
+  const next=(await listSchedule({from:'2026-10-21',to:'2026-10-21',limit:200},1)).tasks.find(row=>row.task.seriesId===id)!;
+  await changeAction({mode:'complete',date:next.date,version:next.version,task:next.task,operationId:randomUUID(),automaticRecord:true},1);
+  current=await loadDiary(date,1);expect(current.document.todos.find(t=>t.id===id)?.checkins||0).toBe(0);
+  const edited=await changeAction({mode:'update',date,version:current.version,task:{...current.document.todos.find(t=>t.id===id)!,checkinEnabled:true},operationId:randomUUID()},1);
+  const completed=await changeAction({mode:'complete',date,version:edited.diary.version,task:edited.diary.document.todos.find(t=>t.id===id)!,operationId:randomUUID(),automaticRecord:true},1);
+  expect((await loadDiary(date,1)).document.todos.find(t=>t.id===id)).toMatchObject({checkinEnabled:true,checkins:1});
+  await changeAction({mode:'restore',date,version:completed.diary.version,task:completed.diary.document.todos.find(t=>t.id===id)!,operationId:randomUUID()},1);
+  expect((await loadDiary(date,1)).document.todos.find(t=>t.id===id)?.checkins).toBe(0);
+});

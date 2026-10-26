@@ -16,7 +16,6 @@
 .calendar-chip[data-dragging=true] { opacity:.3; }
 .calendar-chip[data-pending=true] { outline:2px solid var(--purple);outline-offset:-2px;background:var(--purple-soft);z-index:4; }
 .calendar-batch-message { flex-shrink:0;max-height:72px;overflow:auto;margin:4px 0 8px;color:var(--text);font-size:12px;overflow-wrap:anywhere; }
-.plan-calendar[data-dragging=true] .calendar-selected-day { position:relative; }
 .calendar-heading nav { flex-wrap:wrap; justify-content:flex-end; }
 .calendar-heading .calendar-hours-toggle { font-size:11px; color:var(--purple-ink); background:var(--purple-soft); padding:6px 10px; }
 @media(min-width:900px) {

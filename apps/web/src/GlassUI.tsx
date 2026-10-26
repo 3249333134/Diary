@@ -28,6 +28,6 @@ export function GlassComboBox({label,value,onChange,options,placeholder,onCommit
  <Popover className="glass-popup" placement="bottom start" offset={8} containerPadding={8} shouldFlip><ListBox className="glass-listbox" renderEmptyState={()=><p className="glass-no-options">无匹配选项，可继续输入自定义内容</p>}>{items.map(o=><ListBoxItem id={o} key={o} textValue={o} className="glass-option">{o}</ListBoxItem>)}</ListBox></Popover></ComboBox>;
 }
 function ComboBoxDismiss({open}:{open:boolean}) { const state=useContext(ComboBoxStateContext);useEffect(()=>{if(!open&&state?.isOpen)state.close();},[open,state]);return null; }
-export function GlassDialog({children,label,onClose,busy=false,className='plan-edit-dialog'}:{children:ReactNode;label:string;onClose:()=>void;busy?:boolean;className?:string}){
- return <ModalOverlay isOpen isDismissable={!busy} isKeyboardDismissDisabled={busy} onOpenChange={open=>{if(!open)onClose();}} className="glass-modal-overlay"><Modal className={'glass-modal '+className}><Dialog aria-label={label} className="plan-dialog-content">{children}</Dialog></Modal></ModalOverlay>;
+export function GlassDialog({children,label,onClose,busy=false,className='plan-edit-dialog',overlayClassName=''}:{children:ReactNode;label:string;onClose:()=>void;busy?:boolean;className?:string;overlayClassName?:string}){
+ return <ModalOverlay isOpen isDismissable={!busy} isKeyboardDismissDisabled={busy} onOpenChange={open=>{if(!open)onClose();}} className={'glass-modal-overlay '+overlayClassName}><Modal className={'glass-modal '+className}><Dialog aria-label={label} className="plan-dialog-content">{children}</Dialog></Modal></ModalOverlay>;
 }

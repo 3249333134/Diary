@@ -1,14 +1,13 @@
 import assert from 'node:assert/strict';
 /** Browser-simulated mouse / long-press drag, using the calendar's visible coordinate system. */
-export async function dragCalendar(page,{id,title,targetDate,time='',month=false,touch=false,invalid=false,sourceDate}) {
+export async function dragCalendar(page,{id,title,targetDate,time='',month=false,focused=false,touch=false,invalid=false,sourceDate}) {
   const area=page.locator('.calendar-scroll');
   if(month){
-    const close=page.locator('.calendar-day-agenda').getByRole('button',{name:'收起',exact:true});if(await close.count())await close.click();
-    const day=page.getByRole('button',{name:`查看 ${sourceDate} 的日程`,exact:true});if(await day.getAttribute('aria-expanded')!=='true')await day.click();
+    await page.locator(`.calendar-day[data-calendar-date="${sourceDate}"] .calendar-date`).click();
   }
-  const handle=(month?page.locator('.calendar-day-agenda'):page.locator('.calendar-timeline-canvas')).locator(`.calendar-chip[data-record-id="${id}"] .calendar-chip-copy`).first();
+  const handle=(month?page.locator('.calendar-month-day-pane'):focused?page.locator('.calendar-focused-day'):page.locator('.calendar-timeline-canvas')).locator(`.calendar-chip[data-record-id="${id}"] ${month||focused?'.calendar-chip-drag':'.calendar-chip-copy'}`).first();
   await handle.scrollIntoViewIfNeeded();
-  await area.evaluate((el,{id,month})=>{const handle=el.querySelector(`${month?'.calendar-day-agenda':'.calendar-timeline-canvas'} .calendar-chip[data-record-id="${id}"] .calendar-chip-copy`),r=handle.getBoundingClientRect(),b=el.getBoundingClientRect();el.scrollTop+=r.y+r.height/2-(b.y+44+(b.height-44)/2);if(!month)el.scrollLeft+=r.x+r.width/2-(b.x+96+(b.width-96)/2);},{id,month});
+  await area.evaluate((el,{id,month,focused})=>{if(month||focused)return;const handle=el.querySelector(`.calendar-timeline-canvas .calendar-chip[data-record-id="${id}"] .calendar-chip-copy`),r=handle.getBoundingClientRect(),b=el.getBoundingClientRect();el.scrollTop+=r.y+r.height/2-(b.y+44+(b.height-44)/2);el.scrollLeft+=r.x+r.width/2-(b.x+96+(b.width-96)/2);},{id,month,focused});
   await page.waitForTimeout(40);const a=await handle.boundingBox(),card=await handle.locator('..').boundingBox();
   const cdp=touch?await page.context().newCDPSession(page):undefined;
   try{
@@ -26,7 +25,7 @@ export async function dragCalendar(page,{id,title,targetDate,time='',month=false
       const r=await target.boundingBox();point={x:time?r.x+offset:r.x+r.width/2,y:r.y+r.height/2};
     }
     if(invalid)point={x:2,y:2};
-    if(cdp){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[point]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}else{await page.mouse.move(point.x,point.y,{steps:4});const ghost=await page.locator('.calendar-drag-ghost').boundingBox();assert(Math.abs(ghost.x-(point.x-Math.min(start.x-card.x,240)))<2&&Math.abs(ghost.y-(point.y-(start.y-card.y)))<2,'drag preview follows pointer');await page.mouse.up();}
+    if(cdp){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[point]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});}else{await page.mouse.move(point.x,point.y,{steps:4});await page.waitForFunction(({x,y})=>{const r=document.querySelector('.calendar-drag-ghost')?.getBoundingClientRect();return r&&Math.abs(r.x-x)<2&&Math.abs(r.y-y)<2;},{x:point.x-Math.min(start.x-card.x,240),y:point.y-(start.y-card.y)});const ghost=await page.locator('.calendar-drag-ghost').boundingBox();assert(Math.abs(ghost.x-(point.x-Math.min(start.x-card.x,240)))<2&&Math.abs(ghost.y-(point.y-(start.y-card.y)))<2,'drag preview follows pointer');await page.mouse.up();}
     await page.waitForTimeout(80);
   }finally{if(cdp)await cdp.detach();else await page.mouse.up();}
 }

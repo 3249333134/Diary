@@ -5,6 +5,7 @@ import type { PlanFilter } from './planFilters';
 import { calendarRange, shiftDate } from './calendarDates';
 import { planClock } from './planFilters';
 import { WorkspaceToolbar } from './WorkspaceTools';
+import { GlassSegments } from './GlassSegments';
 
 export const PLAN_LAYOUTS = [['fortnight','两周'],['board','四象限'],['windows','窗口'],['list','列表'],['week','周'],['month','月']] as const;
 
@@ -15,7 +16,7 @@ export function PlanToolbar({layout,onLayout,anchor,onAnchor,filter,filterLabel,
 }) {
   const viewScroller=useRef<HTMLElement>(null);
   useEffect(()=>{
-    const nav=viewScroller.current,selected=nav?.querySelector<HTMLElement>('[aria-pressed=true]');
+    const nav=viewScroller.current,selected=nav?.querySelector<HTMLElement>('[data-selected]');
     if(nav&&selected){
       const item=selected.getBoundingClientRect(),box=nav.getBoundingClientRect();
       if(item.left<box.left)nav.scrollLeft+=item.left-box.left;
@@ -41,7 +42,7 @@ export function PlanToolbar({layout,onLayout,anchor,onAnchor,filter,filterLabel,
         <button type="button" aria-label="下一期" title="下一期" disabled={saving} onClick={()=>navigate(1)}><ChevronRight size={18}/></button>
       </nav>
     </div>
-    <nav ref={viewScroller} className="plan-view-switch" aria-label="计划视图">{PLAN_LAYOUTS.map(([key,label])=><button key={key} type="button" aria-pressed={filter==='trash'?key==='list':layout===key} disabled={saving||filter==='trash'&&key!=='list'} onClick={()=>onLayout(key)}>{label}</button>)}</nav>
+    <nav ref={viewScroller} className="plan-view-switch" aria-label="计划视图"><GlassSegments label="选择计划视图" value={filter==='trash'?'list':layout} options={PLAN_LAYOUTS.map(([value,label])=>({value,label,disabled:filter==='trash'&&value!=='list'}))} onChange={onLayout} disabled={saving}/></nav>
     <div className="plan-toolbar-actions">
       <button type="button" className="plan-filter-trigger" data-restricted={restricted||undefined} aria-label="筛选计划" title={`筛选：${filterLabel}${restricted?' · 已应用限制':''}`} aria-haspopup="dialog" onClick={onFilters}><SlidersHorizontal size={18}/>{restricted&&<i className="plan-filter-dot" aria-label="已应用筛选"/>}</button>
       {onToggleFullscreen&&<button type="button" aria-label={fullscreen?'退出全屏':'全屏显示'} title="全屏" onClick={onToggleFullscreen}>{fullscreen?<Minimize2 size={18}/>:<Maximize2 size={18}/>}</button>}

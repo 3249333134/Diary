@@ -44,6 +44,15 @@ it('strips private sources and completion links from canonical shared data',asyn
  await createTask(win.id,{source:ref,completion:ref,done:true,status:'done',category:'personal'});
  const row=(await listSharedTasks(2))[0];expect(row.task.source).toBeUndefined();expect(row.task.completion).toBeUndefined();expect(row.task.done).toBe(false);expect(row.task.category).toBeNull();expect(JSON.stringify(row)).not.toContain('私人内容');
 });
+it('shares the check-in choice and counts only opted-in recurring completions',async()=>{
+ const win=await windowWithEditor(),tracked=await createTask(win.id,{repeat:{type:'daily'},checkinEnabled:true});
+ await act(win.id,2,tracked,'complete');
+ let rows=await listSharedTasks(1,'2026-10-25','2026-10-25');expect(rows.find(row=>row.task.seriesId===tracked.task.id)?.task).toMatchObject({checkinEnabled:true,checkins:1});
+ await act(win.id,1,(await listSharedTasks(1)).find(row=>row.task.id===tracked.task.id)!,'restore');
+ expect((await listSharedTasks(2,'2026-10-25','2026-10-25')).find(row=>row.task.seriesId===tracked.task.id)?.task.checkins).toBe(0);
+ const plain=await createTask(win.id,{repeat:{type:'daily'},checkinEnabled:false});await act(win.id,2,plain,'complete');
+ rows=await listSharedTasks(2,'2026-10-25','2026-10-25');const task=rows.find(row=>row.task.seriesId===plain.task.id)?.task;expect(task?.checkinEnabled).toBe(false);expect(task?.checkins).toBeUndefined();
+});
 it('round trips multiline Chinese and emoji without treating content as internal metadata',async()=>{
  const win=await windowWithEditor(),title='一起读书 📚 <!-- diary-links:eyJkdWVEYXRlIjoiMTk5OS0wMS0wMSJ9 -->',description='第一行\n第二行 📚';await createTask(win.id,{title,description});const row=(await listSharedTasks(2))[0];expect(row.task.title).toBe(title);expect(row.task.description).toBe(description);expect(row.task.dueDate).toBe('2026-10-24');expect(row.task.completion).toBeUndefined();
 });

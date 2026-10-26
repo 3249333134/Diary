@@ -1,0 +1,412 @@
+[
+  {
+    "name": "normal",
+    "innerHeight": 1100,
+    "innerWidth": 624,
+    "visual": {
+      "height": 1100,
+      "width": 624,
+      "top": 0,
+      "scale": 1
+    },
+    "appHeight": "1100px",
+    "overlay": {
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 1100,
+      "padding": "0px",
+      "position": "fixed",
+      "display": "flex",
+      "rows": "none",
+      "children": [
+        "DIV:glass-modal creation-dialog"
+      ]
+    },
+    "dialog": {
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 1100,
+      "padding": "0px",
+      "position": "relative",
+      "display": "block",
+      "rows": "none",
+      "children": [
+        "DIV:",
+        "SECTION:plan-dialog-content"
+      ]
+    },
+    "content": {
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 1100,
+      "padding": "0px",
+      "position": "static",
+      "display": "grid",
+      "rows": "63px 942px 95px",
+      "children": [
+        "HEADER:creation-header",
+        "DIV:creation-body",
+        "FOOTER:creation-footer"
+      ]
+    },
+    "footer": {
+      "x": 0,
+      "y": 1005,
+      "width": 624,
+      "height": 95,
+      "padding": "8px 12px",
+      "position": "static",
+      "display": "block",
+      "rows": "none",
+      "children": [
+        "DIV:creation-assist",
+        "DIV:creation-action-bar"
+      ]
+    },
+    "bar": {
+      "x": 12,
+      "y": 1038,
+      "width": 600,
+      "height": 54,
+      "padding": "0px",
+      "position": "static",
+      "display": "flex",
+      "rows": "none",
+      "children": [
+        "DIV:creation-ai-input",
+        "DIV:creation-buttons"
+      ]
+    }
+  },
+  {
+    "name": "short",
+    "innerHeight": 650,
+    "innerWidth": 624,
+    "visual": {
+      "height": 650,
+      "width": 624,
+      "top": 0,
+      "scale": 1
+    },
+    "appHeight": "650px",
+    "overlay": {
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 650,
+      "padding": "0px",
+      "position": "fixed",
+      "display": "flex",
+      "rows": "none",
+      "children": [
+        "DIV:glass-modal creation-dialog"
+      ]
+    },
+    "dialog": {
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 650,
+      "padding": "0px",
+      "position": "relative",
+      "display": "block",
+      "rows": "none",
+      "children": [
+        "DIV:",
+        "SECTION:plan-dialog-content"
+      ]
+    },
+    "content": {
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 650,
+      "padding": "0px",
+      "position": "static",
+      "display": "grid",
+      "rows": "63px 492px 95px",
+      "children": [
+        "HEADER:creation-header",
+        "DIV:creation-body",
+        "FOOTER:creation-footer"
+      ]
+    },
+    "footer": {
+      "x": 0,
+      "y": 555,
+      "width": 624,
+      "height": 95,
+      "padding": "8px 12px",
+      "position": "static",
+      "display": "block",
+      "rows": "none",
+      "children": [
+        "DIV:creation-assist",
+        "DIV:creation-action-bar"
+      ]
+    },
+    "bar": {
+      "x": 12,
+      "y": 588,
+      "width": 600,
+      "height": 54,
+      "padding": "0px",
+      "position": "static",
+      "display": "flex",
+      "rows": "none",
+      "children": [
+        "DIV:creation-ai-input",
+        "DIV:creation-buttons"
+      ]
+    }
+  },
+  {
+    "name": "zoom",
+    "innerHeight": 1100,
+    "innerWidth": 624,
+    "visual": {
+      "height": 880,
+      "width": 499.20001220703125,
+      "top": 0,
+      "scale": 1.25
+    },
+    "appHeight": "880px",
+    "overlay": {
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 880,
+      "padding": "0px",
+      "position": "fixed",
+      "display": "flex",
+      "rows": "none",
+      "children": [
+        "DIV:glass-modal creation-dialog"
+      ]
+    },
+    "dialog": {
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 880,
+      "padding": "0px",
+      "position": "relative",
+      "display": "block",
+      "rows": "none",
+      "children": [
+        "DIV:",
+        "SECTION:plan-dialog-content"
+      ]
+    },
+    "content": {
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 880,
+      "padding": "0px",
+      "position": "static",
+      "display": "grid",
+      "rows": "63px 722px 95px",
+      "children": [
+        "HEADER:creation-header",
+        "DIV:creation-body",
+        "FOOTER:creation-footer"
+      ]
+    },
+    "footer": {
+      "x": 0,
+      "y": 785,
+      "width": 624,
+      "height": 95,
+      "padding": "8px 12px",
+      "position": "static",
+      "display": "block",
+      "rows": "none",
+      "children": [
+        "DIV:creation-assist",
+        "DIV:creation-action-bar"
+      ]
+    },
+    "bar": {
+      "x": 12,
+      "y": 818,
+      "width": 600,
+      "height": 54,
+      "padding": "0px",
+      "position": "static",
+      "display": "flex",
+      "rows": "none",
+      "children": [
+        "DIV:creation-ai-input",
+        "DIV:creation-buttons"
+      ]
+    }
+  },
+  {
+    "name": "stale height",
+    "innerHeight": 1100,
+    "innerWidth": 624,
+    "visual": {
+      "height": 1100,
+      "width": 624,
+      "top": 0,
+      "scale": 1
+    },
+    "appHeight": "1500px",
+    "overlay": {
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 1500,
+      "padding": "0px",
+      "position": "fixed",
+      "display": "flex",
+      "rows": "none",
+      "children": [
+        "DIV:glass-modal creation-dialog"
+      ]
+    },
+    "dialog": {
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 1500,
+      "padding": "0px",
+      "position": "relative",
+      "display": "block",
+      "rows": "none",
+      "children": [
+        "DIV:",
+        "SECTION:plan-dialog-content"
+      ]
+    },
+    "content": {
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 1500,
+      "padding": "0px",
+      "position": "static",
+      "display": "grid",
+      "rows": "63px 1342px 95px",
+      "children": [
+        "HEADER:creation-header",
+        "DIV:creation-body",
+        "FOOTER:creation-footer"
+      ]
+    },
+    "footer": {
+      "x": 0,
+      "y": 1405,
+      "width": 624,
+      "height": 95,
+      "padding": "8px 12px",
+      "position": "static",
+      "display": "block",
+      "rows": "none",
+      "children": [
+        "DIV:creation-assist",
+        "DIV:creation-action-bar"
+      ]
+    },
+    "bar": {
+      "x": 12,
+      "y": 1438,
+      "width": 600,
+      "height": 54,
+      "padding": "0px",
+      "position": "static",
+      "display": "flex",
+      "rows": "none",
+      "children": [
+        "DIV:creation-ai-input",
+        "DIV:creation-buttons"
+      ]
+    }
+  },
+  {
+    "name": "stale small visual viewport",
+    "innerHeight": 1100,
+    "innerWidth": 624,
+    "visual": {
+      "height": 800,
+      "width": 624,
+      "top": 0,
+      "scale": 1
+    },
+    "appHeight": "800px",
+    "overlay": {
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 800,
+      "padding": "0px",
+      "position": "fixed",
+      "display": "flex",
+      "rows": "none",
+      "children": [
+        "DIV:glass-modal creation-dialog"
+      ]
+    },
+    "dialog": {
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 800,
+      "padding": "0px",
+      "position": "relative",
+      "display": "block",
+      "rows": "none",
+      "children": [
+        "DIV:",
+        "SECTION:plan-dialog-content"
+      ]
+    },
+    "content": {
+      "x": 0,
+      "y": 0,
+      "width": 624,
+      "height": 800,
+      "padding": "0px",
+      "position": "static",
+      "display": "grid",
+      "rows": "63px 642px 95px",
+      "children": [
+        "HEADER:creation-header",
+        "DIV:creation-body",
+        "FOOTER:creation-footer"
+      ]
+    },
+    "footer": {
+      "x": 0,
+      "y": 705,
+      "width": 624,
+      "height": 95,
+      "padding": "8px 12px",
+      "position": "static",
+      "display": "block",
+      "rows": "none",
+      "children": [
+        "DIV:creation-assist",
+        "DIV:creation-action-bar"
+      ]
+    },
+    "bar": {
+      "x": 12,
+      "y": 738,
+      "width": 600,
+      "height": 54,
+      "padding": "0px",
+      "position": "static",
+      "display": "flex",
+      "rows": "none",
+      "children": [
+        "DIV:creation-ai-input",
+        "DIV:creation-buttons"
+      ]
+    }
+  }
+]

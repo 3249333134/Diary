@@ -1,0 +1,10 @@
+[
+  {
+    "width": 624,
+    "theme": "light",
+    "checks": [],
+    "errors": [],
+    "writes": [],
+    "error": "AssertionError [ERR_ASSERTION]: hidden radio focus target must stay within its visible label\n    at file:///D:/prj/user/Diary/scripts/qa-creation-layout.mjs:43:207\n    at async check (file:///D:/prj/user/Diary/scripts/qa-creation-layout.mjs:28:31)\n    at async file:///D:/prj/user/Diary/scripts/qa-creation-layout.mjs:37:3"
+  }
+]

@@ -67,6 +67,7 @@ const baseTodoSchema = z.object({
   tags: z.array(z.string().trim().min(1).max(40)).max(50).default([]),
   status: z.enum(['todo', 'doing', 'done', 'cancelled']).default('todo'),
   repeat: todoRepeatSchema.default(null),
+  checkinEnabled: z.boolean().optional(),
   // 重复系列打卡计数：由服务端按已完成期次自动维护，客户端只读
   checkins: z.number().int().min(0).max(99999).optional(),
   attachments: z.array(todoAttachmentSchema).max(20).default([]),
@@ -285,6 +286,7 @@ export function entityKey(type: EntityType, name: string): string {
 const captureDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$|^$/);
 export const captureDraftSchema = z.object({
   windowId:z.string().uuid().optional(),
+  checkinEnabled:z.boolean().optional(),
   repeat: todoRepeatSchema.default(null),
   category: planCategoryIdSchema.nullable().optional(), important: z.boolean().nullable().optional(), urgent: z.boolean().nullable().optional(),
   startDate: captureDate.optional(), startTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$|^$/).optional(),

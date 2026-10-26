@@ -23,7 +23,7 @@ export function ClassificationFields({ value, onChange, start = true,hideCategor
     {start && <DateTimeField label="原定开始时间" date={value.startDate||''} time={value.startTime||''} onChange={(startDate,startTime)=>onChange({startDate,startTime})}/>}
   </div>;
 }
-export function SharedTagInput({ value, onChange }: { value: string[]; onChange: (tags: string[]) => void }) {
+export function SharedTagInput({ value, onChange,label='共享标签' }: {label?:string; value: string[]; onChange: (tags: string[]) => void }) {
   const [tags, setTags] = useState<string[]>([]), [input, setInput] = useState(''), [error, setError] = useState('');
   useEffect(() => { void api.tagLibrary().then(data => setTags(data.tags)).catch(() => setError('标签候选暂不可用，仍可手动输入。')); }, []);
   const add = (candidate=input) => {
@@ -33,5 +33,5 @@ export function SharedTagInput({ value, onChange }: { value: string[]; onChange:
     onChange([...new Set([...value, ...added])]); setInput('');
     void Promise.all(added.map(tag => api.addSharedTag(tag))).then(data => { setTags(data.at(-1)?.tags || tags); setError(''); }).catch(() => setError('标签已加入草稿，保存后仍会进入共享候选。'));
   };
-  return <div className="shared-tags"><label>共享标签<div className="shared-tag-entry"><GlassComboBox label="共享标签" value={input} onChange={setInput} onCommit={add} options={tags} placeholder="选择或输入标签，回车添加"/><button type="button" onClick={()=>add()}>添加</button></div></label><FieldHint path="todos.0.tags.0" value={input}/><div className="shared-tag-chips">{value.map(tag => <button type="button" key={tag} aria-label={`移除标签 ${tag}`} onClick={() => onChange(value.filter(t => t !== tag))}>{tag} ×</button>)}</div>{error && <small role="status">{error}</small>}</div>;
+  return <div className="shared-tags"><label>{label}<div className="shared-tag-entry"><GlassComboBox label={label} value={input} onChange={setInput} onCommit={add} options={tags} placeholder="选择或输入标签，回车添加"/><button type="button" onClick={()=>add()}>添加</button></div></label><FieldHint path="todos.0.tags.0" value={input}/><div className="shared-tag-chips">{value.map(tag => <button type="button" key={tag} aria-label={`移除标签 ${tag}`} onClick={() => onChange(value.filter(t => t !== tag))}>{tag} ×</button>)}</div>{error && <small role="status">{error}</small>}</div>;
 }

@@ -1,0 +1,124 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation",
+      "four/six week and year-boundary overview"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 624,
+    "theme": "light",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 624,
+    "theme": "dark",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 1280,
+    "theme": "light",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 1280,
+    "theme": "dark",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation",
+      "four/six week and year-boundary overview"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  }
+]

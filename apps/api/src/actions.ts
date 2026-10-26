@@ -22,7 +22,7 @@ const conflict = (message: string) => Object.assign(new Error(message), { status
 const updatableFields: (keyof Todo)[] = [
   'title', 'time', 'plannedDate', 'description', 'subtasks', 'priority',
   'dueDate', 'dueTime', 'list', 'tags', 'repeat', 'attachments', 'entities',
-  'category', 'important', 'urgent', 'startDate', 'startTime',
+  'category', 'important', 'urgent', 'startDate', 'startTime', 'checkinEnabled',
 ];
 
 export async function listActions(userId: number) {

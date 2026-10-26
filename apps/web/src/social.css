@@ -14,12 +14,6 @@
 .global-nav-icon { position:relative;display:flex; }
 .nav-badge { position:absolute;bottom:12px;left:16px;min-width:15px;padding:2px 3px;box-sizing:border-box;border-radius:8px;background:var(--red);color:white;font-size:9px;line-height:1.1; }
 .draft-dot { position:absolute;top:5px;right:5px;width:7px;height:7px;background:#ffdc85;border-radius:50%; }
-.create-menu-dialog { width:min(440px,calc(100vw - 24px)); }
-.create-menu-options { display:grid;gap:8px; }
-.create-menu-options>button { display:flex;align-items:center;gap:12px;min-height:60px;padding:12px;border:0;border-radius:12px;background:var(--glass-item);color:var(--text);font:inherit;text-align:left;cursor:pointer; }
-.create-menu-options>button>span { flex:1; }
-.create-menu-options>button small { display:block;margin-top:4px;color:var(--muted);font-size:12px; }
-.create-menu-options>button:disabled { opacity:.5;cursor:default; }
 .social-workspace { display:flex;flex-direction:column;min-height:0;flex:1;border:1px solid var(--glass-edge);border-radius:16px;padding:16px;background:var(--glass);backdrop-filter:var(--glass-blur);overflow:hidden; }
 .social-heading { display:flex;justify-content:space-between;align-items:center;gap:12px;flex:none;margin-bottom:12px; }
 .social-heading h1 { font-size:22px;margin:0; }

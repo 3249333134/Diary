@@ -31,7 +31,6 @@
 .calendar-unarranged summary:focus-visible { outline:2px solid var(--purple); outline-offset:-2px; }
 .calendar-unarranged>div { padding:0 8px; display:grid; gap:4px; }
 .calendar-unarranged .calendar-chip { margin:0; }
-.calendar-scroll:not([data-view=month])>.calendar-selected-day { top:44px; z-index:8; width:calc(100% - 2px); box-sizing:border-box; }
 .calendar-scroll:not([data-view=month]) { scroll-padding-top:48px; }
 @media(max-width:899px) { .calendar-timeline-canvas { --timeline-date-width:84px; } }
 

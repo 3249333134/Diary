@@ -1,0 +1,26 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "errors": [],
+    "writes": []
+  }
+]

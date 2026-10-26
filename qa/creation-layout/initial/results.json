@@ -1,0 +1,142 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "checks": [
+      "file picker, removal and local draft reopening retain file metadata",
+      "only the form scrolls and footer has no excess space below actions",
+      "shrink and grow the window without retaining a stale footer height",
+      "touch keyboard uses its visible height",
+      "pinch zoom keeps both footer buttons within the visible width",
+      "cancel clear preserves text and files; confirm clear leaves the AI queue intact"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "checks": [
+      "file picker, removal and local draft reopening retain file metadata",
+      "only the form scrolls and footer has no excess space below actions",
+      "shrink and grow the window without retaining a stale footer height",
+      "touch keyboard uses its visible height",
+      "pinch zoom keeps both footer buttons within the visible width",
+      "cancel clear preserves text and files; confirm clear leaves the AI queue intact"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 624,
+    "theme": "light",
+    "checks": [
+      "file picker, removal and local draft reopening retain file metadata",
+      "only the form scrolls and footer has no excess space below actions",
+      "shrink and grow the window without retaining a stale footer height",
+      "desktop ignores an outdated smaller visual viewport",
+      "pinch zoom keeps both footer buttons within the visible width",
+      "cancel clear preserves text and files; confirm clear leaves the AI queue intact"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 624,
+    "theme": "dark",
+    "checks": [
+      "file picker, removal and local draft reopening retain file metadata",
+      "only the form scrolls and footer has no excess space below actions",
+      "shrink and grow the window without retaining a stale footer height",
+      "desktop ignores an outdated smaller visual viewport",
+      "pinch zoom keeps both footer buttons within the visible width",
+      "cancel clear preserves text and files; confirm clear leaves the AI queue intact"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "checks": [
+      "file picker, removal and local draft reopening retain file metadata",
+      "only the form scrolls and footer has no excess space below actions",
+      "shrink and grow the window without retaining a stale footer height",
+      "desktop ignores an outdated smaller visual viewport",
+      "pinch zoom keeps both footer buttons within the visible width",
+      "cancel clear preserves text and files; confirm clear leaves the AI queue intact"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "checks": [
+      "file picker, removal and local draft reopening retain file metadata",
+      "only the form scrolls and footer has no excess space below actions",
+      "shrink and grow the window without retaining a stale footer height",
+      "desktop ignores an outdated smaller visual viewport",
+      "pinch zoom keeps both footer buttons within the visible width",
+      "cancel clear preserves text and files; confirm clear leaves the AI queue intact"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 1280,
+    "theme": "light",
+    "checks": [
+      "file picker, removal and local draft reopening retain file metadata",
+      "only the form scrolls and footer has no excess space below actions",
+      "shrink and grow the window without retaining a stale footer height",
+      "desktop ignores an outdated smaller visual viewport",
+      "pinch zoom keeps both footer buttons within the visible width",
+      "cancel clear preserves text and files; confirm clear leaves the AI queue intact"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 1280,
+    "theme": "dark",
+    "checks": [
+      "file picker, removal and local draft reopening retain file metadata",
+      "only the form scrolls and footer has no excess space below actions",
+      "shrink and grow the window without retaining a stale footer height",
+      "desktop ignores an outdated smaller visual viewport",
+      "pinch zoom keeps both footer buttons within the visible width",
+      "cancel clear preserves text and files; confirm clear leaves the AI queue intact"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "checks": [
+      "file picker, removal and local draft reopening retain file metadata",
+      "only the form scrolls and footer has no excess space below actions",
+      "shrink and grow the window without retaining a stale footer height",
+      "desktop ignores an outdated smaller visual viewport",
+      "pinch zoom keeps both footer buttons within the visible width",
+      "cancel clear preserves text and files; confirm clear leaves the AI queue intact"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "checks": [
+      "file picker, removal and local draft reopening retain file metadata",
+      "only the form scrolls and footer has no excess space below actions",
+      "shrink and grow the window without retaining a stale footer height",
+      "desktop ignores an outdated smaller visual viewport",
+      "pinch zoom keeps both footer buttons within the visible width",
+      "cancel clear preserves text and files; confirm clear leaves the AI queue intact"
+    ],
+    "errors": [],
+    "writes": []
+  }
+]

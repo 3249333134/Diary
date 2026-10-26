@@ -6,7 +6,7 @@ export class ApiError extends Error {
 }
 export type ActionRow = { windowId?:string;windowName?:string;readOnly?:boolean;role?:'owner'|'viewer'|'editor';seriesVersion?:string; restorePending?: boolean; completionPending?: boolean; pendingRecord?: CaptureDraft; date: string; version: string; task: Todo; sourceExists: boolean; completionExists: boolean; pendingFact?: { date: string; id: string; time: string; note: string; remark: string } };
 export type ActionInput = { windowId?:string;automaticRecord?: boolean; completionRecord?: CompletionRecord; mode: 'create' | 'update' | 'delete' | 'complete' | 'restore' | 'purge' | 'status'; date: string; version: string; task: Todo; operationId: string; sourceVersion?: string; fact?: { date: string; version: string; time: string; note: string; remark: string }; nextStatus?: 'todo' | 'doing' | 'done' | 'cancelled' };
-export type ParsedTodo = Pick<Todo, 'entities' | 'category' | 'important' | 'urgent' | 'startDate' | 'startTime'> & { windowId?:string;repeat?: Todo['repeat']; description?: string; title: string; dueDate: string; dueTime: string; priority: string; list: string; tags: string[] };
+export type ParsedTodo = Pick<Todo, 'entities' | 'category' | 'important' | 'urgent' | 'startDate' | 'startTime' | 'checkinEnabled'> & { windowId?:string;repeat?: Todo['repeat']; description?: string; title: string; dueDate: string; dueTime: string; priority: string; list: string; tags: string[] };
 export type PlanView = { id: string; name: string; color: string; tags: string[] };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {

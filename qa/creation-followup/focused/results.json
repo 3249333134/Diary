@@ -1,0 +1,18 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "checks": [
+      "focused day keeps drag preview and cancellation without saving"
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "checks": [
+      "focused day keeps drag preview and cancellation without saving"
+    ],
+    "errors": []
+  }
+]

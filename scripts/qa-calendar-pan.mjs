@@ -86,14 +86,14 @@ try{for(const width of [375,624,768,1280,1440])for(const theme of ['light','dark
   assert.equal(writes.length,0);
  });
  await check('week and blank all-day column pan, bounds clamp naturally',async()=>{
-  await page.getByRole('navigation',{name:'计划视图'}).getByRole('button',{name:'周',exact:true}).click();
+  await page.getByRole('navigation',{name:'计划视图'}).getByRole('button',{name:'周',exact:true}).tap();
   await area.evaluate(el=>{el.scrollLeft=130;el.scrollTop=120;});await pan({touch:width<900});
   await area.evaluate(el=>{el.scrollLeft=0;el.scrollTop=40;});await pan({dx:-35,dy:-45,scope:'all',touch:true});
   await area.evaluate(el=>{el.scrollLeft=0;el.scrollTop=0;});await pan({dx:30,dy:30});assert.equal((await position()).left,0);assert.equal((await position()).top,0);
   await area.evaluate(el=>{el.scrollLeft=el.scrollWidth;el.scrollTop=el.scrollHeight;});await pan({dx:-30,dy:-30});const end=await position();assert.equal(end.left,end.maxLeft);assert.equal(end.top,end.maxTop);
  });
  await check('card drag keeps local preview; panning with pending preview makes no save request',async()=>{
-  await page.getByRole('navigation',{name:'计划视图'}).getByRole('button',{name:'两周',exact:true}).click();
+  await page.getByRole('navigation',{name:'计划视图'}).getByRole('button',{name:'两周',exact:true}).tap();
   await dragCalendar(page,{id:'pan-0',targetDate:shift(2),time:'15:15',touch:width<900});
   const preview=page.locator('.calendar-chip[data-record-id=pan-0][data-pending=true]');await preview.waitFor();
   assert.equal(writes.length,0,'before pan: '+JSON.stringify(writes));

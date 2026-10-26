@@ -1,0 +1,12 @@
+/* Shared identity is independent of the importance/urgency color on the card. */
+.shared-plan-badge { display:inline-flex;align-items:center;gap:3px;flex:0 0 auto;max-width:100%;min-width:0;padding:2px 5px;border-radius:5px;background:var(--purple-strong);color:#fff;font-size:11px;font-weight:600;line-height:1.2;vertical-align:middle; }
+.shared-plan-badge svg { flex:none; }
+.shared-plan-badge>span { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+:root[data-theme=dark] .shared-plan-badge { color:var(--bg); }
+.plan-summary-meta>.shared-plan-badge { max-width:min(240px,100%); }
+.plan-calendar .calendar-chip .calendar-chip-copy small.calendar-shared-meta { display:flex;align-items:center;gap:4px;min-width:0;overflow:hidden; }
+.calendar-shared-meta .shared-plan-badge { font-size:10px;padding:2px 4px; }
+.calendar-shared-meta .calendar-deadline-text { flex:none; }
+.calendar-shared-meta .calendar-meta-overflow { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.calendar-ghost-meta { display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:4px; }
+.plan-drag-preview>.shared-plan-badge { margin-bottom:5px; }

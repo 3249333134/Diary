@@ -1,0 +1,170 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "checks": [
+      {
+        "view": "两周",
+        "shared": 10
+      },
+      {
+        "view": "月",
+        "shared": 17
+      },
+      {
+        "view": "列表",
+        "shared": 93
+      },
+      {
+        "view": "窗口",
+        "shared": 93
+      },
+      {
+        "view": "四象限",
+        "shared": 93
+      }
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "checks": [
+      {
+        "view": "两周",
+        "shared": 10
+      },
+      {
+        "view": "月",
+        "shared": 17
+      },
+      {
+        "view": "列表",
+        "shared": 93
+      },
+      {
+        "view": "窗口",
+        "shared": 93
+      },
+      {
+        "view": "四象限",
+        "shared": 93
+      }
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 624,
+    "theme": "light",
+    "checks": [
+      {
+        "view": "两周",
+        "shared": 10
+      },
+      {
+        "view": "月",
+        "shared": 17
+      },
+      {
+        "view": "列表",
+        "shared": 93
+      },
+      {
+        "view": "窗口",
+        "shared": 93
+      },
+      {
+        "view": "四象限",
+        "shared": 93
+      }
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 624,
+    "theme": "dark",
+    "checks": [
+      {
+        "view": "两周",
+        "shared": 10
+      },
+      {
+        "view": "月",
+        "shared": 17
+      },
+      {
+        "view": "列表",
+        "shared": 93
+      },
+      {
+        "view": "窗口",
+        "shared": 93
+      },
+      {
+        "view": "四象限",
+        "shared": 93
+      }
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "checks": [
+      {
+        "view": "两周",
+        "shared": 10
+      },
+      {
+        "view": "月",
+        "shared": 17
+      },
+      {
+        "view": "列表",
+        "shared": 93
+      },
+      {
+        "view": "窗口",
+        "shared": 93
+      },
+      {
+        "view": "四象限",
+        "shared": 93
+      }
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "checks": [
+      {
+        "view": "两周",
+        "shared": 10
+      },
+      {
+        "view": "月",
+        "shared": 17
+      },
+      {
+        "view": "列表",
+        "shared": 93
+      },
+      {
+        "view": "窗口",
+        "shared": 93
+      },
+      {
+        "view": "四象限",
+        "shared": 93
+      }
+    ],
+    "errors": [],
+    "writes": []
+  }
+]

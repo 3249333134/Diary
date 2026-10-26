@@ -1,5 +1,6 @@
 .glass-choices{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
-.glass-choice{display:inline-flex!important;flex-direction:row!important;align-items:center;gap:6px!important;min-height:44px;padding:8px 10px;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;background:var(--plan-control);color:var(--text)!important;font-size:13px!important;cursor:pointer;overflow-wrap:anywhere}
+/* Keep React Aria's absolute hidden radio inside the visible choice during focus scrolling. */
+.glass-choice{position:relative;display:inline-flex!important;flex-direction:row!important;align-items:center;gap:6px!important;min-height:44px;padding:8px 10px;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;background:var(--plan-control);color:var(--text)!important;font-size:13px!important;cursor:pointer;overflow-wrap:anywhere}
 .glass-choice-check{display:grid;place-items:center;width:16px;height:16px;flex:none;border:1px solid var(--muted);border-radius:50%;color:transparent}
 .glass-choice-dot{width:7px;height:7px;flex:none;border-radius:50%}
 .glass-choice[data-selected]{background:var(--purple-soft);border-color:var(--purple);color:var(--purple-ink)!important}
@@ -10,6 +11,12 @@
 .plan-classification-fields{grid-template-columns:minmax(0,1fr)!important;gap:16px!important}
 .plan-choice-field{display:grid;gap:6px;min-width:0;font-size:12px;color:var(--muted)}
 .repeat-fields>.glass-choices{width:100%}
+.repeat-fields legend:has(.repeat-checkin){width:100%}
+.repeat-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.repeat-fields label.repeat-checkin{display:inline-flex;align-items:center;gap:6px;flex:none;min-width:0;min-height:44px;cursor:pointer;font-size:12px}
+.repeat-fields .repeat-checkin input{width:18px;min-height:18px;height:18px;padding:0;accent-color:var(--purple-strong)}
+.repeat-checkin:has(input:disabled){opacity:.5;cursor:default}
+@media(max-width:599px){.repeat-fields>.glass-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
 .plan-action-dock{display:flex;align-items:center;justify-content:flex-end;gap:8px 16px;flex-wrap:wrap;flex-shrink:0;padding:10px 12px;border:1px solid var(--plan-edge);border-radius:14px;background:var(--plan-glass);box-shadow:0 8px 24px rgba(32,20,55,.14);color:var(--text);min-width:0}
 .plan-action-status{font-size:12px;line-height:1.5;overflow-wrap:anywhere;flex:1;min-width:120px}
 .plan-action-buttons{display:flex;gap:8px;margin-left:auto}

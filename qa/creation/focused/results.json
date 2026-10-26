@@ -1,0 +1,20 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "checks": [
+      "entry defaults follow workspace, diary column and selected date",
+      "AI IME guard and multiple drafts parse without writes; manual form survives"
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "checks": [
+      "entry defaults follow workspace, diary column and selected date",
+      "AI IME guard and multiple drafts parse without writes; manual form survives"
+    ],
+    "errors": []
+  }
+]

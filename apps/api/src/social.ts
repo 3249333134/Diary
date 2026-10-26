@@ -175,10 +175,11 @@ export async function listSharedTasks(userId:number,from?:string,to?:string){
  for(const window of windows){
   const win=await requireWindow(window.id,userId),stored=await queryRows<StoredTask>('SELECT * FROM shared_tasks WHERE window_id = ?',[win.id]);
   const tasks=stored.map(row=>({row,task:parseTask(row)})),ids=new Set(tasks.map(t=>t.task.id));
-  const checkins=new Map<string,number>();for(const {task}of tasks)if(task.done&&!task.deletedAt){const root=task.seriesId||(isSeries(task)?task.id:undefined);if(root)checkins.set(root,(checkins.get(root)||0)+1);}
+  const checkins=new Map<string,number>();for(const {task}of tasks)if(task.done&&!task.deletedAt&&task.checkinEnabled!==false){const root=task.seriesId||(isSeries(task)?task.id:undefined);if(root)checkins.set(root,(checkins.get(root)||0)+1);}
   for(const item of tasks){
    const {task,row}=item;
-   if(isSeries(task)||task.seriesId)task.checkins=checkins.get(task.seriesId||task.id)||0;
+   if(task.checkinEnabled===false)delete task.checkins;
+   else if(isSeries(task)||task.seriesId)task.checkins=checkins.get(task.seriesId||task.id)||0;
    if(!task.occurrenceSuppressed&&(!from||((task.dueDate||task.plannedDate||'')>=from&&(task.dueDate||task.plannedDate||'')<=to!)))result.push(await taskRow(win,row,userId,task));
    if(from&&to&&isSeries(task))for(let date=from;date<=to;date=addDays(date,1)){
     if(date===task.recurrenceAnchor)continue;const occurrence=deriveOccurrence(task,date);

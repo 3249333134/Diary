@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState, type ReactNode, type PointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode, type PointerEvent } from 'react';
 import { GripVertical, Plus, Plus as PlusIcon,Users } from 'lucide-react';
 import type { ActionRow } from './api';
 import type { PlanCategory,SharedWindow } from '@diary/contracts';
 import type { Classification } from './PlanFields';
+import { createFrameTask } from './frameTask';
 
 type DropResult = { windowId: string; insertBefore: HTMLElement | null };
 
@@ -14,8 +15,8 @@ type DragState = {
   pointer: number;
   cardEl: HTMLElement;
   placeholder: HTMLElement;
-  offsetX: number;
-  offsetY: number;
+  startX: number;
+  startY: number;
   dropPlaceholder: HTMLElement | null;
   dropWindowId: string | null;
 };
@@ -29,8 +30,8 @@ type WinDragState = {
   pointer: number;
   winEl: HTMLElement;
   placeholder: HTMLElement;
-  offsetX: number;
-  offsetY: number;
+  startX: number;
+  startY: number;
 };
 
 /**
@@ -69,7 +70,7 @@ export function PlanWindows({
   const winTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [draggingWinId, setDraggingWinId] = useState<string>();
 
-  const categoryIds = categories.map((c) => c.id);
+  const categoryIds = useMemo(() => categories.map((c) => c.id), [categories]);
 
   const scroll = useRef<HTMLDivElement>(null);
   const finish = useRef(onMove);
@@ -133,12 +134,20 @@ export function PlanWindows({
 
   // ── 代办拖拽逻辑 ──
   useEffect(() => {
+    const motion = createFrameTask(() => {
+      const p = press.current; if (!p?.active) return;
+      const drop = findDrop(p.x, p.y);
+      p.cardEl.style.transform = `translate3d(${p.x-p.startX}px,${p.y-p.startY}px,0)`;
+      setDropPlaceholder(p, drop);
+      setDragTarget(drop?.windowId);
+    });
     const move = (e: globalThis.PointerEvent) => {
       const p = press.current;
       if (!p || p.pointer !== e.pointerId) return;
       if (!p.active) {
         if (Math.hypot(e.clientX - p.x, e.clientY - p.y) > 8) {
           clearTimeout(timer.current);
+          cleanupDrag(p);
           press.current = undefined;
         }
         return;
@@ -146,18 +155,13 @@ export function PlanWindows({
       e.preventDefault();
       p.x = e.clientX;
       p.y = e.clientY;
-      // 卡片跟随鼠标
-      p.cardEl.style.left = `${p.x - p.offsetX}px`;
-      p.cardEl.style.top = `${p.y - p.offsetY}px`;
-      // 更新插入占位符
-      const drop = findDrop(p.x, p.y);
-      setDropPlaceholder(p, drop);
-      setDragTarget(drop?.windowId);
+      motion.schedule();
     };
 
     const end = (e: globalThis.PointerEvent) => {
       const p = press.current;
       if (!p || p.pointer !== e.pointerId) return;
+      motion.cancel();
       clearTimeout(timer.current);
       const wasActive = p.active;
       const row = p.row;
@@ -176,6 +180,7 @@ export function PlanWindows({
 
     const cancel = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && press.current) {
+        motion.cancel();
         clearTimeout(timer.current);
         press.current.dropPlaceholder?.remove();
         cleanupDrag(press.current);
@@ -189,6 +194,8 @@ export function PlanWindows({
     document.addEventListener('pointercancel', end);
     document.addEventListener('keydown', cancel);
     return () => {
+      motion.cancel();
+      if (press.current) { press.current.dropPlaceholder?.remove(); cleanupDrag(press.current); press.current = undefined; }
       clearTimeout(timer.current);
       document.removeEventListener('pointermove', move);
       document.removeEventListener('pointerup', end);
@@ -208,6 +215,12 @@ export function PlanWindows({
       const position: 'before' | 'after' = x < rect.left + rect.width / 2 ? 'before' : 'after';
       return { id, position };
     };
+    const motion = createFrameTask(() => {
+      const p = winPress.current; if (!p?.active) return;
+      const hit = findWindow(p.x, p.y);
+      p.winEl.style.transform = `translate3d(${p.x-p.startX}px,${p.y-p.startY}px,0)`;
+      setWinTarget(old => old?.id === hit?.id && old?.position === hit?.position ? old : hit ?? undefined);
+    });
 
     const move = (e: globalThis.PointerEvent) => {
       const p = winPress.current;
@@ -215,22 +228,22 @@ export function PlanWindows({
       if (!p.active) {
         if (Math.hypot(e.clientX - p.x, e.clientY - p.y) > 8) {
           clearTimeout(winTimer.current);
+          cleanupWinDrag(p);
           winPress.current = undefined;
+          setDraggingWinId(undefined);
         }
         return;
       }
       e.preventDefault();
       p.x = e.clientX;
       p.y = e.clientY;
-      p.winEl.style.left = `${p.x - p.offsetX}px`;
-      p.winEl.style.top = `${p.y - p.offsetY}px`;
-      const hit = findWindow(p.x, p.y);
-      setWinTarget(hit ?? undefined);
+      motion.schedule();
     };
 
     const end = (e: globalThis.PointerEvent) => {
       const p = winPress.current;
       if (!p || p.pointer !== e.pointerId) return;
+      motion.cancel();
       clearTimeout(winTimer.current);
       const wasActive = p.active;
       const draggedId = p.id;
@@ -252,6 +265,7 @@ export function PlanWindows({
 
     const cancel = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && winPress.current) {
+        motion.cancel();
         clearTimeout(winTimer.current);
         cleanupWinDrag(winPress.current);
         winPress.current = undefined;
@@ -265,6 +279,8 @@ export function PlanWindows({
     document.addEventListener('pointercancel', end);
     document.addEventListener('keydown', cancel);
     return () => {
+      motion.cancel();
+      if (winPress.current) { cleanupWinDrag(winPress.current); winPress.current = undefined; }
       clearTimeout(winTimer.current);
       document.removeEventListener('pointermove', move);
       document.removeEventListener('pointerup', end);
@@ -332,8 +348,8 @@ export function PlanWindows({
       pointer: e.pointerId,
       cardEl,
       placeholder,
-      offsetX: e.clientX - rect.left,
-      offsetY: e.clientY - rect.top,
+      startX: e.clientX,
+      startY: e.clientY,
       dropPlaceholder: null,
       dropWindowId: null,
     };
@@ -376,8 +392,8 @@ export function PlanWindows({
       pointer: e.pointerId,
       winEl,
       placeholder,
-      offsetX: e.clientX - rect.left,
-      offsetY: e.clientY - rect.top,
+      startX: e.clientX,
+      startY: e.clientY,
     };
     winPress.current = p;
     setDraggingWinId(id);
@@ -484,6 +500,7 @@ function cleanupDrag(p: DragState) {
   cardEl.style.width = '';
   cardEl.style.zIndex = '';
   cardEl.style.pointerEvents = '';
+  cardEl.style.transform = '';
   placeholder.remove();
 }
 
@@ -496,5 +513,6 @@ function cleanupWinDrag(p: WinDragState) {
   winEl.style.width = '';
   winEl.style.zIndex = '';
   winEl.style.pointerEvents = '';
+  winEl.style.transform = '';
   placeholder.remove();
 }

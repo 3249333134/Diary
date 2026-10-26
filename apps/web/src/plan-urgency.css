@@ -22,7 +22,7 @@
 .calendar-heading nav{margin-left:auto}
 .calendar-scroll{scroll-padding-bottom:8px}
 .calendar-action-slot .calendar-drop-review{background:var(--plan-glass);margin:0}
-@media(max-width:599px){.calendar-month .calendar-chip[data-urgency]{background:var(--urgency-color);border:0}}
+
 
 /* Deadline markers have no invented duration; keep one marker within an hour row. */
 .calendar-chip-copy{padding:4px 6px;gap:2px;line-height:1.25}
@@ -34,4 +34,4 @@
 
 .calendar-deadline-anchor{position:absolute;left:1px;width:2px;border-left:1px dotted var(--muted);pointer-events:none}
 .calendar-deadline-anchor::before{content:'';position:absolute;top:0;left:-3px;width:5px;height:5px;border-radius:50%;background:var(--muted)}
-.calendar-selected-day .calendar-chip-copy strong{white-space:normal;overflow:visible;overflow-wrap:anywhere}
+.calendar-focused-day .calendar-chip-copy strong{white-space:normal;overflow:visible;overflow-wrap:anywhere}

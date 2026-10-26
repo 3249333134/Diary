@@ -1,4 +1,6 @@
-import {SocialContext,useSocialState,MainNavigation,CreateMenu,Communications,MyAccount,type MainPage} from './Social';
+import {AttachmentField} from './AttachmentField';
+import {viewportFrame} from './viewportFrame';
+import {SocialContext,useSocialState,MainNavigation,Communications,MyAccount,type MainPage} from './Social';
 import {useGlassConfirm} from './GlassConfirm';
 import {GlassDialog,GlassComboBox} from './GlassUI';
 import {diaryPresets} from './diaryPresets';
@@ -10,11 +12,12 @@ import { EntityField, type EntityFieldProps } from './EntityField';
 import { CompactDiaryTools } from './CompactDiaryTools';
 import { DiaryPanel, DiaryInformation, DiaryControlsContext, type DiaryControls } from './DiaryPanel';
 import { DiaryToolbar, type SaveStatus } from './WorkspaceTools';
-import { UnifiedCapture } from './Capture';
+import {Creation,type CreationRequest,type CreationResult} from './Creation';
+import {appendCreation,creationIssues,creationTask,type CreationDraft,type CreationKind} from './creationDraft';
 import { planClock } from './planFilters';
 import { SharedTagInput } from './PlanFields';
 import { useCompactBrowse } from './useCompactBrowse';
-import { appendCapture, todoSchema, type CaptureDraft } from '@diary/contracts';
+import { todoSchema } from '@diary/contracts';
 import { createContext, useContext, useEffect, useId, useMemo, useRef, useState, useCallback, type RefObject } from "react";
 import {
   BookOpen, Brain, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, CircleAlert, Clock,
@@ -75,65 +78,6 @@ function StatusBadge({ status }: { status: SaveStatus }) {
   return <span className={`status status-${status}`} role="status" aria-live="polite"><Icon size={15} aria-hidden="true" />{label}</span>;
 }
 
-function AttachmentField({ attachments, onChange, date, variant = "full", limit }: { attachments: Array<{ path: string; name: string }>; onChange: (list: Array<{ path: string; name: string }>) => void; date: string; variant?: "full" | "strip"; limit?: number }) {
-  const [uploading, setUploading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const handleFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    setUploading(true);
-    try {
-      const results = [];
-      for (const file of Array.from(files)) {
-        if (file.size > 8 * 1024 * 1024) { alert(`文件 ${file.name} 超过 8MB，已跳过`); continue; }
-        try {
-          results.push(await api.upload(file, date));
-        } catch (e: any) { alert(`上传 ${file.name} 失败：${e.message}`); }
-      }
-      if (results.length) onChange([...attachments, ...results.map(r => ({ path: r.path, name: r.name }))]);
-    } finally { setUploading(false); if (inputRef.current) inputRef.current.value = ""; }
-  };
-  const remove = (idx: number) => onChange(attachments.filter((_, i) => i !== idx));
-  const displayList = limit ? attachments.slice(0, limit) : attachments;
-  const overflow = limit && attachments.length > limit ? attachments.length - limit : 0;
-
-  if (variant === "strip") {
-    return <div className="attachment-strip">
-      {displayList.map((att, idx) => {
-        const ext = att.path.split(".").pop()?.toLowerCase() || "";
-        const isImage = ["png", "jpg", "jpeg", "gif", "webp", "bmp"].includes(ext);
-        return <div className="attachment-strip-item" key={att.path + idx} title={att.name} onClick={() => window.open(api.assetUrl(att.path), "_blank")}>
-          {isImage ? <img src={api.assetUrl(att.path)} alt={att.name} loading="lazy" /> : <span className="attachment-strip-file">{ext.toUpperCase()}</span>}
-        </div>;
-      })}
-      {overflow > 0 && <span className="attachment-strip-more">+{overflow}</span>}
-      {uploading ? <div className="attachment-strip-uploading"><Loader2 size={14} className="spin" /></div> : (
-        <label className="attachment-strip-add" title="上传附件">
-          <Plus size={14} />
-          <input ref={inputRef} type="file" multiple accept="image/*,.pdf,.txt" hidden onChange={(e) => void handleFiles(e.target.files)} />
-        </label>
-      )}
-    </div>;
-  }
-
-  // full variant — always render so the "+" button is visible even with zero attachments
-  return <div className="attachment-grid">
-    {attachments.map((att, idx) => {
-      const ext = att.path.split(".").pop()?.toLowerCase() || "";
-      const isImage = ["png", "jpg", "jpeg", "gif", "webp", "bmp"].includes(ext);
-      return <div className="attachment-item" key={att.path + idx}>
-        {isImage
-          ? <img src={api.assetUrl(att.path)} alt={att.name} loading="lazy" onClick={() => window.open(api.assetUrl(att.path), "_blank")} />
-          : <a href={api.assetUrl(att.path)} target="_blank" rel="noreferrer">{att.name || ext.toUpperCase()}</a>}
-        <button type="button" className="attachment-remove" onClick={() => remove(idx)} aria-label={`移除附件${att.name}`}><X size={14} /></button>
-      </div>;
-    })}
-    {uploading && <div className="attachment-uploading"><Loader2 size={18} className="spin" />上传中...</div>}
-    <label className="attachment-add" title="添加附件">
-      <Plus size={18} />
-      <input ref={inputRef} type="file" multiple accept="image/*,.pdf,.txt" hidden onChange={(e) => void handleFiles(e.target.files)} />
-    </label>
-  </div>;
-}
 
 function QuickCapture({ entities, onApply }: { entities: EntityRecord[]; onApply: (note: string, split: SplitDraft, time: string, category: string, tags: string[], location?: { name: string; lat?: number; lng?: number }) => void }) {
   const [text, setText] = useState("");
@@ -761,7 +705,9 @@ export function App() {
   const social=useSocialState(authState.user?.id);
   useEffect(()=>{window.dispatchEvent(new Event('diary-account-change'));},[authState.user?.id]);
   const [socialPage,setSocialPage]=useState<'communications'|'mine'>();
-  const [createMenu,setCreateMenu]=useState(false),[captureRequest,setCaptureRequest]=useState(0),[hasCaptureDraft,setHasCaptureDraft]=useState(false);
+  const [creationOpen,setCreationOpen]=useState(false),[creationRequest,setCreationRequest]=useState<CreationRequest>(),[hasCaptureDraft,setHasCaptureDraft]=useState(false),[creationNotice,setCreationNotice]=useState<CreationResult>();
+  const creationCounter=useRef(0);
+  useEffect(()=>{if(!creationNotice||creationOpen||creationNotice.refreshWarning)return;const timer=window.setTimeout(()=>setCreationNotice(undefined),8000);return()=>window.clearTimeout(timer);},[creationNotice,creationOpen]);
   const globalCreate=useRef<HTMLButtonElement>(null);
   useEffect(() => {
     let cancelled = false;
@@ -783,9 +729,9 @@ export function App() {
   };
   useEffect(() => {
     const viewport = window.visualViewport;
-    const update = () => { const style=window.document.documentElement.style;style.setProperty('--app-height', `${viewport?.height || window.innerHeight}px`);style.setProperty('--viewport-top', `${viewport?.offsetTop || 0}px`); };
+    const update = () => { const root=window.document.documentElement,touch=window.matchMedia('(pointer:coarse)').matches||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent),frame=viewportFrame({width:root.clientWidth||window.innerWidth,height:window.innerHeight},viewport||undefined,touch);for(const [name,value] of Object.entries({'--app-height':frame.height,'--viewport-width':frame.width,'--viewport-top':frame.top,'--viewport-left':frame.left}))root.style.setProperty(name,`${value}px`); };
     update(); viewport?.addEventListener('resize', update); viewport?.addEventListener('scroll', update); window.addEventListener('resize', update);
-    return () => { viewport?.removeEventListener('resize', update); viewport?.removeEventListener('scroll', update); window.removeEventListener('resize', update); window.document.documentElement.style.removeProperty('--app-height');window.document.documentElement.style.removeProperty('--viewport-top'); };
+    return () => { viewport?.removeEventListener('resize', update); viewport?.removeEventListener('scroll', update); window.removeEventListener('resize', update); for(const name of ['--app-height','--viewport-width','--viewport-top','--viewport-left'])window.document.documentElement.style.removeProperty(name); };
   }, []);
   const [mobileLayout,setMobileLayout]=useState(()=>window.matchMedia('(max-width:899px)').matches);
   useEffect(()=>{const media=window.matchMedia('(max-width:899px)'),update=()=>setMobileLayout(media.matches);media.addEventListener('change',update);return()=>media.removeEventListener('change',update);},[]);
@@ -943,7 +889,7 @@ export function App() {
   };
   useEffect(()=>{if(social.revision)void reloadAfterAction().catch(()=>{});},[social.revision]);
   const createFromRecord = async (ref: RecordRef) => {
-    try { await prepareAction(); setActionSource(ref); setShowTodos(true); setShowReceipts(false); setActionError(''); }
+    try { await prepareAction();const owner=await api.loadDiary(ref.date),event=ref.kind==='facts'?owner.document.facts.events.find(e=>e.id===ref.id):undefined,entry=ref.kind!=='facts'&&ref.kind!=='todo'?owner.document.entries?.[ref.kind].find(e=>e.id===ref.id):undefined;beginCreation('plan',{source:ref,content:ref.summary,ownerDate:ref.date,entities:event?[...event.people,...event.places,...event.activities,...event.foods]:entry?.sources||[]});setActionError(''); }
     catch (e) { setActionError(e instanceof Error ? e.message : '请先保存'); }
   };
   const openRecord = async (ref: RecordRef) => {
@@ -961,23 +907,27 @@ export function App() {
     }, 150);
     return () => clearTimeout(timer);
   }, [focusRecord, diary.date, status, showTodos, actionsRevision]);
-  const captureOwners = useRef(new Map<string, string>());
-  const saveCapture = async (draft: CaptureDraft): Promise<RecordRef> => {
-    const targetDate = captureOwners.current.get(draft.id) || (draft.kind === 'plan' ? planClock().date : draft.date);
-    captureOwners.current.set(draft.id, targetDate);
-    if (!targetDate) throw new Error('请选择日记日期');
-    await prepareAction(targetDate);
-    const target = await api.loadDiary(targetDate);
-    if (draft.kind === 'plan') {
-      const task = todoSchema.parse({ id: draft.id, repeat:draft.repeat, title: draft.content, description: draft.description, category: draft.category, important: draft.important, urgent: draft.urgent, startDate: draft.startDate, startTime: draft.startTime, dueDate: draft.date, dueTime: draft.time, priority: draft.priority, list: draft.list, tags: draft.tags, entities: Object.values(draft.entities).flat() });
-      if(draft.windowId){const saved=await api.sharedAction(draft.windowId,{mode:'create',date:targetDate,version:'0',task,operationId:draft.id});if(saved.refreshWarning)setRefreshWarning(saved.refreshWarning);}
-      else await api.changeAction({mode:'create',date:targetDate,version:target.version,task,operationId:draft.id});
-    } else {
-      const document = appendCapture(target.document, draft);
-      await api.saveDiary(targetDate, document, target.version);
+  const saveCreation = async (draft:CreationDraft):Promise<CreationResult> => {
+    const invalid=creationIssues(draft);if(invalid.length)throw new ApiError(invalid[0].message,400,{issues:invalid});
+    const targetDate=draft.kind==='plan'?draft.ownerDate:draft.date;
+    try{await prepareAction(draft.windowId?undefined:targetDate);}catch(e){throw new ApiError(e instanceof Error?e.message:'请先保存当前日记草稿',409,{code:'DIARY_NOT_READY'});}
+    let refreshWarning='';
+    if(draft.kind==='plan'&&draft.windowId){
+      const saved=await api.sharedAction(draft.windowId,{mode:'create',date:targetDate,version:'0',task:creationTask(draft),operationId:draft.id});refreshWarning=saved.refreshWarning||'';
+    }else{
+      const target=await api.loadDiary(targetDate);
+      if(draft.kind==='plan'){
+        const task=creationTask(draft),document={...target.document,todos:target.document.todos.some(t=>t.id===task.id)?target.document.todos:[...target.document.todos,task]};
+        const issues=validateDiary(document);if(issues.length)throw new ApiError(issues[0].message,400,{issues});
+        await api.changeAction({mode:'create',date:targetDate,version:target.version,sourceVersion:target.version,task,operationId:draft.id});
+      }else{
+        const document=appendCreation(target.document,draft),issues=validateDiary(document);if(issues.length)throw new ApiError(issues[0].message,400,{issues});
+        await api.saveDiary(targetDate,document,target.version);
+      }
     }
-    await reloadAfterAction().catch(()=>setRefreshWarning('记录已保存，列表或关联信息刷新失败'));
-    return {windowId:draft.kind==='plan'?draft.windowId:undefined,date:targetDate,kind:draft.kind === 'plan' ? 'todo' : draft.kind,id:draft.id,summary:draft.content.slice(0,2000)};
+    const refreshed=await Promise.allSettled([reloadAfterAction(),api.actions(),api.sharedTasks()]);
+    if(refreshed.some(result=>result.status==='rejected'))refreshWarning ||= '已创建，列表或关联信息刷新失败，可稍后刷新。';
+    return {ref:{windowId:draft.kind==='plan'?draft.windowId:undefined,date:targetDate,kind:draft.kind==='plan'?'todo':draft.kind,id:draft.id,summary:draft.content.slice(0,2000)},refreshWarning:refreshWarning||undefined};
   };
   const applyCapture = (note: string, split: SplitDraft, time: string, category: string, tags: string[], location?: { name: string; lat?: number; lng?: number }) => {
     if (category === 'learn' || category === 'input' || category === 'idea') {
@@ -1032,9 +982,8 @@ export function App() {
   const diaryCount=diary.date!==date?0:activeTab===0?diary.facts.events.length:activeTab<4?(diary.entries?.[tabs[activeTab].id as TextKind]?.length||0):0;
   const openDiaryInformation=()=>activeTab<4?invokeDiary(activeTab,'information'):setDiaryTools(true);
     const toggleTheme=()=>setTheme(theme==='light'?'dark':'light');
-  const navigate=(page:MainPage)=>{setCreateMenu(false);if(page!=='diary')setPrintedReceipts([]);if(page==='plan'||page==='diary'){setSocialPage(undefined);setShowTodos(page==='plan');}else setSocialPage(page);};
-  const closeCreate=()=>{setCreateMenu(false);requestAnimationFrame(()=>globalCreate.current?.focus());};
-  const startDiary=(index:number)=>{setCreateMenu(false);navigate('diary');setShowReceipts(false);selectTab(index);requestAnimationFrame(()=>invokeDiary(index,'create'));};
+  const navigate=(page:MainPage)=>{setCreationOpen(false);if(page!=='diary')setPrintedReceipts([]);if(page==='plan'||page==='diary'){setSocialPage(undefined);setShowTodos(page==='plan');}else setSocialPage(page);};
+  const beginCreation=(kind:CreationKind=(!socialPage&&!showTodos&&activeTab<4?tabs[activeTab].id:'plan') as CreationKind,preset?:Partial<CreationDraft>)=>{setCreationNotice(undefined);setCreationRequest({id:++creationCounter.current,kind,date,preset,defaults:{learn:{entities:diary.learn.sources},input:{entities:diary.input.names,inputKind:diary.input.kind},idea:{tags:diary.idea.tags}}});setCreationOpen(true);};
   const diaryColumnSelector=<div className="diary-column-selector"><GlassSelect label="日记栏目" value={String(activeTab)} options={[...tabs.map((t,i)=>({value:String(i),label:`${t.label}${i===activeTab&&i<4?'·'+diaryCount:''}`})),{value:'information',label:informationLabel},{value:'today',label:'回到今天'},{value:'fullscreen',label:fullscreen?'退出全屏':'全屏显示'}]} onChange={value=>{if(value==='information')openDiaryInformation();else if(value==='today')setDate(today());else if(value==='fullscreen')setFullscreen(f=>!f);else selectTab(Number(value));}}/></div>;
   return <SocialContext.Provider value={social}><DiaryControlsContext.Provider value={{register:registerDiaryControls,onReceipts:()=>setShowReceipts(true)}}><RecordContext.Provider value={{ create: ref => void createFromRecord(ref), open: ref => void openRecord(ref), focus: focusRecord }}><div className="app-shell social-app" data-main-page={socialPage||(showTodos?'plan':'diary')}>
     <a className="skip-link" href="#main-content">跳到日记内容</a>
@@ -1054,9 +1003,10 @@ export function App() {
       {!showTodos&&refreshWarning&&<div className="refresh-warning" role="status">{refreshWarning}<button className="quiet-button" onClick={()=>void refreshContext(date).then(()=>setRefreshWarning('')).catch(()=>{})}>重试刷新</button></div>}
       {reauth&&<GlassDialog label="重新登录" onClose={()=>setReauth(false)}><p className="reauth-note">登录已失效，编辑内容已保留。请使用原账号重新登录。</p><Login onAuth={async()=>{const me=await api.auth.me();if(me.id!==authState.user?.id){await api.auth.logout();setSaveError('请登录原账号后继续保存');return;}setReauth(false);await saveNow();}}/></GlassDialog>}
       {actionError && <p role="alert">{actionError}</p>}
-      {createMenu&&<CreateMenu onClose={closeCreate} planDisabled={!!planNavigation?.createDisabled} diaryDisabled={status==='loading'||status==='saving'||diary.date!==date} onPlan={()=>{setCreateMenu(false);navigate('plan');requestPlanTool('create');}} onDiary={startDiary} onAi={()=>{setCreateMenu(false);setCaptureRequest(n=>n+1);}}/>}
-      <div className="workspace-footer"><MainNavigation page={socialPage||(showTodos?'plan':'diary')} onPage={navigate} onCreate={()=>setCreateMenu(true)} trigger={globalCreate} hasDraft={hasCaptureDraft}/><UnifiedCapture headless openRequest={captureRequest} onDraftChange={setHasCaptureDraft} externalTrigger={globalCreate} compactDesktop entityContext={common} onSave={saveCapture} onOpen={ref=>void openRecord(ref)}/></div>
-      <div className="workspace-root plan-workspace" hidden={!showTodos||!!socialPage}><TodoPanel theme={theme==='dark'?'dark':'light'} onTheme={toggleTheme} active={showTodos&&!socialPage} onNavigationChange={setPlanNavigation} entityContext={common} toolbarAction={planToolbarAction} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} date={planClock().date} source={actionSource} revision={actionsRevision} focusId={focusRecord?.kind === 'todo' ? focusRecord.id : undefined} prepare={prepareAction} changed={reloadAfterAction} onOpen={ref => void openRecord(ref)} onClose={() => setShowTodos(false)} /></div>
+      <Creation key={authState.user.id} account={authState.user.id} open={creationOpen} request={creationRequest} onClose={()=>setCreationOpen(false)} trigger={globalCreate} context={common} onSave={saveCreation} onCreated={setCreationNotice} onDraftChange={setHasCaptureDraft} planDisabled={!!planNavigation?.createDisabled} diaryDisabled={status==='loading'||status==='saving'||diary.date!==date}/>
+      {creationNotice&&!creationOpen&&<div className="creation-toast" role="status"><span>{creationNotice.refreshWarning||(creationNotice.createdCount&&creationNotice.createdCount>1?`已创建 ${creationNotice.createdCount} 项`:'已创建')}</span><button type="button" onClick={()=>{const ref=creationNotice.ref;setCreationNotice(undefined);void openRecord(ref);}}>查看</button>{creationNotice.refreshWarning&&<button type="button" onClick={()=>void reloadAfterAction().then(()=>setCreationNotice(old=>old?{...old,refreshWarning:undefined}:old)).catch(()=>{})}>重试刷新</button>}<button type="button" aria-label="关闭创建提示" onClick={()=>setCreationNotice(undefined)}><X size={16}/></button></div>}
+      <div className="workspace-footer"><MainNavigation page={socialPage||(showTodos?'plan':'diary')} onPage={navigate} onCreate={()=>beginCreation()} trigger={globalCreate} hasDraft={hasCaptureDraft}/></div>
+      <div className="workspace-root plan-workspace" hidden={!showTodos||!!socialPage}><TodoPanel onCreateRequest={preset=>beginCreation('plan',preset)} theme={theme==='dark'?'dark':'light'} onTheme={toggleTheme} active={showTodos&&!socialPage} onNavigationChange={setPlanNavigation} entityContext={common} toolbarAction={planToolbarAction} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} date={planClock().date} source={actionSource} revision={actionsRevision} focusId={focusRecord?.kind === 'todo' ? focusRecord.id : undefined} prepare={prepareAction} changed={reloadAfterAction} onOpen={ref => void openRecord(ref)} onClose={() => setShowTodos(false)} /></div>
       <div className="workspace-root diary-workspace" data-record-workspace={recordWorkspace||undefined} hidden={showTodos||!!socialPage}>
       {!showReceipts&&<DiaryToolbar compact={mobileLayout} date={date} onDate={setDate} label={diaryLabel} count={diaryCount} status={status} onSave={()=>void saveNow(diaryRef.current,true)} onInformation={openDiaryInformation} informationLabel={informationLabel} theme={theme} onTheme={toggleTheme} fullscreen={fullscreen} onToggleFullscreen={mobileLayout?undefined:()=>setFullscreen(f=>!f)} navigation={mobileLayout?diaryColumnSelector:fullscreen?diaryNavigation:undefined}/>}
 
@@ -1068,7 +1018,7 @@ export function App() {
       </div>
       </div>
       {socialPage==='communications'&&<Communications onOpenWindow={(windowId,taskId)=>{navigate('plan');requestPlanTool('window',windowId);if(taskId)setFocusRecord({date:date,kind:'todo',id:taskId,summary:'',windowId});}}/>}
-      {socialPage==='mine'&&<MyAccount username={authState.user.username} theme={theme} onTheme={toggleTheme} onLogout={()=>void handleLogout()} onDemo={async code=>{await prepareAction();if(hasCaptureDraft)throw new Error('请先保存 AI 草稿，再切换演示身份');await api.demoAccount(code);window.location.reload();}}/>}
+      {socialPage==='mine'&&<MyAccount username={authState.user.username} theme={theme} onTheme={toggleTheme} onLogout={()=>void handleLogout()} onDemo={async code=>{await prepareAction();if(hasCaptureDraft)throw new Error('请先保存新增草稿，再切换演示身份');await api.demoAccount(code);window.location.reload();}}/>}
     </main>
 
     {!showTodos&&!socialPage&&<aside className="context-rail" aria-label="本周概览">

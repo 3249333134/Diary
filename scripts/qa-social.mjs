@@ -50,7 +50,7 @@ try{
 
  });
  await check('shared creation visible to all; viewer writes denied and diaries remain private',async()=>{
-  await owner.locator('.plan-window').filter({hasText:'周末一起安排'}).getByRole('button',{name:'添加待办',exact:true}).click();const dialog=owner.getByRole('dialog',{name:'计划编辑',exact:true});await dialog.getByLabel('标题',{exact:true}).fill('一起读书');assert((await dialog.locator('.shared-scope').innerText()).includes('周末一起安排'));await dialog.getByRole('button',{name:'确认创建',exact:true}).click();
+  await owner.locator('.plan-window').filter({hasText:'周末一起安排'}).getByRole('button',{name:'添加待办',exact:true}).click();const dialog=owner.getByRole('dialog',{name:'新建日程或日记',exact:true});await dialog.getByLabel('标题',{exact:true}).fill('一起读书');assert((await dialog.locator('.shared-scope').innerText()).includes('周末一起安排'));await dialog.getByRole('button',{name:'创建',exact:true}).click();
   taskId=await wait(async()=>(await call(contexts[0],'/api/shared-tasks')).tasks.find(r=>r.task.title==='一起读书')?.task.id,'shared task');
   for(const page of [editor,viewer]){await nav(page,'日程').click();await page.getByRole('navigation',{name:'计划视图'}).getByRole('button',{name:'列表',exact:true}).click();await page.locator(`[data-record-id="${taskId}"]`).waitFor();}
   assert.equal((await call(contexts[1],'/api/diaries/'+date)).document.todos.length,0);assert(await viewer.locator(`[data-record-id="${taskId}"]`).getByRole('checkbox').isDisabled());
@@ -72,7 +72,7 @@ try{
   await call(contexts[0],'/api/actions','POST',{mode:'create',date,version:diary.version,task:privateTask,operationId:randomUUID()});
   await owner.getByRole('button',{name:'筛选计划',exact:true}).click();await owner.getByRole('button',{name:'重置筛选',exact:true}).click();await owner.getByRole('button',{name:/^显示 \d+ 项/}).click();await owner.getByRole('navigation',{name:'计划视图'}).getByRole('button',{name:'列表',exact:true}).click();
   await owner.reload();await owner.getByRole('navigation',{name:'计划视图'}).getByRole('button',{name:'列表',exact:true}).click();const card=owner.locator(`[data-record-id="${privateTask.id}"]`);await card.getByRole('button',{name:/计划详情/}).click();await card.getByRole('button',{name:'修改',exact:true}).click();
-  const dialog=owner.getByRole('dialog',{name:'计划编辑',exact:true});await select(owner,dialog.locator('.copy-shared-task'),'周末一起安排');await dialog.getByRole('button',{name:'复制并共享',exact:true}).click();await owner.getByRole('dialog',{name:'确认操作'}).getByRole('button',{name:'确认',exact:true}).click();
+  const dialog=owner.getByRole('dialog',{name:'新建日程或日记',exact:true});await select(owner,dialog.locator('.copy-shared-task'),'周末一起安排');await dialog.getByRole('button',{name:'复制并共享',exact:true}).click();await owner.getByRole('dialog',{name:'确认操作'}).getByRole('button',{name:'确认',exact:true}).click();
   const shared=await wait(async()=>(await call(contexts[0],'/api/shared-tasks')).tasks.find(r=>r.task.title==='私人待办'),'copy');assert.notEqual(shared.task.id,privateTask.id);assert((await call(contexts[0],'/api/actions')).tasks.some(r=>r.task.id===privateTask.id));
  });
  await check('revoking collaboration preserves unsaved form text, disables save, and notices can be read',async()=>{

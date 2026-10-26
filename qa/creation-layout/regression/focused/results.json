@@ -1,0 +1,22 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "checks": [
+      "AI IME guard and multiple drafts parse without writes; manual form survives",
+      "calendar pending preview survives creation and retains its original location",
+      "focused day keeps drag preview and cancellation without saving"
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "checks": [
+      "AI IME guard and multiple drafts parse without writes; manual form survives",
+      "calendar pending preview survives creation and retains its original location",
+      "focused day keeps drag preview and cancellation without saving"
+    ],
+    "errors": []
+  }
+]

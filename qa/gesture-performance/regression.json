@@ -1,0 +1,26 @@
+[
+  {
+    "width": 375,
+    "checks": [
+      "same-frame last move is used on release and remains a local preview",
+      "Escape cancels the scheduled movement and release never opens an editor",
+      "quadrant drop commits only at release and uses the final target",
+      "window card moves without layout offsets and restores after Escape",
+      "window drop and private window reorder use the final location",
+      "touch intent before long press restores original card and long press cancels cleanly"
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "checks": [
+      "same-frame last move is used on release and remains a local preview",
+      "Escape cancels the scheduled movement and release never opens an editor",
+      "quadrant drop commits only at release and uses the final target",
+      "window card moves without layout offsets and restores after Escape",
+      "window drop and private window reorder use the final location",
+      "touch intent before long press restores original card and long press cancels cleanly"
+    ],
+    "errors": []
+  }
+]

@@ -1,0 +1,140 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation",
+      "edge scrolling keeps month drag reachable without committing",
+      "multi-drag changes counts immediately, keeps time and cancels without writes",
+      "unarranged long-press, shared preview markers and range cancellation",
+      "one confirmation saves once and preserves occurrence/start fields",
+      "400 write failure restores saved date",
+      "409 write failure restores saved date",
+      "partial failure keeps committed item and remaining previews",
+      "refresh failure after successful save does not roll back",
+      "completion, editing, filters and other calendar views still work"
+    ],
+    "errors": [],
+    "writes": 1
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 624,
+    "theme": "light",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 624,
+    "theme": "dark",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 1280,
+    "theme": "light",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 1280,
+    "theme": "dark",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation",
+      "edge scrolling keeps month drag reachable without committing",
+      "multi-drag changes counts immediately, keeps time and cancels without writes",
+      "unarranged long-press, shared preview markers and range cancellation",
+      "one confirmation saves once and preserves occurrence/start fields",
+      "400 write failure restores saved date",
+      "409 write failure restores saved date",
+      "partial failure keeps committed item and remaining previews",
+      "refresh failure after successful save does not roll back",
+      "completion, editing, filters and other calendar views still work"
+    ],
+    "errors": [],
+    "writes": 1
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "checks": [
+      "fixed month overview, responsive panes, no clipped controls",
+      "full agenda grouped all-day then exact time, shared and read-only controls",
+      "selection, adjacent date, keyboard and month memory",
+      "short viewport, fullscreen, empty date and single bottom navigation"
+    ],
+    "errors": [],
+    "writes": 0
+  }
+]

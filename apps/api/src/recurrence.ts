@@ -7,8 +7,8 @@ export function syncSeriesCheckins(document: DiaryDocument) {
   const todos = document.todos;
   for (const root of todos) {
     if (!root.recurrenceAnchor || root.deletedAt) continue;
-    const count = todos.filter(t => t.seriesId === root.id && t.done && !t.deletedAt).length + (root.done ? 1 : 0);
-    if (count > 0 || root.checkins) root.checkins = count;
+    const count = todos.filter(t => t.seriesId === root.id && t.done && !t.deletedAt && t.checkinEnabled!==false).length + (root.done && root.checkinEnabled!==false ? 1 : 0);
+    if (count > 0 || root.checkins || root.checkinEnabled===true) root.checkins = count;
   }
 }
 

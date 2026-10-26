@@ -1,0 +1,132 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "checks": [
+      "month has seven fixed weekday labels and 42 date cells",
+      "readable month markers and continuous grid without native completion controls",
+      "selected day precedes collapsed unscheduled section and can close completely",
+      "library view switch supports keyboard and keeps all views reachable",
+      "short viewport, text enlargement and reduced motion keep operations reachable"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "checks": [
+      "month has seven fixed weekday labels and 42 date cells",
+      "readable month markers and continuous grid without native completion controls",
+      "selected day precedes collapsed unscheduled section and can close completely",
+      "library view switch supports keyboard and keeps all views reachable",
+      "short viewport, text enlargement and reduced motion keep operations reachable"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 624,
+    "theme": "light",
+    "checks": [
+      "month has seven fixed weekday labels and 42 date cells",
+      "readable month markers and continuous grid without native completion controls",
+      "selected day precedes collapsed unscheduled section and can close completely",
+      "library view switch supports keyboard and keeps all views reachable",
+      "short viewport, text enlargement and reduced motion keep operations reachable"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 624,
+    "theme": "dark",
+    "checks": [
+      "month has seven fixed weekday labels and 42 date cells",
+      "readable month markers and continuous grid without native completion controls",
+      "selected day precedes collapsed unscheduled section and can close completely",
+      "library view switch supports keyboard and keeps all views reachable",
+      "short viewport, text enlargement and reduced motion keep operations reachable"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "checks": [
+      "month has seven fixed weekday labels and 42 date cells",
+      "readable month markers and continuous grid without native completion controls",
+      "selected day precedes collapsed unscheduled section and can close completely",
+      "library view switch supports keyboard and keeps all views reachable",
+      "short viewport, text enlargement and reduced motion keep operations reachable"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "checks": [
+      "month has seven fixed weekday labels and 42 date cells",
+      "readable month markers and continuous grid without native completion controls",
+      "selected day precedes collapsed unscheduled section and can close completely",
+      "library view switch supports keyboard and keeps all views reachable",
+      "short viewport, text enlargement and reduced motion keep operations reachable"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 1280,
+    "theme": "light",
+    "checks": [
+      "month has seven fixed weekday labels and 42 date cells",
+      "readable month markers and continuous grid without native completion controls",
+      "selected day precedes collapsed unscheduled section and can close completely",
+      "library view switch supports keyboard and keeps all views reachable",
+      "short viewport, text enlargement and reduced motion keep operations reachable"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 1280,
+    "theme": "dark",
+    "checks": [
+      "month has seven fixed weekday labels and 42 date cells",
+      "readable month markers and continuous grid without native completion controls",
+      "selected day precedes collapsed unscheduled section and can close completely",
+      "library view switch supports keyboard and keeps all views reachable",
+      "short viewport, text enlargement and reduced motion keep operations reachable"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "checks": [
+      "month has seven fixed weekday labels and 42 date cells",
+      "readable month markers and continuous grid without native completion controls",
+      "selected day precedes collapsed unscheduled section and can close completely",
+      "library view switch supports keyboard and keeps all views reachable",
+      "short viewport, text enlargement and reduced motion keep operations reachable"
+    ],
+    "errors": [],
+    "writes": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "checks": [
+      "month has seven fixed weekday labels and 42 date cells",
+      "readable month markers and continuous grid without native completion controls",
+      "selected day precedes collapsed unscheduled section and can close completely",
+      "library view switch supports keyboard and keeps all views reachable",
+      "short viewport, text enlargement and reduced motion keep operations reachable"
+    ],
+    "errors": [],
+    "writes": []
+  }
+]

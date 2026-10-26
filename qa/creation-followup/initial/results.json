@@ -1,0 +1,132 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "checks": [
+      "fullscreen shell, one action bar, stable footer and safe nested date controls",
+      "check-in choice sits beside recurrence and survives cancel and reopen",
+      "type switching and close/reopen preserve manual and AI text",
+      "short visual viewport and keyboard focus keep bottom operations reachable",
+      "AI queue uses the same full screen and one create action",
+      "date selection shows only the selected day and restores calendar scroll"
+    ],
+    "errors": []
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "checks": [
+      "fullscreen shell, one action bar, stable footer and safe nested date controls",
+      "check-in choice sits beside recurrence and survives cancel and reopen",
+      "type switching and close/reopen preserve manual and AI text",
+      "short visual viewport and keyboard focus keep bottom operations reachable",
+      "AI queue uses the same full screen and one create action",
+      "date selection shows only the selected day and restores calendar scroll"
+    ],
+    "errors": []
+  },
+  {
+    "width": 624,
+    "theme": "light",
+    "checks": [
+      "fullscreen shell, one action bar, stable footer and safe nested date controls",
+      "check-in choice sits beside recurrence and survives cancel and reopen",
+      "type switching and close/reopen preserve manual and AI text",
+      "short visual viewport and keyboard focus keep bottom operations reachable",
+      "AI queue uses the same full screen and one create action",
+      "date selection shows only the selected day and restores calendar scroll"
+    ],
+    "errors": []
+  },
+  {
+    "width": 624,
+    "theme": "dark",
+    "checks": [
+      "fullscreen shell, one action bar, stable footer and safe nested date controls",
+      "check-in choice sits beside recurrence and survives cancel and reopen",
+      "type switching and close/reopen preserve manual and AI text",
+      "short visual viewport and keyboard focus keep bottom operations reachable",
+      "AI queue uses the same full screen and one create action",
+      "date selection shows only the selected day and restores calendar scroll"
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "checks": [
+      "fullscreen shell, one action bar, stable footer and safe nested date controls",
+      "check-in choice sits beside recurrence and survives cancel and reopen",
+      "type switching and close/reopen preserve manual and AI text",
+      "short visual viewport and keyboard focus keep bottom operations reachable",
+      "AI queue uses the same full screen and one create action",
+      "date selection shows only the selected day and restores calendar scroll"
+    ],
+    "errors": []
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "checks": [
+      "fullscreen shell, one action bar, stable footer and safe nested date controls",
+      "check-in choice sits beside recurrence and survives cancel and reopen",
+      "type switching and close/reopen preserve manual and AI text",
+      "short visual viewport and keyboard focus keep bottom operations reachable",
+      "AI queue uses the same full screen and one create action",
+      "date selection shows only the selected day and restores calendar scroll"
+    ],
+    "errors": []
+  },
+  {
+    "width": 1280,
+    "theme": "light",
+    "checks": [
+      "fullscreen shell, one action bar, stable footer and safe nested date controls",
+      "check-in choice sits beside recurrence and survives cancel and reopen",
+      "type switching and close/reopen preserve manual and AI text",
+      "short visual viewport and keyboard focus keep bottom operations reachable",
+      "AI queue uses the same full screen and one create action",
+      "date selection shows only the selected day and restores calendar scroll"
+    ],
+    "errors": []
+  },
+  {
+    "width": 1280,
+    "theme": "dark",
+    "checks": [
+      "fullscreen shell, one action bar, stable footer and safe nested date controls",
+      "check-in choice sits beside recurrence and survives cancel and reopen",
+      "type switching and close/reopen preserve manual and AI text",
+      "short visual viewport and keyboard focus keep bottom operations reachable",
+      "AI queue uses the same full screen and one create action",
+      "date selection shows only the selected day and restores calendar scroll"
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "checks": [
+      "fullscreen shell, one action bar, stable footer and safe nested date controls",
+      "check-in choice sits beside recurrence and survives cancel and reopen",
+      "type switching and close/reopen preserve manual and AI text",
+      "short visual viewport and keyboard focus keep bottom operations reachable",
+      "AI queue uses the same full screen and one create action",
+      "date selection shows only the selected day and restores calendar scroll"
+    ],
+    "errors": []
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "checks": [
+      "fullscreen shell, one action bar, stable footer and safe nested date controls",
+      "check-in choice sits beside recurrence and survives cancel and reopen",
+      "type switching and close/reopen preserve manual and AI text",
+      "short visual viewport and keyboard focus keep bottom operations reachable",
+      "AI queue uses the same full screen and one create action",
+      "date selection shows only the selected day and restores calendar scroll"
+    ],
+    "errors": []
+  }
+]
