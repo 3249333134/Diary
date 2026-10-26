@@ -19,10 +19,12 @@ import './schedule-refinements.css';
 
 type Target=CalendarTarget;
 type GestureMode='decide'|'drag'|'scrub'|'scroll';
-type Gesture={row:ActionRow;x:number;y:number;startX:number;startY:number;lastX:number;lastY:number;offsetX:number;offsetY:number;width:number;startTop:number;mode:GestureMode;timer?:number;pointer:number;el:HTMLElement;target?:Target;date:string;minutes:number;edgeTick:number};
+type Gesture={row:ActionRow;x:number;y:number;startX:number;startY:number;lastX:number;lastY:number;offsetX:number;offsetY:number;width:number;startTop:number;mode:GestureMode;timer?:number;pointer:number;el:HTMLElement;target?:Target;date:string;startMinutes:number;minutes:number;edgeTick:number};
 type CanvasPan={pointer:number;x:number;y:number;nextX:number;nextY:number;left:number;top:number;el:HTMLDivElement;moved:boolean};
 const minutesOf=(time:string)=>{const[h,m]=time.split(':').map(Number);return(h||0)*60+(m||0);};
 const formatMinutes=(minutes:number)=>`${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;
+/** 拖动/滑动调时间时使用完整 24 小时刻度，落点连续，不会跳过被压缩的小时 */
+const ALL_HOURS=Array.from({length:24},(_,hour)=>hour);
 export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,active=true,showAllHours=false,onInteractionChange,onOpenHoursSettings,monthDate,onMonthDate,navigationRevision=0}:{navigationRevision?:number;monthDate?:string;onMonthDate:(date:string)=>void;onOpenHoursSettings:()=>void;view:CalendarView;anchor:string;showAllHours?:boolean;onInteractionChange?:(state:{dragging:boolean;pending:boolean;saving:boolean})=>void;rows:ActionRow[];busy:boolean;onEdit:(row:ActionRow)=>void;onMove:(row:ActionRow,target:Target)=>Promise<boolean>;onToggle:(row:ActionRow)=>void;active?:boolean}) {
   const range=useMemo(()=>calendarRange(anchor,view),[anchor,view]);
   /** 两周视图可在两端继续扩展，滑动即可看到更早/更晚的周 */
@@ -68,8 +70,10 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   const contentHeight=(date:string)=>Math.max(60,...[...markersFor(date).values()].map(marker=>(marker.lane+1)*LANE_HEIGHT+8),(rowsByDate.get(date)||[]).filter(row=>!planDueTime(row.task)).length*LANE_HEIGHT+8);
   const rowHeight=(date:string)=>frozen?.heights[date]||contentHeight(date);
   const axisWidth=Math.max(hours.length*HOUR_WIDTH,...[...markersByDate.values()].flatMap(markers=>[...markers.values()].map(marker=>marker.anchor+DEADLINE_WIDTH+12)));
-  const freeze=(row:ActionRow)=>setFrozen(old=>old||{hours:hours.length?hours:planDueTime(row.task)?[Number(planDueTime(row.task)!.slice(0,2))]:[],heights:Object.fromEntries(days.map(date=>[date,contentHeight(date)])),allDay:allDay||!planDueTime(row.task)});
-  /** 冻结刻度后保持原刻度不变，拖动与最终结果都不会跳到另一套时间轴 */
+  const freeze=(row:ActionRow,allHours=false)=>setFrozen(old=>old||{hours:allHours?ALL_HOURS:hours.length?hours:planDueTime(row.task)?[Number(planDueTime(row.task)!.slice(0,2))]:[],heights:Object.fromEntries(days.map(date=>[date,contentHeight(date)])),allDay:allDay||!planDueTime(row.task)});
+  /** 拖动时切换为完整时间线，横向滚动补偿让卡片仍停在手指下方 */
+  const anchorShift=useRef<number|null>(null);
+  useEffect(()=>{if(anchorShift.current===null)return;const box=scroll.current;if(box)box.scrollLeft+=anchorShift.current;anchorShift.current=null;},[frozen]);
   useEffect(()=>{const box=scroll.current;if(!box)return;const observer=new ResizeObserver(()=>setViewportWidth(box.clientWidth));observer.observe(box);return()=>observer.disconnect();},[]);
   useEffect(()=>{
     const box=scroll.current;if(!box||!active||view==='month')return;
@@ -149,21 +153,16 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     if(kept.length!==pending.length){setPending(kept);setBatchMessage('共享窗口或权限已变化，对应未确认改期已撤销。');if(!kept.length)setFrozen(undefined);}
     if(gesture.current?.row.windowId&&!allowed.has(calendarRowKey(gesture.current.row)))end(false);
   },[rows]);
-  /** Dragging near the timeline edge grows the frozen hour axis so deadlines can pass the visible range. */
-  const extendHoursTo=(hour:number)=>{
-    if(hour<0||hour>23)return;
-    setFrozen(old=>old&&!old.hours.includes(hour)?{...old,hours:[...old.hours,hour].sort((a,b)=>a-b)}:old);
-  };
+  /** 指针贴着屏幕边缘时继续推进截止时间 */
   const applyScrub=(g:Gesture)=>{
     g.target={date:g.date,time:formatMinutes(g.minutes)};
     publishDrag(g);
   };
-  /** 滑动调时间沿用当前刻度（可能是压缩后的可见小时），落点与看到的列一一对应 */
-  const scrubMinutes=(g:Gesture)=>{
-    const cell=scroll.current?.querySelector<HTMLElement>(`[data-timed="true"][data-calendar-date="${g.date}"]`);
-    if(!cell)return g.minutes;
-    const time=timelineTime(g.x-cell.getBoundingClientRect().left,hoursRef.current);
-    return time?minutesOf(time):g.minutes;
+  /** 拖动时展开为完整 24 小时刻度，并补偿横向滚动让卡片停在手指下方 */
+  const freezeFull=(row:ActionRow)=>{
+    const time=planDueTime(row.task);
+    if(time)anchorShift.current=minutesOf(time)/60*HOUR_WIDTH-timelineOffset(time,hoursRef.current);
+    freeze(row,true);
   };
   const publishDrag=(g:Gesture)=>setDrag(old=>old?.row===g.row&&old.target?.date===g.target?.date&&old.target?.time===g.target?.time?old:{row:g.row,target:g.target});
   const cancel=()=>{if(saving.current)return;setPending([]);setBatchMessage('');end();};
@@ -202,14 +201,14 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
       g.edgeTick++;
       if(g.mode==='scrub'){
         // Keep pushing the deadline while the pointer hugs the screen edge.
-        if(g.x<r.left+28){box.scrollLeft-=24;if(g.edgeTick%4===0){const hs=hoursRef.current;extendHoursTo((hs.length?hs[0]:1)-1);}g.minutes=scrubMinutes(g);applyScrub(g);}
-        else if(g.x>r.right-28){box.scrollLeft+=24;if(g.edgeTick%4===0){const hs=hoursRef.current;extendHoursTo((hs.length?hs[hs.length-1]:22)+1);}g.minutes=scrubMinutes(g);applyScrub(g);}
+        if(g.x<r.left+28){box.scrollLeft-=24;if(g.edgeTick%2===0&&g.minutes>0){g.minutes=Math.max(0,g.minutes-15);applyScrub(g);}}
+        else if(g.x>r.right-28){box.scrollLeft+=24;if(g.edgeTick%2===0&&g.minutes<1435){g.minutes=Math.min(1435,g.minutes+15);applyScrub(g);}}
         return;
       }
       if(g.mode!=='drag')return;
       if(g.y<r.top+50)box.scrollTop-=14;else if(g.y>r.bottom-50)box.scrollTop+=14;
-      if(g.x<r.left+35){box.scrollLeft-=14;if(g.edgeTick%4===0){const hs=hoursRef.current;extendHoursTo((hs.length?hs[0]:1)-1);}}
-      else if(g.x>r.right-35){box.scrollLeft+=14;if(g.edgeTick%4===0){const hs=hoursRef.current;extendHoursTo((hs.length?hs[hs.length-1]:22)+1);}}
+      if(g.x<r.left+35)box.scrollLeft-=14;
+      else if(g.x>r.right-35)box.scrollLeft+=14;
       updateTarget();
     },35);
     return()=>window.clearInterval(timer);
@@ -224,10 +223,10 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     const el=e.currentTarget.closest<HTMLElement>('.calendar-chip')!,rect=el.getBoundingClientRect(),minutes=minutesOf(planDueTime(row.task)||'12:00');
     const date=row.task.dueDate||row.task.plannedDate||'';
     const startTop=(markersFor(date).get(calendarRowKey(row))?.lane||0)*LANE_HEIGHT+4;
-    const g:Gesture={row,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,offsetX:Math.min(e.clientX-rect.left,240),offsetY:e.clientY-rect.top,width:Math.max(160,Math.min(rect.width,280)),startTop,mode:'decide',pointer:e.pointerId,el,date,minutes,edgeTick:0};
+    const g:Gesture={row,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,offsetX:Math.min(e.clientX-rect.left,240),offsetY:e.clientY-rect.top,width:Math.max(160,Math.min(rect.width,280)),startTop,mode:'decide',pointer:e.pointerId,el,date,startMinutes:minutes,minutes,edgeTick:0};
     gesture.current=g;
     el.setPointerCapture(e.pointerId);
-    if(e.pointerType!=='mouse')g.timer=window.setTimeout(()=>{if(gesture.current!==g||g.mode!=='decide')return;g.mode='drag';freeze(row);setDrag({row});},350);
+    if(e.pointerType!=='mouse')g.timer=window.setTimeout(()=>{if(gesture.current!==g||g.mode!=='decide')return;g.mode='drag';freezeFull(row);setDrag({row});},350);
   };
   const move=(e:PointerEvent<HTMLDivElement>)=>{
     const g=gesture.current;if(!g||e.pointerId!==g.pointer)return;
@@ -235,15 +234,15 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
       const dx=e.clientX-g.startX,dy=e.clientY-g.startY;
       if(e.pointerType==='mouse'){
         if(Math.hypot(dx,dy)<=6)return;
-        g.mode='drag';freeze(g.row);setDrag({row:g.row});
+        g.mode='drag';freezeFull(g.row);setDrag({row:g.row});
       }else if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){
         // Vertical intent: hand the gesture to manual container scrolling.
         g.mode='scroll';window.clearTimeout(g.timer);g.lastX=e.clientX;g.lastY=e.clientY;return;
       }else if(Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)){
         window.clearTimeout(g.timer);
         if(view!=='month'&&planDueTime(g.row.task)){
-          // 保持当前刻度滑动，不切换到完整时间线
-          g.mode='scrub';freeze(g.row);
+          // 拖动期间切换完整时间线，时间连续可落点
+          g.mode='scrub';freezeFull(g.row);
         }else{g.mode='scroll';g.lastX=e.clientX;g.lastY=e.clientY;return;}
       }else return;
     }
@@ -251,7 +250,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
       g.x=e.clientX;g.y=e.clientY;pointerFrame.schedule();return;
     }
     e.preventDefault();g.x=e.clientX;g.y=e.clientY;
-    if(g.mode==='scrub')g.minutes=scrubMinutes(g);
+    if(g.mode==='scrub')g.minutes=Math.max(0,Math.min(1435,g.startMinutes+Math.round((g.x-g.startX)/HOUR_WIDTH*60/15)*15));
     pointerFrame.schedule();
   };
   const updateTarget=()=>{
