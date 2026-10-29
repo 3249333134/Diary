@@ -3,8 +3,8 @@
 .main-content[data-workspace=plan]>.mobile-workspace-switch { display:none; }
 .main-content[data-workspace=plan] .todo-panel { padding:8px; gap:0; }
 .plan-main-toolbar { display:flex; align-items:center; gap:8px; flex:0 0 60px; min-width:0; max-height:64px; padding:0 2px 8px; box-sizing:border-box; }
-.plan-date-tools { display:flex; align-items:center; gap:6px; flex-shrink:0; min-width:0; }
-.plan-date-range { font-size:12px; font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.plan-date-tools { display:flex; align-items:center; gap:6px; flex:0 1 auto; min-width:0; }
+.plan-date-range { font-size:12px; font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums; min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .plan-date-tools nav { display:flex; gap:0; }
 .plan-main-toolbar button { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; min-width:44px; min-height:44px; padding:8px; border:0; border-radius:10px; background:transparent; color:var(--text); font:inherit; font-size:12px; cursor:pointer; }
 .plan-main-toolbar button:hover { background:var(--purple-soft); }
@@ -50,10 +50,12 @@
   .main-content[data-workspace=plan]>.compact-browse-bar { display:flex; flex-shrink:0; align-items:center; gap:4px; height:52px; min-height:52px; padding:3px; box-sizing:border-box; border:1px solid var(--glass-edge); border-radius:14px; background:var(--glass); backdrop-filter:var(--glass-blur); }
   .main-content[data-workspace=plan] .plan-calendar { flex:1; min-height:0; }
   .main-content[data-workspace=plan] .todo-panel { padding:6px 8px; }
-  .plan-main-toolbar { flex-basis:60px; padding:0 0 4px; gap:4px; }
-  .plan-date-tools { gap:0; }
-  .plan-date-range { font-size:11px; }
-  .plan-date-tools nav button { min-width:44px; padding:6px; }
+  .plan-main-toolbar { flex-basis:60px; padding:0 0 4px; gap:2px; }
+  .plan-date-tools { gap:2px; flex-basis:0; max-width:38%; }
+  .plan-date-range { font-size:10px; max-width:90px; }
+  .plan-date-tools nav button { min-width:36px; min-height:40px; padding:4px; font-size:11px; }
+  .plan-toolbar-actions { gap:0; }
+  .plan-toolbar-actions button { min-width:38px; min-height:40px; padding:4px; }
   .main-content[data-workspace=plan] .plan-time-tabs { margin:0; padding:0 0 4px; gap:2px; min-height:48px; }
   .main-content[data-workspace=plan] .plan-time-tabs button { padding:6px 9px; font-size:12px; }
 }
