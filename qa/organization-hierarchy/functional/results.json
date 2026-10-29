@@ -1,0 +1,21 @@
+{
+  "results": [
+    {
+      "name": "nested department lists remain visible on mobile and branches expand independently with keyboard",
+      "passed": true
+    },
+    {
+      "name": "a department inline plus creates a fourth-level child only after preview confirmation",
+      "passed": true
+    },
+    {
+      "name": "editing a parent moves the department and keeps its complete path accurate",
+      "passed": true
+    },
+    {
+      "name": "search retains ancestor paths; cancelling a nested department preserves the structure",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

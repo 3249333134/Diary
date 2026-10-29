@@ -14,6 +14,8 @@ import { useFrameTask } from './useFrameTask';
 import { SharedPlanBadge } from './SharedPlanBadge';
 import { GripVertical, Users } from 'lucide-react';
 import { monthAgendaGroups, monthDaySummary, monthGridDates, selectedMonthDate } from './calendarMonth';
+import {useScrollMemory} from './workspaceState';
+import {useSocial} from './Social';
 import './schedule.css';
 import './schedule-refinements.css';
 
@@ -36,6 +38,8 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   const ghost=useRef<HTMLDivElement>(null);
   const gesture=useRef<Gesture|undefined>(undefined);
   const [expanded,setExpanded]=useState<string>(),[drag,setDrag]=useState<{row:ActionRow;target?:Target}>(),[pending,setPending]=useState<CalendarPreview[]>([]);
+  const {data:socialData}=useSocial();
+  const scrollRemembered=useScrollMemory(socialData.profile.code,`plan.calendar.${view}.${range.from}`,scroll,active&&rows.length>0&&!expanded);
   const timelinePosition=useRef({left:0,top:0}),dayHeading=useRef<HTMLHeadingElement>(null),dayMode=useRef(false);
   const showDay=(date:string)=>{if(scroll.current)timelinePosition.current={left:scroll.current.scrollLeft,top:scroll.current.scrollTop};setExpanded(date);};
   const closeDay=()=>{const date=expanded;setExpanded(undefined);requestAnimationFrame(()=>scroll.current?.querySelector<HTMLButtonElement>(`.timeline-date[data-calendar-date="${date}"]`)?.focus({preventScroll:true}));};
@@ -146,6 +150,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   useEffect(()=>()=>{const current=pan.current;pan.current=undefined;if(current?.el.hasPointerCapture(current.pointer))current.el.releasePointerCapture(current.pointer);},[]);
   const hoursRef=useRef<number[]>([]);hoursRef.current=hours;
   const initialScroll=useRef('');
+  const initialNavigation=useRef(navigationRevision);
   const end=(retainHours=false)=>{pointerFrame.cancel();const g=gesture.current;if(g){if(g.mode!=='decide')suppressGestureClick.current=true;window.clearTimeout(g.timer);if(g.el.hasPointerCapture(g.pointer))g.el.releasePointerCapture(g.pointer);}gesture.current=undefined;setDrag(undefined);if(!retainHours)setFrozen(undefined);};
   useEffect(()=>{
     const allowed=new Set(rows.filter(row=>!row.readOnly).map(calendarRowKey));
@@ -166,7 +171,8 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   };
   const publishDrag=(g:Gesture)=>setDrag(old=>old?.row===g.row&&old.target?.date===g.target?.date&&old.target?.time===g.target?.time?old:{row:g.row,target:g.target});
   const cancel=()=>{if(saving.current)return;setPending([]);setBatchMessage('');end();};
-  useEffect(()=>{setExpanded(undefined);setPending([]);setBatchMessage('');setMonthFocus('');setWeeks({before:0,after:0});edgeLock.current=performance.now()+700;end();},[view,anchor,active,navigationRevision]);
+  useEffect(()=>{setExpanded(undefined);setPending([]);setBatchMessage('');setMonthFocus('');setWeeks({before:0,after:0});edgeLock.current=performance.now()+700;end();},[view,anchor,navigationRevision]);
+  useEffect(()=>{if(!active){setPending([]);setBatchMessage('');end();}},[active]);
   useEffect(()=>{
     if(!pending.length)return;
     const frame=requestAnimationFrame(()=>{
@@ -181,6 +187,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     const key=range.from+showAllHours+navigationRevision;
     if(initialScroll.current===key)return;
     initialScroll.current=key;
+    if(scrollRemembered&&initialNavigation.current===navigationRevision)return;
     const frame=requestAnimationFrame(()=>{if(scroll.current){scroll.current.scrollTop=0;scroll.current.scrollLeft=showAllHours?Math.max(0,(times.filter(Boolean).length?Math.min(...times.filter(Boolean).map(t=>Number(t.slice(0,2)))):9)-1)*HOUR_WIDTH:0;}});
     return()=>cancelAnimationFrame(frame);
   },[view,anchor,showAllHours,navigationRevision]);

@@ -1,0 +1,45 @@
+{
+  "results": [
+    {
+      "name": "375 light layout",
+      "passed": true
+    },
+    {
+      "name": "375 dark layout",
+      "passed": true
+    },
+    {
+      "name": "624 light layout",
+      "passed": true
+    },
+    {
+      "name": "624 dark layout",
+      "passed": true
+    },
+    {
+      "name": "768 light layout",
+      "passed": true
+    },
+    {
+      "name": "768 dark layout",
+      "passed": true
+    },
+    {
+      "name": "1280 light layout",
+      "passed": true
+    },
+    {
+      "name": "1280 dark layout",
+      "passed": true
+    },
+    {
+      "name": "1440 light layout",
+      "passed": true
+    },
+    {
+      "name": "1440 dark layout",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

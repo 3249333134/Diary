@@ -1,6 +1,6 @@
 import type { PlanCategory, CaptureDraft, CompletionRecord, DiaryDocument, DiaryResponse, EntityRecord, EntityType, PinQuickFactRequest, QuickFact, SentenceSplitResult, TagStore, Todo, RecordRef } from "@diary/contracts";
 import type {FieldIssue} from '@diary/contracts';
-import type {SocialSnapshot,SharedWindow,SocialPerson} from '@diary/contracts';
+import type {SocialSnapshot,SharedWindow,SocialPerson,Organization,OrganizationChange,OrganizationImpact,WindowGrant} from '@diary/contracts';
 export class ApiError extends Error {
   constructor(message:string,public status=0,public data:{code?:string;issues?:FieldIssue[];requestId?:string;current?:DiaryResponse}={}) { super(message); this.name='ApiError'; }
 }
@@ -9,7 +9,22 @@ export type ActionInput = { windowId?:string;automaticRecord?: boolean; completi
 export type ParsedTodo = Pick<Todo, 'entities' | 'category' | 'important' | 'urgent' | 'startDate' | 'startTime' | 'checkinEnabled'> & { windowId?:string;repeat?: Todo['repeat']; description?: string; title: string; dueDate: string; dueTime: string; priority: string; list: string; tags: string[] };
 export type PlanView = { id: string; name: string; color: string; tags: string[] };
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+let planEpoch=0;
+const planCache=new Map<string,unknown>(),planFlights=new Map<string,Promise<unknown>>();
+export function invalidatePlanReads(){planEpoch++;planCache.clear();}
+if(typeof window!=='undefined')window.addEventListener('diary-account-change',invalidatePlanReads);
+function request<T>(path:string,init?:RequestInit):Promise<T>{
+ const method=init?.method||'GET',planRead=method==='GET'&&/^\/api\/(actions|schedule|shared-tasks)(\?|$)/.test(path);
+ if(method!=='GET'&&/^\/api\/(actions|diaries|schedule|shared-windows|organizations)/.test(path)){
+  invalidatePlanReads();return requestRaw<T>(path,init).finally(invalidatePlanReads);
+ }
+ if(!planRead)return requestRaw<T>(path,init);
+ const key=planEpoch+':'+path;if(planCache.has(key))return Promise.resolve(planCache.get(key) as T);
+ const existing=planFlights.get(key);if(existing)return existing as Promise<T>;
+ const epoch=planEpoch,flight=requestRaw<T>(path,init).then(data=>{if(epoch===planEpoch)planCache.set(key,data);return data;}).finally(()=>planFlights.delete(key));planFlights.set(key,flight);return flight;
+}
+
+async function requestRaw<T>(path: string, init?: RequestInit): Promise<T> {
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), (path === "/api/split-sentence" || path === "/api/parse-todo" || path === "/api/capture/parse") ? 30_000 : 15_000);
   try {
@@ -28,12 +43,25 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   } finally { window.clearTimeout(timer); }
 }
 
+const pendingCommands=new Map<string,string>();
+if(typeof window!=='undefined')window.addEventListener('diary-account-change',()=>pendingCommands.clear());
+async function command<T>(path:string,body:object):Promise<T>{const key=path+JSON.stringify(body),operationId=pendingCommands.get(key)||crypto.randomUUID();pendingCommands.set(key,operationId);try{const result=await request<T>(path,{method:'POST',body:JSON.stringify({...body,operationId})});pendingCommands.delete(key);return result;}catch(error){if(error instanceof ApiError&&[400,401,403,404,409].includes(error.status))pendingCommands.delete(key);throw error;}}
 export const api = {
   social:()=>request<SocialSnapshot>('/api/social'),
   friendRequest:(code:string)=>request('/api/friends',{method:'POST',body:JSON.stringify({code})}),
   respondFriend:(id:string,action:'accept'|'reject'|'withdraw')=>request(`/api/friends/${id}/respond`,{method:'POST',body:JSON.stringify({action})}),
   removeFriend:(code:string)=>request(`/api/friends/${encodeURIComponent(code)}`,{method:'DELETE'}),
-  createWindow:(name:string,color:string)=>request<{window:SharedWindow}>('/api/shared-windows',{method:'POST',body:JSON.stringify({name,color})}),
+  createWindow:(name:string,color:string,options:{organizationId?:string;departmentId?:string;grants?:WindowGrant[];codes?:string[];groupIds?:string[]}={})=>command<{window:SharedWindow}>('/api/shared-windows',{name,color,...options}),
+  saveFriendGroup:(group:{id?:string;version?:string;name:string;codes:string[];remove?:boolean})=>command<{ok:boolean}>('/api/friend-groups',group),
+  createOrganization:(name:string)=>command<{organization:Organization}>('/api/organizations',{name}),
+  organizationPreview:(id:string,change:OrganizationChange)=>request<OrganizationImpact&{version:string}>(`/api/organizations/${id}/preview`,{method:'POST',body:JSON.stringify(change)}),
+  organizationChange:(org:Organization,change:OrganizationChange)=>command<{impact:OrganizationImpact}>(`/api/organizations/${org.id}/actions`,{...change,version:org.version}),
+  inviteOrganization:(org:Organization,codes:string[],departmentIds:string[])=>command<{results:{code:string;ok:boolean;message:string}[]}>(`/api/organizations/${org.id}/invitations`,{codes,departmentIds,version:org.version}),
+  respondOrganization:(id:string,action:'accept'|'reject'|'withdraw',consent=false)=>command(`/api/organization-invitations/${id}/respond`,{action,consent}),
+  organizationAudit:(id:string)=>request<{entries:{id:string;actor:SocialPerson;action:string;createdAt:string}[]}>(`/api/organizations/${id}/audit`),
+  windowGrantsPreview:(window:SharedWindow,grants:WindowGrant[])=>request<{impact:OrganizationImpact}>(`/api/shared-windows/${window.id}/grants/preview`,{method:'POST',body:JSON.stringify({grants,version:window.version})}),
+  windowGrants:(window:SharedWindow,grants:WindowGrant[])=>command(`/api/shared-windows/${window.id}/grants`,{grants,version:window.version}),
+  inviteBatch:(id:string,codes:string[],groupIds:string[]=[],role='viewer')=>command<{results:{code:string;ok:boolean;message:string}[]}>(`/api/shared-windows/${id}/invite-batch`,{codes,groupIds,role}),
   editWindow:(window:SharedWindow,archived=false)=>request(`/api/shared-windows/${window.id}`,{method:'PATCH',body:JSON.stringify({...window,archived})}),
   inviteMember:(id:string,code:string,role='viewer')=>request(`/api/shared-windows/${id}/invite`,{method:'POST',body:JSON.stringify({code,role})}),
   changeMember:(id:string,action:string,code?:string,role?:string)=>request(`/api/shared-windows/${id}/members`,{method:'POST',body:JSON.stringify({action,code,role})}),

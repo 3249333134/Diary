@@ -5,6 +5,8 @@ import {GlassDialog} from './GlassUI';
 import {GlassSegments} from './GlassSegments';
 import {CreationFields} from './CreationFields';
 import {VoiceInput} from './VoiceInput';
+import {GlassSelect} from './GlassSelect';
+import {focusCreationIssue} from './creationFocus';
 import {FieldHint} from './FieldHint';
 import {api,ApiError} from './api';
 import {planClock} from './planFilters';
@@ -36,17 +38,14 @@ export function Creation({account,open,request,onClose,trigger,context,onSave,on
  useEffect(()=>{onDraftChange(hasCreationDraft(session));try{if(hasCreationDraft(session))localStorage.setItem(creationStorageKey(account),JSON.stringify(session));else localStorage.removeItem(creationStorageKey(account));setStorageError('');}catch{setStorageError('本地空间不足，暂时只能在当前页面保留草稿，请勿刷新。');}},[session,account,onDraftChange]);
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
  useEffect(()=>{if(body.current)body.current.scrollTop=0;},[manualKey,activeRow]);
- useEffect(()=>{const el=input.current;if(el)el.scrollTop=el.scrollHeight;},[session.text,open]);
+ useEffect(()=>{const el=input.current;if(el){el.style.height='44px';el.style.height=Math.min(88,Math.max(44,el.scrollHeight))+'px';el.scrollTop=el.scrollHeight;}},[session.text,open]);
  const close=()=>{if(guard.current||uploading)return;onClose();requestAnimationFrame(()=>trigger.current?.focus({preventScroll:true}));};
  const patch=(value:Partial<CreationDraft>)=>{if(guard.current||parsing||submitted)return;setError('');setSession(old=>activeRow?{...old,rows:old.rows.map(row=>row.draft.id===activeRow?{...row,draft:{...row.draft,...value},error:undefined}:row)}:{...old,manual:{...old.manual,[manualKey]:{...old.manual[manualKey],...value,edited:true}}});};
  const switchKind=(kind:CreationKind)=>{
   if(!activeRow)selectManual(kind);else patch({kind,...kind!=='plan'&&!draft?.date?{date:request?.date||planClock().date}:{}});
   if(kind!=='plan')setLastDiaryKind(kind);
  };
- const focusIssue=(issue?:FieldIssue)=>{
-  const path=issue?.path||'',field=/remark|description/.test(path)?'description':/title|note|content|excerpt/.test(path)?'content':path;
-  requestAnimationFrame(()=>{const container=body.current?.querySelector<HTMLElement>(`[data-create-field="${CSS.escape(field)}"]`)||body.current?.querySelector<HTMLElement>('[data-create-field="content"]'),el=container?.matches('input,textarea,button')?container:container?.querySelector<HTMLElement>('button,input:not([hidden]),textarea')||container;el?.scrollIntoView({block:'center'});el?.focus({preventScroll:true});});
- };
+ const focusIssue=(issue?:FieldIssue)=>requestAnimationFrame(()=>focusCreationIssue(body.current,issue?.path));
  const pending=session.rows.filter(row=>row.state!=='saved');
  const canParse=!!session.text.trim()&&session.text.length<=10000&&!parsing&&!listening&&!busy;
  const parse=async(text=session.text)=>{
@@ -113,7 +112,10 @@ export function Creation({account,open,request,onClose,trigger,context,onSave,on
   <div className="creation-body" ref={body}>
    <div className="creation-form">
     {draft?.kind!=='plan'&&<GlassSegments label="日记类型" value={draft?.kind||'facts'} options={(['facts','learn','input','idea'] as const).map(value=>({value,label:creationLabels[value]}))} disabled={busy||parsing||!!submitted} onChange={switchKind}/>}
-    {(!!session.rows.length||!!otherManual.length)&&<nav className="creation-queue" aria-label="新增草稿"><button type="button" disabled={busy} aria-pressed={!queueActive} onClick={()=>{setActiveRow(undefined);setError('');}}>手动填写</button>{otherManual.map(([key,draft])=><button type="button" key={key} disabled={busy} onClick={()=>{setManualKey(key);setActiveRow(undefined);setError('');}}>手动草稿 · {creationLabels[draft.kind]} · {draft.content.slice(0,16)||draft.date}</button>)}{session.rows.map((row,i)=><button type="button" disabled={busy} key={row.draft.id} aria-pressed={activeRow===row.draft.id} onClick={()=>{setActiveRow(row.draft.id);setError(row.error||'');}}>草稿 {i+1} · {creationLabels[row.draft.kind]}</button>)}</nav>}
+    <nav className="creation-modes" aria-label="新增方式"><button type="button" disabled={busy} aria-pressed={!queueActive} onClick={()=>{setActiveRow(undefined);setError('');}}>手动填写</button><button type="button" disabled={busy||!pending.length} aria-pressed={queueActive} onClick={()=>{setActiveRow(pending[0]?.draft.id);setError('');}}>AI草稿 · {pending.length}</button><small>{session.rows.filter(row=>row.state==='error').length?`${session.rows.filter(row=>row.state==='error').length}条待重试`:queueActive?'核对后一起创建':'先填写常用信息'}</small></nav>
+    {queueActive&&<GlassSelect label="核对AI草稿" value={activeRow||''} disabled={busy} onChange={id=>{setActiveRow(id);setError(session.rows.find(row=>row.draft.id===id)?.error||'');}} options={session.rows.map((row,i)=>({value:row.draft.id,label:`${i+1} · ${creationLabels[row.draft.kind]} · ${row.draft.content.slice(0,28)||'空内容'}${row.state==='error'?' · 待重试':''}`}))}/>}
+    {!queueActive&&otherManual.length>0&&<GlassSelect label="切换手动草稿" value={manualKey} disabled={busy} onChange={key=>{setManualKey(key);setError('');}} options={[{value:manualKey,label:'当前填写'},...otherManual.map(([key,row])=>({value:key,label:`${creationLabels[row.kind]} · ${row.content.slice(0,24)||row.date}`}))]}/>}
+
     {(storageError||error)&&<p className="creation-error" role="alert">{error||storageError}</p>}
     {message&&<p className="creation-message" role="status">{message}</p>}{current?.originalText&&<details className="creation-original"><summary>识别原文</summary><p>{current.originalText}</p></details>}
     {!permitted&&<div className="creation-error" role="status">共享窗口权限已变化，草稿保留，当前无法创建。<button type="button" className="quiet-button" disabled={busy} onClick={()=>patch({windowId:undefined})}>改为私人日程</button></div>}

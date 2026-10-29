@@ -1,33 +1,47 @@
 import {createContext,useContext,useEffect,useRef,useState,useCallback,type RefObject} from 'react';
-import {CalendarDays,Feather,Plus,Users,UserRound,Sparkles,X,Copy,Check,ArrowRight,Inbox,RefreshCw,LockKeyhole} from 'lucide-react';
-import type {SocialSnapshot,SharedWindow,SocialPerson} from '@diary/contracts';
-import {api} from './api';
-import {GlassDialog} from './GlassUI';
+import {CalendarDays,Feather,Plus,Users,UserRound,Copy,Check,LockKeyhole} from 'lucide-react';
+import type {SocialSnapshot,SharedWindow,SocialPerson,SocialChange} from '@diary/contracts';
+import {api,invalidatePlanReads} from './api';
+import {fullSocialChange,normalizeSocialChange,mergeSocialChanges,reconcileSocial,pendingSocialRequests} from './socialRefresh';
 import {GlassSelect} from './GlassSelect';
-import {GlassChoices} from './GlassChoices';
-import {useGlassConfirm} from './GlassConfirm';
 import {ObsidianDevices} from './ObsidianDevices';
 import './social.css';
 
 const empty:SocialSnapshot={profile:{code:'',name:''},friends:[],requests:[],invitations:[],windows:[],notices:[],cursor:0};
 export function useSocialState(userId?:number){
- const [data,setData]=useState(empty),[error,setError]=useState(''),[connected,setConnected]=useState(false),[revision,setRevision]=useState(0);
- const identity=useRef(userId);identity.current=userId;
- const refresh=useCallback(async()=>{const account=identity.current;if(!account)return;try{const next=await api.social();if(account!==identity.current)return;if(next.profile&&Array.isArray(next.windows)){setData(next);setError('');setRevision(r=>r+1);}}catch(e){if(account===identity.current)setError(e instanceof Error?e.message:'通讯暂时无法读取');}},[]);
+ const [data,setData]=useState(empty),[error,setError]=useState(''),[connected,setConnected]=useState(false),[planRevision,setPlanRevision]=useState(0),[diaryChange,setDiaryChange]=useState({revision:0,dates:undefined as string[]|undefined});
+ const identity=useRef(userId),generation=useRef(0),loadedAccount=useRef<number|undefined>(undefined),snapshot=useRef(empty),pending=useRef<SocialChange|undefined>(undefined),flight=useRef<Promise<void>|undefined>(undefined);
+ if(identity.current!==userId){identity.current=userId;generation.current++;pending.current=undefined;flight.current=undefined;}
+ const refresh=useCallback((input?:unknown):Promise<void>=>{
+  if(!identity.current)return Promise.resolve();const change=input&&Array.isArray((input as SocialChange).domains)?normalizeSocialChange(input):{domains:['social'] as SocialChange['domains']};
+  pending.current=pending.current?mergeSocialChanges(pending.current,change):change;if(flight.current)return flight.current;
+  const account=identity.current,epoch=generation.current;
+  const work=async()=>{while(pending.current&&identity.current===account&&generation.current===epoch){const batch=pending.current;pending.current=undefined;let plans=batch.domains.includes('plans');
+   try{if(batch.domains.includes('social')){const next=await api.social();if(identity.current!==account||generation.current!==epoch)return;
+    if(next.profile&&Array.isArray(next.windows)){const previous=snapshot.current;if(loadedAccount.current===account&&(JSON.stringify(previous.windows)!==JSON.stringify(next.windows)||JSON.stringify(previous.organizations)!==JSON.stringify(next.organizations)))plans=true;
+     const stable=reconcileSocial(previous,next);snapshot.current=stable;loadedAccount.current=account;setData(stable);setError('');}
+   }}catch(e){if(identity.current===account&&generation.current===epoch)setError(e instanceof Error?e.message:'通讯暂时无法读取');}
+   if(identity.current!==account||generation.current!==epoch)return;
+   if(plans){invalidatePlanReads();setPlanRevision(r=>r+1);}
+   if(batch.domains.includes('diary'))setDiaryChange(old=>({revision:old.revision+1,dates:batch.dates}));
+  }};
+  const promise=work().finally(()=>{if(generation.current===epoch)flight.current=undefined;});flight.current=promise;return promise;
+ },[]);
  useEffect(()=>{
-  if(!userId){setData(empty);return;}
-  let active=true,stream:EventSource|undefined,retry=0,reconnect:number|undefined,pending:number|undefined;
-  const update=()=>{if(!active)return;window.clearTimeout(pending);pending=window.setTimeout(()=>void refresh(),100);};
-  const connect=()=>{if(!active)return;stream=new EventSource('/api/social/events',{withCredentials:true});stream.onopen=()=>{retry=0;setConnected(true);};stream.addEventListener('change',update);stream.onerror=()=>{stream?.close();setConnected(false);reconnect=window.setTimeout(connect,Math.min(30000,1000*2**retry++));};};
-  void refresh();connect();
-  const poll=window.setInterval(()=>{if(document.visibilityState==='visible'&&stream?.readyState!==EventSource.OPEN)void refresh();},15000);
-  const visible=()=>{if(document.visibilityState==='visible')update();};document.addEventListener('visibilitychange',visible);window.addEventListener('online',update);
-  return()=>{active=false;stream?.close();clearInterval(poll);window.clearTimeout(reconnect);window.clearTimeout(pending);document.removeEventListener('visibilitychange',visible);window.removeEventListener('online',update);};
+  if(!userId){snapshot.current=empty;setData(empty);return;}
+  let active=true,stream:EventSource|undefined,retry=0,reconnect:number|undefined,timer:number|undefined,queued:SocialChange|undefined;
+  const update=(change:SocialChange=fullSocialChange())=>{if(!active)return;queued=queued?mergeSocialChanges(queued,change):change;window.clearTimeout(timer);timer=window.setTimeout(()=>{const batch=queued;queued=undefined;void refresh(batch);},100);};
+  const connect=()=>{if(!active)return;stream=new EventSource('/api/social/events',{withCredentials:true});stream.onopen=()=>{retry=0;setConnected(true);};stream.addEventListener('change',event=>{try{update(normalizeSocialChange(JSON.parse((event as MessageEvent).data)));}catch{update();}});stream.onerror=()=>{stream?.close();setConnected(false);reconnect=window.setTimeout(connect,Math.min(30000,1000*2**retry++));};};
+  void refresh(fullSocialChange());connect();
+  const poll=window.setInterval(()=>{if(document.visibilityState==='visible'&&stream?.readyState!==EventSource.OPEN)update();},15000);
+  const visible=()=>{if(document.visibilityState==='visible')update();};document.addEventListener('visibilitychange',visible);window.addEventListener('online',visible);
+  return()=>{active=false;stream?.close();clearInterval(poll);window.clearTimeout(reconnect);window.clearTimeout(timer);document.removeEventListener('visibilitychange',visible);window.removeEventListener('online',visible);};
  },[userId,refresh]);
- return {data,error,connected,revision,refresh};
+ return {data:loadedAccount.current===userId?data:empty,error,connected,planRevision,diaryChange,refresh};
 }
+
 type SocialState=ReturnType<typeof useSocialState>;
-export const SocialContext=createContext<SocialState>({data:empty,error:'',connected:false,revision:0,refresh:async()=>{}});
+export const SocialContext=createContext<SocialState>({data:empty,error:'',connected:false,planRevision:0,diaryChange:{revision:0,dates:undefined},refresh:async()=>{}});
 export const useSocial=()=>useContext(SocialContext);
 export const editableWindows=(windows:SharedWindow[])=>windows.filter(w=>w.role!=='viewer');
 export function SharedScope({value,onChange,disabled=false}:{value?:string;onChange:(id:string)=>void;disabled?:boolean}){
@@ -36,26 +50,12 @@ export function SharedScope({value,onChange,disabled=false}:{value?:string;onCha
 }
 export type MainPage='plan'|'diary'|'communications'|'mine';
 export function MainNavigation({page,onPage,onCreate,trigger,hasDraft}:{page:MainPage;onPage:(page:MainPage)=>void;onCreate:()=>void;trigger:RefObject<HTMLButtonElement|null>;hasDraft:boolean}){
- const {data}=useSocial(),unread=data.notices.filter(n=>!n.read).length+data.requests.filter(r=>r.direction==='incoming').length+data.invitations.length;
- const tab=(key:MainPage,label:string,Icon:typeof CalendarDays)=><button type="button" aria-current={page===key?'page':undefined} aria-label={label} onClick={()=>onPage(key)}><span className="global-nav-icon"><Icon size={21}/>{key==='communications'&&unread>0&&<b className="nav-badge">{unread>99?'99+':unread}</b>}</span><small>{label}</small></button>;
+ const {data}=useSocial(),unread=pendingSocialRequests(data),ordinary=data.unreadNoticeCount??data.notices.filter(n=>!n.read).length;
+ const tab=(key:MainPage,label:string,Icon:typeof CalendarDays)=><button type="button" aria-current={page===key?'page':undefined} aria-label={label} onClick={()=>onPage(key)}><span className="global-nav-icon"><Icon size={21}/>{key==='communications'&&unread>0&&<b className="nav-badge">{unread>99?'99+':unread}</b>}{key==='communications'&&!unread&&ordinary>0&&<i className="nav-unread-dot" aria-label="有未读通知"/>}</span><small>{label}</small></button>;
  return <nav className="global-navigation" aria-label="主导航">{tab('plan','日程',CalendarDays)}{tab('diary','日记',Feather)}<button ref={trigger} type="button" className="global-create workspace-create-button" aria-label="新建日程或日记" aria-haspopup="dialog" onClick={onCreate}><Plus size={27}/><span className="sr-only">新建</span>{hasDraft&&<i className="draft-dot" aria-label="有新增草稿"/>}</button>{tab('communications','通讯',Users)}{tab('mine','我的',UserRound)}</nav>;
 }
-export function SharedWindowDialog({initial,onClose,onCreated}:{initial?:SharedWindow;onClose:()=>void;onCreated?:(window:SharedWindow)=>void}){
- const {data,refresh}=useSocial(),current=initial?data.windows.find(w=>w.id===initial.id):undefined;
- const [name,setName]=useState(initial?.name||''),[color,setColor]=useState(initial?.color||'#7963bd'),[pendingInvites,setPendingInvites]=useState<Record<string,'viewer'|'editor'>>({}),[busy,setBusy]=useState(false),[error,setError]=useState('');
- const confirmation=useGlassConfirm();
- const run=async(work:()=>Promise<unknown>)=>{setBusy(true);setError('');try{await work();await refresh();}catch(e){setError(e instanceof Error?e.message:'操作失败');}finally{setBusy(false);}};
- const owner=!initial||current?.role==='owner';
- const candidates=current?data.friends.filter(f=>!current.members.some(m=>m.code===f.code)):[],invites=Object.entries(pendingInvites);
- return <GlassDialog label={initial?'共享窗口成员':'新建共享窗口'} busy={busy} onClose={onClose}>{confirmation.dialog}<div className="compact-sheet shared-window-sheet"><header><div><h2>{initial?initial.name:'新建共享窗口'}</h2><p>窗口内日程持续同步，私人日记保持私有。</p></div><button type="button" className="square-button" aria-label="关闭共享窗口" onClick={onClose} disabled={busy}><X size={18}/></button></header>{error&&<p role="alert">{error}</p>}{initial&&!current?<p role="status">此窗口已关闭或你已退出。</p>:<>{owner&&<><label>窗口名称<input aria-label="窗口名称" value={name} onChange={e=>setName(e.target.value)}/><small>{name.length}/30</small></label><label>窗口颜色<input type="color" value={color} onChange={e=>setColor(e.target.value)}/></label></>}{current&&<><h3>成员 · {current.members.filter(m=>m.status==='active').length}</h3><ul className="social-list">{current.members.map(m=><li key={m.code}><span className="social-avatar">{m.name.slice(0,1)}</span><div><strong>{m.name}</strong><small>{m.role==='owner'?'创建者':m.status==='invited'?'等待接受邀请':m.role==='editor'?'可协作':'仅查看'}</small></div>{owner&&m.role!=='owner'&&<><GlassSelect label={`${m.name}的权限`} disabled={busy} value={m.role} options={[{value:'viewer',label:'仅查看'},{value:'editor',label:'可协作'}]} onChange={role=>void run(()=>api.changeMember(current.id,'role',m.code,role))}/><button className="quiet-button" disabled={busy} onClick={()=>void run(async()=>{if(await confirmation.confirm(`移除 ${m.name}？已有个人完成事实会保留。`))await api.changeMember(current.id,'remove',m.code);})}>移除</button></>}</li>)}</ul>{owner&&<section className="shared-invite"><h3>邀请好友</h3>{candidates.length?<ul className="invite-list">{candidates.map(f=><li key={f.code}><label><input type="checkbox" disabled={busy} checked={f.code in pendingInvites} onChange={e=>setPendingInvites(old=>{const next={...old};if(e.target.checked)next[f.code]='viewer';else delete next[f.code];return next;})}/><span className="social-avatar">{f.name.slice(0,1)}</span><strong>{f.name}</strong></label>{pendingInvites[f.code]&&<GlassChoices label={`${f.name}的邀请权限`} value={pendingInvites[f.code]} options={[{value:'viewer',label:'仅查看'},{value:'editor',label:'可协作'}]} onChange={permission=>setPendingInvites(old=>({...old,[f.code]:permission as 'viewer'|'editor'}))}/>}</li>)}</ul>:<p>先在“通讯”添加好友，再邀请加入。</p>}<button type="button" className="save-button" disabled={busy||!invites.length} onClick={()=>void run(async()=>{for(const [code,permission] of invites)await api.inviteMember(current.id,code,permission);setPendingInvites({});})}>{invites.length?`发送窗口邀请（${invites.length}）`:'发送窗口邀请'}</button></section>}<p className="social-help">仅查看成员不能修改日程。完成时，所有已加入成员各生成一条完成事实，新成员不补历史。</p></>}<footer>{current&&(owner?<button className="quiet-button" disabled={busy} onClick={()=>void run(async()=>{if(await confirmation.confirm('归档此共享窗口？成员将停止同步，个人完成事实保留。')){await api.editWindow(current,true);onClose();}})}>归档窗口</button>:<button className="quiet-button" disabled={busy} onClick={()=>void run(async()=>{if(await confirmation.confirm('退出窗口并停止同步？已有完成事实将作为历史快照保留。')){await api.changeMember(current.id,'leave');onClose();}})}>退出窗口</button>)}<button className="quiet-button" disabled={busy} onClick={onClose}>关闭</button>{owner&&<button className="save-button" disabled={busy||!name.trim()||name.trim().length>30} onClick={()=>void run(async()=>{if(current)await api.editWindow({...current,name:name.trim(),color});else{const result=await api.createWindow(name.trim(),color);onCreated?.(result.window);}onClose();})}>{busy?'保存中…':current?'保存窗口信息':'创建并邀请好友'}</button>}</footer></>}</div></GlassDialog>;
-}
-
-export function Communications({onOpenWindow}:{onOpenWindow:(id:string,taskId?:string)=>void}){
- const {data,error:loadError,refresh,connected}=useSocial();const [tab,setTab]=useState('friends'),[code,setCode]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[window,setWindow]=useState<SharedWindow>();
- const confirmation=useGlassConfirm();
- const run=async(work:()=>Promise<unknown>,success='')=>{setBusy(true);setError('');setMessage('');try{await work();await refresh();setMessage(success);}catch(e){setError(e instanceof Error?e.message:'操作失败');}finally{setBusy(false);}};
- return <section className="social-workspace" aria-label="通讯">{confirmation.dialog}{window&&<SharedWindowDialog initial={window} onClose={()=>setWindow(undefined)}/>}<header className="social-heading"><div><h1>通讯</h1><small>{connected?'共同安排，保持同步':'连接恢复后将自动同步'}</small></div><button className="square-button" aria-label="刷新通讯" disabled={busy} onClick={()=>void refresh()}><RefreshCw size={18}/></button></header><nav className="social-tabs" aria-label="通讯栏目">{[['friends','好友'],['requests',`申请与邀请${data.requests.length+data.invitations.length?` · ${data.requests.length+data.invitations.length}`:''}`],['notices','日程通知']].map(([id,label])=><button type="button" key={id} aria-pressed={tab===id} onClick={()=>setTab(id)}>{label}</button>)}</nav>{(error||loadError)&&<p role="alert">{error||loadError}<button className="quiet-button" onClick={()=>void refresh()}>重试</button></p>}{message&&<p role="status">{message}</p>}<div className="social-body">{tab==='friends'?<><form className="friend-add" onSubmit={e=>{e.preventDefault();void run(async()=>{await api.friendRequest(code);setCode('');},'好友申请已发送，等待对方同意');}}><label>添加好友<input value={code} onChange={e=>setCode(e.target.value)} placeholder="输入对方的专属好友码" autoCapitalize="characters"/></label><button className="save-button" disabled={busy||!code.trim()}>发送申请</button></form><h2>好友 · {data.friends.length}</h2><ul className="social-list">{data.friends.map(friend=><li key={friend.code}><span className="social-avatar">{friend.name.slice(0,1)}</span><div><strong>{friend.name}</strong><small>{data.windows.filter(w=>w.members.some(m=>m.code===friend.code&&m.status==='active')).length} 个共同窗口</small></div><button className="quiet-button" disabled={busy} onClick={()=>void run(async()=>{if(await confirmation.confirm(`解除与 ${friend.name} 的好友关系？已有窗口成员关系不会改变，需要停止共享请退出窗口。`))await api.removeFriend(friend.code);})}>解除好友</button></li>)}</ul>{!data.friends.length&&<p className="social-empty"><Users/>把“我的”中的好友码发给朋友，一起安排下一件事。</p>}<h2>共同窗口</h2><ul className="social-list">{data.windows.map(w=><li key={w.id}><span className="social-avatar" style={{color:w.color}}><Users size={20}/></span><button className="social-row-link" onClick={()=>onOpenWindow(w.id)}><strong>{w.name}</strong><small>{w.members.filter(m=>m.status==='active').length} 位成员 · {w.role==='viewer'?'仅查看':'可协作'}</small></button><button className="quiet-button" onClick={()=>setWindow(w)}>成员</button></li>)}</ul></>:tab==='requests'?<><h2>好友申请</h2><ul className="social-list">{data.requests.map(r=><li key={r.id}><span className="social-avatar">{r.person.name.slice(0,1)}</span><div><strong>{r.person.name}</strong><small>{r.direction==='incoming'?'请求添加你为好友':'等待对方同意'}</small></div>{r.direction==='incoming'?<><button className="save-button" disabled={busy} onClick={()=>void run(()=>api.respondFriend(r.id,'accept'))}>同意</button><button className="quiet-button" disabled={busy} onClick={()=>void run(()=>api.respondFriend(r.id,'reject'))}>拒绝</button></>:<button className="quiet-button" disabled={busy} onClick={()=>void run(()=>api.respondFriend(r.id,'withdraw'))}>撤回</button>}</li>)}</ul><h2>窗口邀请</h2><ul className="social-list">{data.invitations.map(w=><li key={w.id}><span className="social-avatar"><Users size={20}/></span><div><strong>{w.name}</strong><small>{w.role==='viewer'?'仅查看':'可协作'} · 完成后为所有成员记录事实</small></div><button className="save-button" disabled={busy} onClick={()=>void run(()=>api.changeMember(w.id,'accept'))}>接受</button><button className="quiet-button" disabled={busy} onClick={()=>void run(()=>api.changeMember(w.id,'reject'))}>拒绝</button></li>)}</ul>{!data.requests.length&&!data.invitations.length&&<p className="social-empty"><Inbox/>暂时没有待处理申请。</p>}</>:<><div className="social-section-heading"><h2>日程通知</h2><button className="quiet-button" disabled={busy||!data.notices.some(n=>!n.read)} onClick={()=>void run(()=>api.readNotices(data.cursor))}>全部已读</button></div><ul className="social-list notices-list">{data.notices.map(n=><li key={n.id} data-unread={!n.read||undefined}><div><strong>{n.title}</strong><small>{new Date(n.createdAt).toLocaleString('zh-CN',{hour12:false})}</small></div>{n.windowId&&data.windows.some(w=>w.id===n.windowId)&&<button className="quiet-button" onClick={()=>{void run(()=>api.readNotices(n.id));onOpenWindow(n.windowId!,n.taskId);}}>查看</button>}</li>)}</ul>{!data.notices.length&&<p className="social-empty"><Inbox/>好友和共同日程的消息会显示在这里。</p>}</>}</div></section>;
-}
+export {SharedWindowManager as SharedWindowDialog} from './SharedWindowManager';
+export {Communications} from './Organizations';
 
 export function MyAccount({username,theme,onTheme,onLogout,onDemo}:{username:string;theme:string;onTheme:()=>void;onLogout:()=>void;onDemo:(code:string)=>Promise<void>}){
  const {data}=useSocial(),[copied,setCopied]=useState(false),[error,setError]=useState(''),[accounts,setAccounts]=useState<SocialPerson[]>([]),[busy,setBusy]=useState(false);

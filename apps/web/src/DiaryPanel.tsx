@@ -1,18 +1,20 @@
 import {createContext,useContext,useEffect,useRef,type ReactNode,type RefObject} from 'react';
 import {BookOpen, X} from 'lucide-react';
 import {GlassDialog} from './GlassUI';
+import {useScrollMemory} from './workspaceState';
 import './diary-panel.css';
 
 export type DiaryControls={create:()=>void;information:()=>void};
-export const DiaryControlsContext=createContext<{register:(id:string,controls:RefObject<DiaryControls>)=>()=>void;onReceipts:()=>void}>({register:()=>()=>{},onReceipts:()=>{}});
+export const DiaryControlsContext=createContext<{register:(id:string,controls:RefObject<DiaryControls>)=>()=>void;onReceipts:()=>void;account?:string;date?:string;column?:string;active?:boolean}>({register:()=>()=>{},onReceipts:()=>{}});
 export function DiaryPanel({id,title,onInformation,onCreate,children,className=''}:{
   id:string;title:string;onInformation:()=>void;onCreate:()=>void;children:ReactNode;className?:string;
 }) {
-  const {register}=useContext(DiaryControlsContext),controls=useRef({create:onCreate,information:onInformation});
+  const {register,account='guest',date='',column,active}=useContext(DiaryControlsContext),controls=useRef({create:onCreate,information:onInformation}),body=useRef<HTMLDivElement>(null);
+  useScrollMemory(account,'diary.'+date+'.'+id,body,active&&column===id.replace('-title',''));
   controls.current={create:onCreate,information:onInformation};
   useEffect(()=>register(id,controls),[id,register]);
   return <section className={`panel-section diary-panel ${className}`} aria-label={title}>
-    <div className="diary-panel-body" role="region" aria-label={`${title}记录区`} tabIndex={0}>{children}</div>
+    <div ref={body} className="diary-panel-body" role="region" aria-label={`${title}记录区`} tabIndex={0}>{children}</div>
   </section>;
 }
 

@@ -3,6 +3,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import {emptyDiary,todoSchema} from '../packages/contracts/dist/index.js';
 import {dragCalendar} from './calendar-drag.mjs';
+import {selectPlanView} from './plan-view.mjs';
 
 const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true});
 const output='qa/calendar-pan/'+(process.env.QA_FUNCTIONAL_ONLY?'functional':process.env.QA_CONFIRM?'confirmation':'initial');
@@ -86,14 +87,14 @@ try{for(const width of [375,624,768,1280,1440])for(const theme of ['light','dark
   assert.equal(writes.length,0);
  });
  await check('week and blank all-day column pan, bounds clamp naturally',async()=>{
-  await page.getByRole('navigation',{name:'计划视图'}).getByRole('button',{name:'周',exact:true}).tap();
+  await selectPlanView(page,'周');
   await area.evaluate(el=>{el.scrollLeft=130;el.scrollTop=120;});await pan({touch:width<900});
   await area.evaluate(el=>{el.scrollLeft=0;el.scrollTop=40;});await pan({dx:-35,dy:-45,scope:'all',touch:true});
   await area.evaluate(el=>{el.scrollLeft=0;el.scrollTop=0;});await pan({dx:30,dy:30});assert.equal((await position()).left,0);assert.equal((await position()).top,0);
   await area.evaluate(el=>{el.scrollLeft=el.scrollWidth;el.scrollTop=el.scrollHeight;});await pan({dx:-30,dy:-30});const end=await position();assert.equal(end.left,end.maxLeft);assert.equal(end.top,end.maxTop);
  });
  await check('card drag keeps local preview; panning with pending preview makes no save request',async()=>{
-  await page.getByRole('navigation',{name:'计划视图'}).getByRole('button',{name:'两周',exact:true}).tap();
+  await selectPlanView(page,'两周');
   await dragCalendar(page,{id:'pan-0',targetDate:shift(2),time:'15:15',touch:width<900});
   const preview=page.locator('.calendar-chip[data-record-id=pan-0][data-pending=true]');await preview.waitFor();
   assert.equal(writes.length,0,'before pan: '+JSON.stringify(writes));
@@ -102,9 +103,9 @@ try{for(const width of [375,624,768,1280,1440])for(const theme of ['light','dark
  });
  await check('date controls, escape cleanup, range switch and short viewport keep canvas usable',async()=>{
   await area.evaluate(el=>{el.scrollTop=0;el.scrollLeft=0;});
-  await page.locator('.timeline-date').first().click();await page.locator('.calendar-selected-day').waitFor();await page.locator('.calendar-selected-day').getByRole('button',{name:'收起',exact:true}).click();
+  await page.locator('.timeline-date').first().click();await page.locator('.calendar-focused-day').waitFor();await page.locator('.calendar-focused-day').getByRole('button',{name:'返回两周',exact:true}).click();
   const start=await blank();await page.mouse.move(start.x,start.y);await page.mouse.down();await page.mouse.move(start.x-20,start.y-20);await page.keyboard.press('Escape');const before=await position();await page.mouse.move(start.x-50,start.y-50);await page.mouse.up();assert.deepEqual(await position(),before);assert.equal(await area.getAttribute('data-panning'),null);
-  await page.getByRole('button',{name:'下一期',exact:true}).click();assert.equal(await page.locator('.calendar-timeline-row').first().getAttribute('data-date'),shift(14));await page.getByRole('button',{name:'今天',exact:true}).click();
+  await page.getByRole('button',{name:'下一段日期',exact:true}).click();assert.equal(await page.locator('.calendar-timeline-row').first().getAttribute('data-date'),shift(14));await page.getByRole('button',{name:'今天',exact:true}).click();
   await page.setViewportSize({width,height:560});await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve(null)))));await area.evaluate(el=>{el.scrollLeft=el.scrollWidth;el.scrollTop=120;});await pan({touch:true,dx:35,dy:-45});
   const g=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth,footer:document.querySelector('.workspace-footer').getBoundingClientRect().bottom,gap:document.querySelector('.workspace-footer').getBoundingClientRect().top-document.querySelector('.todo-panel').getBoundingClientRect().bottom}));assert(!g.overflow);assert(g.footer<=560);assert(Math.abs(g.gap-8)<1);
   if(!process.env.QA_FUNCTIONAL_ONLY)await page.screenshot({path:`${output}/${width}-${theme}-pan.png`});

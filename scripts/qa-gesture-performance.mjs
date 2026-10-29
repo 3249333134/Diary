@@ -1,3 +1,4 @@
+import {selectPlanView} from './plan-view.mjs';
 import {chromium} from 'playwright-core';
 import {mkdir,writeFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
@@ -12,8 +13,8 @@ try{for(const width of [375,1440]){
  const cdp=await page.context().newCDPSession(page);await cdp.send('Performance.enable');await cdp.send('Emulation.setCPUThrottlingRate',{rate:4});
  const metric=async()=>Object.fromEntries((await cdp.send('Performance.getMetrics')).metrics.map(m=>[m.name,m.value]));
  for(const [label,handleSelector,ghostSelector]of [['两周','.calendar-chip-copy','.calendar-drag-ghost'],['四象限','.plan-drag-handle','.plan-drag-preview'],['窗口','.plan-drag-handle','.plan-card-dragging']]){
-  await page.getByRole('navigation',{name:'计划视图'}).getByRole('button',{name:label,exact:true}).click();await page.waitForTimeout(250);
-  const handle=page.locator(handleSelector).first();await handle.scrollIntoViewIfNeeded();const r=await handle.boundingBox(),start={x:r.x+r.width/2,y:r.y+r.height/2};
+  await selectPlanView(page,label);await page.waitForTimeout(250);
+  const handle=label==='两周'?page.locator('.timeline-timed-cell .calendar-chip').filter({has:page.locator('input:not(:disabled):not(:checked)')}).locator('.calendar-chip-copy').first():page.locator(handleSelector+':not([disabled])').first();await handle.scrollIntoViewIfNeeded();if(label==='两周')await handle.evaluate(h=>{const el=h.closest('.calendar-scroll'),r=h.getBoundingClientRect(),b=el.getBoundingClientRect();el.scrollTop+=r.y+r.height/2-(b.y+44+(b.height-44)/2);el.scrollLeft+=r.x+r.width/2-(b.x+96+(b.width-96)/2);});await page.waitForTimeout(50);const r=await handle.boundingBox(),start={x:r.x+r.width/2,y:r.y+r.height/2};
   await page.mouse.move(start.x,start.y);await page.mouse.down();await page.mouse.move(start.x+9,start.y+9);await page.locator(ghostSelector).waitFor();
   await page.evaluate(()=>{window.__frames=[];window.__tracking=true;let previous=performance.now();const frame=now=>{window.__frames.push(now-previous);previous=now;if(window.__tracking)requestAnimationFrame(frame);};requestAnimationFrame(frame);});
   const before=await metric(),started=Date.now();

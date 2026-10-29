@@ -35,6 +35,7 @@ import { PlanCalendar, calendarRange, shiftDate } from './PlanCalendar';
 import type { CaptureDraft } from '@diary/contracts';
 const today = () => planClock().date;
 import './todos.css';
+import {useWorkspaceState} from './workspaceState';
 
 const PRIORITY_LABEL: Record<string, string> = { high: '高', medium: '中', low: '低' };
 const PRIORITY_COLOR: Record<string, string> = { high: '#bd3d4c', medium: '#b8860b', low: '#6b7280' };
@@ -72,7 +73,8 @@ function TodoItem({ row, busy, onCheck, onEdit, onDelete, onStatus, onOpenSource
   const dueTime = row.task.dueDate ? row.task.dueTime : row.task.time;
   const overdue = matchesPlan(row.task, 'overdue');
   const status = row.task.done ? 'done' : row.task.status || 'todo';
-  const [expanded, setExpanded] = useState(false);
+  const {data}=useSocial();
+  const [expanded,setExpanded]=useWorkspaceState(data.profile.code,`plan.expanded.${row.windowId||'private'}:${row.date}:${row.task.id}`,false);
   const detailsId = useId();
   const state = planState(row.task);
   const {categories}=usePlanCategories();
@@ -322,7 +324,8 @@ function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries,
   );
 }
 
-export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, revision = 0, focusId, toolbarAction, onNavigationChange, fullscreen, onToggleFullscreen, theme, onTheme, entityContext,active=true,onCreateRequest }: {
+export function TodoPanel({ account='local',date, source, prepare, changed, onOpen, onClose, revision = 0, focusId, toolbarAction, onNavigationChange, fullscreen, onToggleFullscreen, theme, onTheme, entityContext,active=true,onCreateRequest }: {
+  account?:string;
   onCreateRequest?:(preset?:Partial<CreationDraft>)=>void;entityContext: EntityContext; theme:'light'|'dark'; onTheme:()=>void;
   date: string; source?: RecordRef; revision?: number; focusId?: string;active?:boolean;
   toolbarAction?: PlanToolAction; onNavigationChange?:(state:PlanNavigationState)=>void; fullscreen?: boolean; onToggleFullscreen?: () => void;
@@ -333,7 +336,8 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
 }) {
   const {categories}=usePlanCategories();
   const social=useSocial();
-  const [newSharedWindow,setNewSharedWindow]=useState(false),[managingWindow,setManagingWindow]=useState<SharedWindow>(),[windowFilter,setWindowFilter]=useState('');
+  const [newSharedWindow,setNewSharedWindow]=useState(false),[managingWindow,setManagingWindow]=useState<SharedWindow>();
+  const [windowFilter,setWindowFilter]=useWorkspaceState(account,'plan.window','');
   const [addingCategory,setAddingCategory]=useState(false);
   const confirmation=useGlassConfirm();
   const [showFilters, setShowFilters] = useState(false);
@@ -350,16 +354,16 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
   }, [toolbarAction]);
   const [quickText, setQuickText] = useState('');
   const [parsed, setParsed] = useState<ParsedTodo | null>(null);
-  const [sourceFilter, setSourceFilter] = useState('all');
-  const [listFilter, setListFilter] = useState('');
+  const [sourceFilter, setSourceFilter] = useWorkspaceState(account,'plan.source','all');
+  const [listFilter, setListFilter] = useWorkspaceState(account,'plan.list','');
   const [createId, setCreateId] = useState(() => crypto.randomUUID());
   const [rows, setRows] = useState<ActionRow[]>([]);
-  const [filter, setFilter] = useState<PlanFilter>('all');
-  const [layout, setLayout] = useState<PlanLayout>('fortnight');
-  const [calendarDate,setCalendarDate]=useState(today);
+  const [filter, setFilter] = useWorkspaceState<PlanFilter>(account,'plan.filter','all');
+  const [layout, setLayout] = useWorkspaceState<PlanLayout>(account,'plan.layout','fortnight');
+  const [calendarDate,setCalendarDate]=useWorkspaceState(account,'plan.date',today());
   const [calendarNavigation,setCalendarNavigation]=useState(0);
-  const [monthDates,setMonthDates]=useState<Record<string,string>>({});
-  const [showAllHours,setShowAllHours]=useState(false);
+  const [monthDates,setMonthDates]=useWorkspaceState<Record<string,string>>(account,'plan.monthDates',{});
+  const [showAllHours,setShowAllHours]=useWorkspaceState(account,'plan.allHours',false);
   const [calendarInteraction,setCalendarInteraction]=useState({dragging:false,pending:false,saving:false});
   const [scheduleRows,setScheduleRows]=useState<ActionRow[]>([]);
   const [nextCursor,setNextCursor]=useState<string>();
@@ -367,8 +371,8 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
   const [horizon,setHorizon]=useState(90);
   const queryEpoch=useRef(0);
   const committedVersions=useRef(new Map<string,{before:Set<string>;after:string}>());
-  const [categoryFilter,setCategoryFilter] = useState('all');
-  const [viewFilter,setViewFilter] = useState('');
+  const [categoryFilter,setCategoryFilter] = useWorkspaceState(account,'plan.category','all');
+  const [viewFilter,setViewFilter] = useWorkspaceState(account,'plan.view','');
   const [views,setViews] = useState<PlanView[]>([]);
   const [retryMove,setRetryMove] = useState<{row:ActionRow;patch:Classification}>();
   const [batch,setBatch] = useState<Classification>();
@@ -380,7 +384,7 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
   const [completing, setCompleting] = useState<ActionRow | null>(null);
 
   const [, tick] = useState(0);
-  useEffect(() => { const timer = window.setInterval(() => tick(n => n + 1), 60000); return () => clearInterval(timer); }, []);
+  useEffect(() => { if(!active)return;const timer = window.setInterval(() => tick(n => n + 1), 60000); return () => clearInterval(timer); }, [active]);
   const refresh = async () => {
     const epoch=++queryEpoch.current,[privateData,sharedData]=await Promise.all([api.actions(),api.sharedTasks()]);const data=[...privateData.tasks,...sharedData.tasks||[]];
     const roots=data.filter(r=>r.task.recurrenceAnchor);
@@ -391,7 +395,7 @@ export function TodoPanel({ date, source, prepare, changed, onOpen, onClose, rev
     setError(previous=>previous==='计划读取失败，请重试。'?'':previous);
   };
   const projectionKey=layout==='fortnight'||layout==='week'||layout==='month'?`${layout}:${calendarDate}`:`overview:${horizon}`;
-  useEffect(() => {let current=true;setLoading(true);void refresh().catch(() => setError('计划读取失败，请重试。')).finally(()=>{if(current)setLoading(false);});return()=>{current=false;};}, [revision,projectionKey]);
+  useEffect(() => {if(!active)return;let current=true;setLoading(true);void refresh().catch(() => setError('计划读取失败，请重试。')).finally(()=>{if(current)setLoading(false);});return()=>{current=false;};}, [active,revision,projectionKey]);
   useEffect(()=>{
     const origin=createOrigin.current;
     if(parsed||busy||loading||!origin?.classList.contains('workspace-create-button'))return;

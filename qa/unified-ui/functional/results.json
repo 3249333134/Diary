@@ -1,0 +1,56 @@
+{
+  "results": [
+    {
+      "name": "notification read requests",
+      "requests": [
+        {
+          "path": "/api/social/read",
+          "method": "POST"
+        },
+        {
+          "path": "/api/social",
+          "method": "GET"
+        },
+        {
+          "path": "/api/social",
+          "method": "GET"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "name": "ordinary notices show a quiet dot; marking read does not fetch plans or diaries",
+      "passed": true
+    },
+    {
+      "name": "department detail, browser back and workspace return preserve organization and branches",
+      "passed": true
+    },
+    {
+      "name": "cached switch automation elapsed (not INP)",
+      "elapsed": 78,
+      "passed": true
+    },
+    {
+      "name": "cached plan view switches reuse reads and produce immediate visual feedback",
+      "passed": true
+    },
+    {
+      "name": "calendar day and both scroll axes survive workspace return; navigation is isolated by account",
+      "passed": true
+    },
+    {
+      "name": "collapsed form retains repeat values and reveals the first invalid hidden field",
+      "passed": true
+    },
+    {
+      "name": "incoming invitations are counted; outgoing requests are not included",
+      "passed": true
+    },
+    {
+      "name": "important plan groups ignore the old folded defaults without losing the draft",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

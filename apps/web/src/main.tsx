@@ -15,3 +15,5 @@ import "./ui-refinement.css";
 import "./calendar-surface.css";
 
 createRoot(document.getElementById("root")!).render(<StrictMode><I18nProvider locale="zh-CN"><PlanCategoryProvider><App /></PlanCategoryProvider></I18nProvider></StrictMode>);
+
+import "./unified-ui.css";

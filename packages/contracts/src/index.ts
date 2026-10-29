@@ -1,5 +1,6 @@
 import { z } from "zod";
-export type {WindowRole,SocialPerson,FriendRequest,WindowMember,SharedWindow,SocialNotice,SocialSnapshot} from './social.js';
+export type {WindowRole,SocialDomain,SocialChange,SocialPerson,FriendRequest,WindowMember,SharedWindow,SocialNotice,SocialSnapshot} from './social.js';
+export * from './organization.js';
 
 export const entityTypes = ["person", "place", "activity", "food", "thing"] as const;
 export const entityTypeSchema = z.enum(entityTypes);

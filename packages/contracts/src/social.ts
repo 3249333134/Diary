@@ -1,7 +1,9 @@
 export type WindowRole='owner'|'editor'|'viewer';
 export type SocialPerson={code:string;name:string};
+export type SocialDomain='social'|'plans'|'diary';
+export type SocialChange={domains:SocialDomain[];dates?:string[]};
 export type FriendRequest={id:string;person:SocialPerson;direction:'incoming'|'outgoing';createdAt:string};
-export type WindowMember=SocialPerson&{role:WindowRole;status:'invited'|'active'};
-export type SharedWindow={id:string;name:string;color:string;version:string;role:WindowRole;members:WindowMember[]};
+export type WindowMember=SocialPerson&{role:WindowRole;status:'invited'|'active';sources?:import('./organization.js').PermissionSource[]};
+export type SharedWindow={id:string;name:string;color:string;version:string;role:WindowRole;members:WindowMember[];scope?:'friends'|'organization';organizationId?:string;organizationName?:string;departmentId?:string;canManage?:boolean;grants?:import('./organization.js').WindowGrant[];invitationResults?:{code:string;ok:boolean;message:string}[]};
 export type SocialNotice={id:number;kind:string;title:string;windowId?:string;taskId?:string;read:boolean;createdAt:string};
-export type SocialSnapshot={profile:SocialPerson;friends:SocialPerson[];requests:FriendRequest[];invitations:SharedWindow[];windows:SharedWindow[];notices:SocialNotice[];cursor:number};
+export type SocialSnapshot={profile:SocialPerson;friends:SocialPerson[];requests:FriendRequest[];invitations:SharedWindow[];windows:SharedWindow[];notices:SocialNotice[];cursor:number;unreadNoticeCount?:number;groups?:import('./organization.js').FriendGroup[];organizations?:import('./organization.js').Organization[];organizationInvitations?:import('./organization.js').OrganizationInvitation[]};

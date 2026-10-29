@@ -1,0 +1,216 @@
+[
+  {
+    "width": 375,
+    "kind": "legacy-empty versus social-only event",
+    "legacy": [
+      "/api/social",
+      "/api/diaries/2026-10-29",
+      "/api/actions",
+      "/api/shared-tasks",
+      "/api/entities",
+      "/api/tags",
+      "/api/weeks",
+      "/api/schedule",
+      "/api/shared-tasks"
+    ],
+    "scoped": [
+      "/api/social"
+    ]
+  },
+  {
+    "width": 375,
+    "kind": "trusted-click to next animation frame (not full INP)",
+    "cpuRate": 1,
+    "max": 26.5,
+    "samples": [
+      {
+        "elapsed": 15.300000000745058
+      },
+      {
+        "target": "四象限",
+        "elapsed": 26.5
+      },
+      {
+        "elapsed": 14.199999999254942
+      },
+      {
+        "target": "窗口",
+        "elapsed": 15.899999998509884
+      },
+      {
+        "elapsed": 15
+      },
+      {
+        "target": "两周",
+        "elapsed": 18.099999997764826
+      }
+    ]
+  },
+  {
+    "width": 375,
+    "kind": "drag",
+    "view": "两周",
+    "cpuRate": 4,
+    "moves": 60,
+    "p95": 16.700000000000273,
+    "max": 16.799999999999272,
+    "frames": 60,
+    "longTasks": []
+  },
+  {
+    "width": 375,
+    "kind": "drag",
+    "view": "四象限",
+    "cpuRate": 4,
+    "moves": 60,
+    "p95": 16.799999999999272,
+    "max": 16.800000000000182,
+    "frames": 60,
+    "longTasks": []
+  },
+  {
+    "width": 375,
+    "kind": "drag",
+    "view": "窗口",
+    "cpuRate": 4,
+    "moves": 60,
+    "p95": 16.700000000000728,
+    "max": 16.800000000000182,
+    "frames": 60,
+    "longTasks": []
+  },
+  {
+    "width": 375,
+    "kind": "trusted-click to next animation frame (not full INP)",
+    "cpuRate": 4,
+    "max": 159.90000000223517,
+    "samples": [
+      {
+        "elapsed": 34.400000002235174
+      },
+      {
+        "target": "两周",
+        "elapsed": 26.199999999254942
+      },
+      {
+        "elapsed": 4.800000000745058
+      },
+      {
+        "elapsed": 50.100000001490116
+      },
+      {
+        "target": "四象限",
+        "elapsed": 159.90000000223517
+      },
+      {
+        "target": "拖动归类：性能测量 1",
+        "elapsed": 8.900000002235174
+      },
+      {
+        "elapsed": 43.5
+      },
+      {
+        "target": "窗口",
+        "elapsed": 73
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "kind": "legacy-empty versus social-only event",
+    "legacy": [
+      "/api/social",
+      "/api/diaries/2026-10-29",
+      "/api/actions",
+      "/api/shared-tasks",
+      "/api/entities",
+      "/api/tags",
+      "/api/weeks",
+      "/api/schedule",
+      "/api/shared-tasks"
+    ],
+    "scoped": [
+      "/api/social"
+    ]
+  },
+  {
+    "width": 1440,
+    "kind": "trusted-click to next animation frame (not full INP)",
+    "cpuRate": 1,
+    "max": 18.5,
+    "samples": [
+      {
+        "target": "四象限",
+        "elapsed": 14.699999999254942
+      },
+      {
+        "target": "窗口",
+        "elapsed": 18.5
+      },
+      {
+        "target": "两周",
+        "elapsed": 14.699999999254942
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "kind": "drag",
+    "view": "两周",
+    "cpuRate": 4,
+    "moves": 60,
+    "p95": 16.700000000000273,
+    "max": 16.800000000000182,
+    "frames": 60,
+    "longTasks": []
+  },
+  {
+    "width": 1440,
+    "kind": "drag",
+    "view": "四象限",
+    "cpuRate": 4,
+    "moves": 60,
+    "p95": 16.800000000000182,
+    "max": 16.800000000000182,
+    "frames": 60,
+    "longTasks": []
+  },
+  {
+    "width": 1440,
+    "kind": "drag",
+    "view": "窗口",
+    "cpuRate": 4,
+    "moves": 60,
+    "p95": 16.800000000000182,
+    "max": 16.800000000000182,
+    "frames": 60,
+    "longTasks": []
+  },
+  {
+    "width": 1440,
+    "kind": "trusted-click to next animation frame (not full INP)",
+    "cpuRate": 4,
+    "max": 65.5,
+    "samples": [
+      {
+        "target": "两周",
+        "elapsed": 12.199999999254942
+      },
+      {
+        "elapsed": 16.5
+      },
+      {
+        "target": "四象限",
+        "elapsed": 65.5
+      },
+      {
+        "target": "拖动归类：性能测量 1",
+        "elapsed": 3.600000001490116
+      },
+      {
+        "target": "窗口",
+        "elapsed": 56.5
+      }
+    ]
+  }
+]

@@ -1,0 +1,46 @@
+{
+  "results": [
+    {
+      "name": "375 light organization, grants, invite and short viewport",
+      "passed": true
+    },
+    {
+      "name": "375 dark organization, grants, invite and short viewport",
+      "passed": true
+    },
+    {
+      "name": "624 light organization, grants, invite and short viewport",
+      "passed": true
+    },
+    {
+      "name": "624 dark organization, grants, invite and short viewport",
+      "passed": true
+    },
+    {
+      "name": "768 light organization, grants, invite and short viewport",
+      "passed": true
+    },
+    {
+      "name": "768 dark organization, grants, invite and short viewport",
+      "passed": true
+    },
+    {
+      "name": "1280 light organization, grants, invite and short viewport",
+      "passed": true
+    },
+    {
+      "name": "1280 dark organization, grants, invite and short viewport",
+      "passed": true
+    },
+    {
+      "name": "1440 light organization, grants, invite and short viewport",
+      "passed": true
+    },
+    {
+      "name": "1440 dark organization, grants, invite and short viewport",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "isolatedDatabase": "C:\\Users\\HONGCH~1\\AppData\\Local\\Temp\\diary-organizations-nrqz6V"
+}

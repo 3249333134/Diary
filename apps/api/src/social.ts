@@ -2,7 +2,7 @@ import {createHash,randomBytes,randomUUID} from 'node:crypto';
 import {EventEmitter} from 'node:events';
 import type {FastifyInstance} from 'fastify';
 import {z} from 'zod';
-import {emptyDiary,diaryEventSchema,todoSchema,type Todo,type SocialSnapshot,type SharedWindow,type WindowRole} from '@diary/contracts';
+import {emptyDiary,diaryEventSchema,todoSchema,organizationAccess,type Todo,type SocialSnapshot,type SharedWindow,type WindowRole,type SocialChange,type SocialDomain} from '@diary/contracts';
 import {pool,queryRows} from './db.js';
 import {syncTransaction} from './sync-db.js';
 import {loadDiary,saveDiaryUnlocked,withVaultLock} from './vault.js';
@@ -10,7 +10,9 @@ import {serializeDiaryMarkdown,parseDiaryMarkdown} from './markdown.js';
 import {deriveOccurrence,isSeries,firstOccurrence} from './recurrence.js';
 import {addDays,assertDate,todayInTimezone} from './date.js';
 import {config} from './config.js';
+import {databaseContext} from './db-context.js';
 import {getSessionToken,verifySession,createSession,setSessionCookie} from './auth.js';
+import {ensureOrganizationTables,organizationSnapshot,organizationWindow,attachOrganizationWindow,leaveOrganizationWindow,expandFriendSelection,organizationOperation,registerOrganizations} from './organizations.js';
 
 const fail=(message:string,statusCode=400)=>Object.assign(new Error(message),{statusCode});
 const now=()=>new Date().toISOString();
@@ -18,6 +20,7 @@ const hash=(value:string)=>createHash('sha256').update(value).digest('hex');
 const uuid=z.string().uuid(),role=z.enum(['viewer','editor']);
 const metadata=z.object({name:z.string().trim().min(1).max(30),color:z.string().regex(/^#[a-f0-9]{6}$/i)});
 const events=new EventEmitter();events.setMaxListeners(0);
+export function emitSocialChange(userId:number,domains:SocialDomain[]=['social','plans'],dates?:string[]){events.emit(String(userId),{domains,dates} satisfies SocialChange);}
 type Member={user_id:number;role:WindowRole;status:string};
 type StoredTask={window_id:string;task_id:string;date:string;content:string;version:string};
 const locks=new Map<string,Promise<unknown>>();
@@ -36,6 +39,7 @@ export async function ensureSocialTables(){
   'CREATE TABLE IF NOT EXISTS shared_notice_jobs (id VARCHAR(36) PRIMARY KEY,completion_id VARCHAR(36) NOT NULL,user_id INT NOT NULL,kind VARCHAR(30) NOT NULL,title VARCHAR(300) NOT NULL,window_id VARCHAR(36) NOT NULL,task_id VARCHAR(80) NOT NULL)',
   'CREATE TABLE IF NOT EXISTS shared_fact_jobs (id VARCHAR(36) PRIMARY KEY,window_id VARCHAR(36) NOT NULL,task_id VARCHAR(80) NOT NULL,completion_id VARCHAR(36) NOT NULL,user_id INT NOT NULL,date VARCHAR(10) NOT NULL,event_id VARCHAR(36) NOT NULL,payload LONGTEXT NOT NULL,desired VARCHAR(10) NOT NULL,state VARCHAR(12) NOT NULL,created_at VARCHAR(30) NOT NULL,UNIQUE(completion_id,user_id))',
  ])await pool.query(sql+(sqlite?'':' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'));
+ await ensureOrganizationTables();
 }
 export async function socialProfile(userId:number){
  let rows=await queryRows<{friend_code:string}>('SELECT friend_code FROM social_profiles WHERE user_id = ?',[userId]);
@@ -49,11 +53,14 @@ export async function socialProfile(userId:number){
 }
 async function personId(code:string){const users=await queryRows<{user_id:number}>('SELECT user_id FROM social_profiles WHERE friend_code = ?',[code.trim().toUpperCase()]);if(!users.length)throw fail('未找到这个好友码',404);return users[0].user_id;}
 async function notice(users:number[],kind:string,title:string,windowId?:string,taskId?:string){
- for(const id of new Set(users)){await pool.query('INSERT INTO social_notices (user_id,kind,title,window_id,task_id,created_at) VALUES (?,?,?,?,?,?)',[id,kind,title,windowId||null,taskId||null,now()]);events.emit(String(id));}
+ for(const id of new Set(users)){await pool.query('INSERT INTO social_notices (user_id,kind,title,window_id,task_id,created_at) VALUES (?,?,?,?,?,?)',[id,kind,title,windowId||null,taskId||null,now()]);emitSocialChange(id,kind==='friend'? ['social']:['social','plans']);}
 }
-async function members(windowId:string){return queryRows<Member>('SELECT user_id,role,status FROM shared_members WHERE window_id = ?',[windowId]);}
+export async function notifyOrganizationChange(users:number[],title:string,domains:SocialDomain[]=['social','plans']){for(const id of new Set(users)){if(databaseContext.getStore())await pool.query('INSERT INTO shared_notice_jobs (id,completion_id,user_id,kind,title,window_id,task_id) VALUES (?,?,?,?,?,?,?)',[randomUUID(),randomUUID(),id,domains.includes('plans')?'organization':'group',title,'','']);else emitSocialChange(id,domains);}}
+async function members(windowId:string){return queryRows<Member>('SELECT user_id,role,status FROM shared_members WHERE window_id = ?'+(databaseContext.getStore()&&typeof pool.getConnection==='function'?' FOR UPDATE':''),[windowId]);}
 export async function requireWindow(windowId:string,userId:number,write=false,owner=false){
  uuid.parse(windowId);const [win]=await queryRows<{id:string;name:string;color:string;version:string;archived:number;owner_id:number}>('SELECT * FROM shared_windows WHERE id = ?',[windowId]);
+ const organization=await organizationWindow(windowId,userId);
+ if(organization){if(!win||win.archived||!organization.access.permission)throw fail('组织窗口权限已撤销',403);if(owner&&!organization.access.canManage||write&&organization.access.permission!=='editor')throw fail('没有相应的组织窗口权限',403);return {...win,role:organization.access.canManage?'owner' as const:organization.access.permission};}
  const member=(await members(windowId)).find(m=>m.user_id===userId&&m.status==='active');
  if(!win||win.archived||!member)throw fail('共享窗口不存在或你已不在窗口中',403);
  if(owner&&member.role!=='owner'||write&&member.role==='viewer')throw fail('当前为仅查看权限，不能修改此窗口',403);
@@ -62,7 +69,8 @@ export async function requireWindow(windowId:string,userId:number,write=false,ow
 async function windowInfo(id:string,userId:number):Promise<SharedWindow>{
  const [win]=await queryRows<{id:string;name:string;color:string;version:string}>('SELECT * FROM shared_windows WHERE id = ?',[id]);
  const list=(await members(id)).filter(m=>m.status==='active'||m.status==='invited');
- return {id:win.id,name:win.name,color:win.color,version:win.version,role:list.find(m=>m.user_id===userId)!.role,members:await Promise.all(list.map(async m=>({...await socialProfile(m.user_id),role:m.role,status:m.status as 'active'|'invited'})))};
+ const organization=await organizationWindow(id,userId);
+ return {id:win.id,name:win.name,color:win.color,version:win.version,role:list.find(m=>m.user_id===userId)!.role,members:await Promise.all(list.map(async m=>{const person=await socialProfile(m.user_id);return {...person,role:m.role,status:m.status as 'active'|'invited',...organization?{sources:organizationAccess(organization.org,person.code,organization.binding.department_id||undefined,organization.grants).sources}:{}};})),...organization?{scope:'organization',organizationId:organization.org.id,organizationName:organization.org.name,departmentId:organization.binding.department_id||undefined,canManage:organization.access.canManage,...organization.access.canManage?{grants:organization.grants}:{}}:{scope:'friends'}};
 }
 export async function socialSnapshot(userId:number):Promise<SocialSnapshot>{
  const profile=await socialProfile(userId);
@@ -70,7 +78,8 @@ export async function socialSnapshot(userId:number):Promise<SocialSnapshot>{
  const joins=await queryRows<{window_id:string;status:string}>('SELECT m.window_id,m.status FROM shared_members m JOIN shared_windows w ON m.window_id = w.id WHERE m.user_id = ? AND w.archived = 0 AND (m.status = ? OR m.status = ?)',[userId,'active','invited']);
  const windows=await Promise.all(joins.filter(j=>j.status==='active').map(j=>windowInfo(j.window_id,userId))),invitations=await Promise.all(joins.filter(j=>j.status==='invited').map(j=>windowInfo(j.window_id,userId)));
  const notices=await queryRows<{id:number;kind:string;title:string;window_id:string|null;task_id:string|null;is_read:number;created_at:string}>('SELECT * FROM social_notices WHERE user_id = ? ORDER BY id DESC LIMIT 100',[userId]);
- return {profile,friends:await Promise.all(pairs.filter(p=>p.status==='accepted').map(p=>socialProfile(p.sender_id===userId?p.recipient_id:p.sender_id))),requests:await Promise.all(pairs.filter(p=>p.status==='pending').map(async p=>({id:p.id,person:await socialProfile(p.sender_id===userId?p.recipient_id:p.sender_id),direction:p.sender_id===userId?'outgoing' as const:'incoming' as const,createdAt:p.created_at}))),windows,invitations,notices:notices.map(n=>({id:Number(n.id),kind:n.kind,title:n.title,windowId:n.window_id||undefined,taskId:n.task_id||undefined,read:!!n.is_read,createdAt:n.created_at})),cursor:Number(notices[0]?.id||0)};
+ const [unread]=await queryRows<{count:number}>('SELECT COUNT(*) AS count FROM social_notices WHERE user_id = ? AND is_read = 0',[userId]);
+ return {profile,unreadNoticeCount:Number(unread.count),friends:await Promise.all(pairs.filter(p=>p.status==='accepted').map(p=>socialProfile(p.sender_id===userId?p.recipient_id:p.sender_id))),requests:await Promise.all(pairs.filter(p=>p.status==='pending').map(async p=>({id:p.id,person:await socialProfile(p.sender_id===userId?p.recipient_id:p.sender_id),direction:p.sender_id===userId?'outgoing' as const:'incoming' as const,createdAt:p.created_at}))),windows,invitations,notices:notices.map(n=>({id:Number(n.id),kind:n.kind,title:n.title,windowId:n.window_id||undefined,taskId:n.task_id||undefined,read:!!n.is_read,createdAt:n.created_at})),cursor:Number(notices[0]?.id||0),...await organizationSnapshot(userId)};
 }
 export async function requestFriend(userId:number,code:string){
  const other=await personId(code);if(other===userId)throw fail('不能添加自己为好友');
@@ -82,7 +91,7 @@ export async function requestFriend(userId:number,code:string){
   if(old)await pool.query('DELETE FROM social_friends WHERE id = ?',[old.id]);
   await pool.query('INSERT INTO social_friends (id,pair_key,sender_id,recipient_id,status,created_at) VALUES (?,?,?,?,?,?)',[randomUUID(),key,userId,other,'pending',now()]);
  }));
- await notice([other],'friend',`${(await socialProfile(userId)).name} 请求添加你为好友`);events.emit(String(userId));
+ await notice([other],'friend',`${(await socialProfile(userId)).name} 请求添加你为好友`);emitSocialChange(userId,['social']);
 }
 export async function respondFriend(userId:number,id:string,action:'accept'|'reject'|'withdraw'|'remove'){
  uuid.parse(id);const [r]=await queryRows<{id:string;sender_id:number;recipient_id:number;status:string}>('SELECT * FROM social_friends WHERE id = ?',[id]);
@@ -95,12 +104,17 @@ export async function respondFriend(userId:number,id:string,action:'accept'|'rej
 }
 export async function removeFriend(userId:number,code:string){const other=await personId(code);const [r]=await queryRows<{id:string}>('SELECT id FROM social_friends WHERE pair_key = ? AND status = ?',[[userId,other].sort((a,b)=>a-b).join(':'),'accepted']);if(!r)throw fail('好友关系不存在',404);await respondFriend(userId,r.id,'remove');}
 export async function createWindow(userId:number,input:unknown){
- const data=metadata.parse(input),id=randomUUID();
- await syncTransaction(async()=>{await pool.query('INSERT INTO shared_windows (id,owner_id,name,color,version) VALUES (?,?,?,?,?)',[id,userId,data.name,data.color,randomUUID()]);await pool.query('INSERT INTO shared_members (window_id,user_id,role,status) VALUES (?,?,?,?)',[id,userId,'owner','active']);});
- events.emit(String(userId));return windowInfo(id,userId);
+ const data=metadata.extend({organizationId:uuid.optional(),departmentId:uuid.optional(),grants:z.array(z.unknown()).optional(),codes:z.array(z.string()).max(500).default([]),groupIds:z.array(uuid).max(100).default([]),operationId:uuid.optional()}).parse(input);
+ if(data.organizationId&&(data.codes.length||data.groupIds.length))throw fail('组织窗口只能授权组织成员，不能直接邀请外部好友');
+ const work=async()=>{const id=randomUUID();await pool.query('INSERT INTO shared_windows (id,owner_id,name,color,version) VALUES (?,?,?,?,?)',[id,userId,data.name,data.color,randomUUID()]);await pool.query('INSERT INTO shared_members (window_id,user_id,role,status) VALUES (?,?,?,?)',[id,userId,'owner','active']);
+  if(data.organizationId){const users=await attachOrganizationWindow(id,userId,data.organizationId,data.departmentId,data.grants||[]);await notifyOrganizationChange(users,'新增组织共享窗口：'+data.name);}
+  const invitationResults=[];if(!data.organizationId)for(const code of await expandFriendSelection(userId,data.codes,data.groupIds))try{await inviteMember(id,userId,code,'viewer');invitationResults.push({code,ok:true,message:'已邀请'});}catch(error){invitationResults.push({code,ok:false,message:error instanceof Error?error.message:'邀请失败'});}
+  return {...await windowInfo(id,userId),invitationResults};};
+ const result=data.operationId?await organizationOperation(userId,data.operationId,{createWindow:data},work):await syncTransaction(work);emitSocialChange(userId,['social']);if(data.organizationId)await notifyOrganizationChange(await Promise.all(result.members.map(m=>personId(m.code))),'组织窗口已创建');return result;
 }
 export async function inviteMember(windowId:string,userId:number,code:string,permission:'viewer'|'editor'){
  const win=await requireWindow(windowId,userId,false,true),other=await personId(code);role.parse(permission);
+ if(await organizationWindow(windowId,userId))throw fail('组织窗口请使用部门或个人授权');
  const friendship=await queryRows('SELECT id FROM social_friends WHERE pair_key = ? AND status = ?',[[userId,other].sort((a,b)=>a-b).join(':'),'accepted']);
  if(!friendship.length)throw fail('只能邀请已同意的好友');
  await serial(windowId,()=>syncTransaction(async()=>{
@@ -114,6 +128,8 @@ export async function inviteMember(windowId:string,userId:number,code:string,per
 }
 export async function changeMember(windowId:string,userId:number,action:string,code?:string,permission?:'viewer'|'editor'){
  return serial(windowId,async()=>{
+ if(action==='leave'||action==='rejoin'){if(await leaveOrganizationWindow(windowId,userId,action))return;}
+ if(await queryRows('SELECT window_id FROM organization_windows WHERE window_id = ?',[windowId]).then(rows=>rows.length))throw fail('组织窗口请使用授权设置，成员需先加入组织');
  uuid.parse(windowId);const list=await members(windowId),self=list.find(m=>m.user_id===userId);
  if(action==='accept'||action==='reject'){
   const [w]=await queryRows<{archived:number}>('SELECT archived FROM shared_windows WHERE id = ?',[windowId]);
@@ -134,13 +150,13 @@ export async function changeMember(windowId:string,userId:number,action:string,c
  });
 }
 export async function editWindow(windowId:string,userId:number,input:unknown){
- return serial(windowId,async()=>{
+ return serial(windowId,()=>syncTransaction(async()=>{
  const data=metadata.extend({version:z.string(),archived:z.boolean().default(false)}).parse(input);await requireWindow(windowId,userId,false,true);
  const [result]=await pool.query('UPDATE shared_windows SET name = ?,color = ?,archived = ?,version = ? WHERE id = ? AND version = ?',[data.name,data.color,data.archived?1:0,randomUUID(),windowId,data.version]);
  if(!(result as {affectedRows:number}).affectedRows)throw fail('窗口已被修改，请刷新重试',409);
  if(data.archived)await pool.query('UPDATE shared_fact_jobs SET state = ? WHERE window_id = ?',['frozen',windowId]);
  await notice((await members(windowId)).map(m=>m.user_id),'window',data.archived?'共享窗口已归档':'共享窗口信息已修改',windowId);
- });
+ }));
 }
 
 const storedState=(row:StoredTask)=>{const raw=row.content.match(/<!-- shared-state:([A-Za-z0-9+/=]+) -->\s*$/)?.[1];return raw?JSON.parse(Buffer.from(raw,'base64').toString()):undefined;};
@@ -198,6 +214,7 @@ export async function changeSharedTask(windowId:string,userId:number,body:unknow
   const [replay]=await queryRows<{request_hash:string;result:string}>('SELECT request_hash,result FROM shared_operations WHERE user_id = ? AND operation_id = ?',[userId,input.operationId]);
   if(replay){if(replay.request_hash!==requestHash)throw fail('操作编号已用于其他内容',409);return JSON.parse(replay.result);}
   return syncTransaction(async()=>{
+   await requireWindow(windowId,userId,true,input.mode==='purge');
    const [found]=await queryRows<StoredTask>('SELECT * FROM shared_tasks WHERE window_id = ? AND task_id = ?',[windowId,input.task.id]);
    let stored=found,old=stored?parseTask(stored):undefined,completion=stored?completionOf(stored):undefined;
    if(!old&&input.mode!=='create'&&input.task.seriesId&&input.task.occurrenceDate){
@@ -274,12 +291,13 @@ export async function processSharedFactJobs(){
  if(processing)return;processing=true;
  try{
   const notices=await queryRows<{id:string;user_id:number;kind:string;title:string;window_id:string;task_id:string}>('SELECT * FROM shared_notice_jobs LIMIT 100');
-  for(const n of notices)try{await syncTransaction(async()=>{const pending=await queryRows('SELECT id FROM shared_notice_jobs WHERE id = ?',[n.id]);if(!pending.length)return;const delivered=await queryRows('SELECT id FROM social_notices WHERE event_key = ?',[n.id]);if(!delivered.length)await pool.query('INSERT INTO social_notices (user_id,kind,title,window_id,task_id,event_key,created_at) VALUES (?,?,?,?,?,?,?)',[n.user_id,n.kind,n.title,n.window_id,n.task_id,n.id,now()]);await pool.query('DELETE FROM shared_notice_jobs WHERE id = ?',[n.id]);});events.emit(String(n.user_id));}catch{console.warn('[shared-notice]',{jobId:n.id});}
+  for(const n of notices)try{await syncTransaction(async()=>{const pending=await queryRows('SELECT id FROM shared_notice_jobs WHERE id = ?',[n.id]);if(!pending.length)return;const delivered=await queryRows('SELECT id FROM social_notices WHERE event_key = ?',[n.id]);if(!delivered.length)await pool.query('INSERT INTO social_notices (user_id,kind,title,window_id,task_id,event_key,created_at) VALUES (?,?,?,?,?,?,?)',[n.user_id,n.kind,n.title,n.window_id,n.task_id,n.id,now()]);await pool.query('DELETE FROM shared_notice_jobs WHERE id = ?',[n.id]);});emitSocialChange(n.user_id,n.kind==='group'||n.kind==='friend'?['social']:['social','plans']);}catch{console.warn('[shared-notice]',{jobId:n.id});}
   const jobs=await queryRows<{id:string;window_id:string;user_id:number;task_id:string;date:string;event_id:string;payload:string;desired:string}>('SELECT * FROM shared_fact_jobs WHERE state = ? ORDER BY created_at LIMIT 100',['pending']);
   for(const job of jobs)try{
    await serial(job.window_id,()=>withVaultLock(job.user_id,()=>syncTransaction(async()=>{
     const [current]=await queryRows<{state:string;desired:string}>('SELECT state,desired FROM shared_fact_jobs WHERE id = ?',[job.id]);
     if(current?.state!=='pending')return;
+    await organizationWindow(job.window_id,job.user_id);
     const member=(await members(job.window_id)).find(m=>m.user_id===job.user_id&&m.status==='active');
     if(!member){await pool.query('UPDATE shared_fact_jobs SET state = ? WHERE id = ?',['frozen',job.id]);return;}
     const diary=await loadDiary(job.date,job.user_id),existing=diary.document.facts.events.find(e=>e.id===job.event_id);
@@ -288,7 +306,7 @@ export async function processSharedFactJobs(){
     if((current.desired==='present'&&!existing)||(current.desired==='absent'&&existing))await saveDiaryUnlocked(job.date,diary.document,diary.version,job.user_id);
     await pool.query('UPDATE shared_fact_jobs SET state = ? WHERE id = ?',['done',job.id]);
    })));
-   diaryChanged(job.user_id);events.emit(String(job.user_id));
+   diaryChanged(job.user_id);emitSocialChange(job.user_id,['diary','plans'],[job.date]);
   }catch(error){console.warn('[shared-fact]',{jobId:job.id,errorType:error instanceof Error?error.name:'Error'});}
  }finally{processing=false;}
 }
@@ -296,6 +314,7 @@ export async function processSharedFactJobs(){
 export async function registerSocial(app:FastifyInstance,onDiaryChanged?:(userId:number)=>void){
  diaryChanged=onDiaryChanged||(()=>{});
  await ensureSocialTables();
+ await registerOrganizations(app);
  const retry=setInterval(()=>void processSharedFactJobs().catch(()=>{}),5000);retry.unref();app.addHook('onClose',async()=>clearInterval(retry));
  app.get('/api/social',request=>socialSnapshot(request.userId!));
  app.get('/api/shared-tasks',async request=>{const q=z.object({from:z.string().optional(),to:z.string().optional()}).parse(request.query);return {tasks:await listSharedTasks(request.userId!,q.from,q.to)};});
@@ -305,12 +324,13 @@ export async function registerSocial(app:FastifyInstance,onDiaryChanged?:(userId
  app.post('/api/shared-windows',async request=>({window:await createWindow(request.userId!,request.body)}));
  app.patch('/api/shared-windows/:id',async request=>{await editWindow((request.params as {id:string}).id,request.userId!,request.body);return {ok:true};});
  app.post('/api/shared-windows/:id/invite',async request=>{const data=z.object({code:z.string(),role:role.default('viewer')}).parse(request.body);await inviteMember((request.params as {id:string}).id,request.userId!,data.code,data.role);return {ok:true};});
- app.post('/api/shared-windows/:id/members',async request=>{const data=z.object({action:z.enum(['accept','reject','leave','remove','role']),code:z.string().optional(),role:role.optional()}).parse(request.body);await changeMember((request.params as {id:string}).id,request.userId!,data.action,data.code,data.role);return {ok:true};});
+ app.post('/api/shared-windows/:id/members',async request=>{const data=z.object({action:z.enum(['accept','reject','leave','rejoin','remove','role']),code:z.string().optional(),role:role.optional()}).parse(request.body);await changeMember((request.params as {id:string}).id,request.userId!,data.action,data.code,data.role);return {ok:true};});
+ app.post('/api/shared-windows/:id/invite-batch',async request=>{const id=(request.params as {id:string}).id,data=z.object({codes:z.array(z.string()).max(500),groupIds:z.array(uuid).default([]),role:role.default('viewer'),operationId:uuid}).parse(request.body);return organizationOperation(request.userId!,data.operationId,{id,...data},async()=>{await requireWindow(id,request.userId!,false,true);const results=[];for(const code of await expandFriendSelection(request.userId!,data.codes,data.groupIds))try{await inviteMember(id,request.userId!,code,data.role);results.push({code,ok:true,message:'已邀请'});}catch(error){results.push({code,ok:false,message:error instanceof Error?error.message:'邀请失败'});}return {results};});});
  app.post('/api/shared-windows/:id/actions',request=>changeSharedTask((request.params as {id:string}).id,request.userId!,request.body));
- app.post('/api/social/read',async request=>{const {through}=z.object({through:z.number().int().nonnegative()}).parse(request.body);await pool.query('UPDATE social_notices SET is_read = 1 WHERE user_id = ? AND id <= ?',[request.userId!,through]);events.emit(String(request.userId!));return {ok:true};});
+ app.post('/api/social/read',async request=>{const {through}=z.object({through:z.number().int().nonnegative()}).parse(request.body);await pool.query('UPDATE social_notices SET is_read = 1 WHERE user_id = ? AND id <= ?',[request.userId!,through]);emitSocialChange(request.userId!,['social']);return {ok:true};});
  app.get('/api/social/events',async(request,reply)=>{
   reply.hijack();reply.raw.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});
-  const userId=request.userId!,send=()=>{if(!reply.raw.destroyed)reply.raw.write('event: change\ndata: {}\n\n');};
+  const userId=request.userId!,send=(change:SocialChange={domains:['social','plans','diary']})=>{if(!reply.raw.destroyed)reply.raw.write('event: change\ndata: '+JSON.stringify(change)+'\n\n');};
   events.on(String(userId),send);send();
   const heartbeat=setInterval(()=>{void(async()=>{const token=getSessionToken(request);if(token&&await verifySession(token)!==userId){reply.raw.end();return;}if(!reply.raw.destroyed)reply.raw.write(': heartbeat\n\n');})().catch(()=>reply.raw.end());},20000);
   request.raw.on('close',()=>{clearInterval(heartbeat);events.off(String(userId),send);});

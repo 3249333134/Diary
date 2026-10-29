@@ -1,0 +1,46 @@
+{
+  "results": [
+    {
+      "name": "private friend group can select overlapping friends without changing existing relationships",
+      "passed": true
+    },
+    {
+      "name": "organization department UI previews a structural mutation before saving",
+      "passed": true
+    },
+    {
+      "name": "an organization update cannot silently replace the version or context of an open editor",
+      "passed": true
+    },
+    {
+      "name": "bulk organization invitation reports individual failures and requires consent",
+      "passed": true
+    },
+    {
+      "name": "new organization window selects a department and immediately projects all inherited members",
+      "passed": true
+    },
+    {
+      "name": "server merges multiple positions, permits personal restrictions and denies outsiders",
+      "passed": true
+    },
+    {
+      "name": "all effective members receive one completion fact; removed members keep historical snapshots",
+      "passed": true
+    },
+    {
+      "name": "window exit remains excluded across organization updates until explicitly rejoined",
+      "passed": true
+    },
+    {
+      "name": "revocation disables creating shared tasks without erasing the local form",
+      "passed": true
+    },
+    {
+      "name": "event stream fallback refreshes changes after disconnection",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "isolatedDatabase": "C:\\Users\\HONGCH~1\\AppData\\Local\\Temp\\diary-organizations-sztsb3"
+}

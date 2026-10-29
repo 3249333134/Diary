@@ -1,0 +1,19 @@
+{
+  "organizations": [
+    {
+      "id": "5e10549b-73f1-4a34-a896-b8abea8cd583",
+      "name": "双瑞",
+      "departments": 0,
+      "version": "630896be-4d12-43e6-9e3f-e8be720f0d39"
+    },
+    {
+      "id": "db9fa623-f39f-4b7a-a550-a0c2c9184fc0",
+      "name": "多部门协作示例",
+      "departments": 14,
+      "version": "ae759afb-a956-4b32-9d6d-b27893329c04"
+    }
+  ],
+  "friends": 2,
+  "windows": 1,
+  "privateTasks": 37
+}
