@@ -54,7 +54,6 @@
   .plan-date-tools { gap:0; }
   .plan-date-range { font-size:11px; }
   .plan-date-tools nav button { min-width:44px; padding:6px; }
-  .plan-main-toolbar .plan-toolbar-actions { display:none; }
   .main-content[data-workspace=plan] .plan-time-tabs { margin:0; padding:0 0 4px; gap:2px; min-height:48px; }
   .main-content[data-workspace=plan] .plan-time-tabs button { padding:6px 9px; font-size:12px; }
 }

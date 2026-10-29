@@ -8,7 +8,7 @@ import { WorkspaceToolbar } from './WorkspaceTools';
 import { GlassSelect } from './GlassSelect';
 import { GlassSegments } from './GlassSegments';
 
-export const PLAN_LAYOUTS = [['fortnight','两周'],['month','月'],['week','周'],['windows','窗口'],['list','列表'],['board','四象限']] as const;
+export const PLAN_LAYOUTS = [['fortnight','两周'],['month','月'],['week','周'],['windows','窗口'],['list','列表']] as const;
 
 export function PlanToolbar({layout,onLayout,anchor,onAnchor,filter,filterLabel,restricted,saving,onFilters,theme,onTheme,fullscreen,onToggleFullscreen}:{
   layout:PlanLayout;onLayout:(view:PlanLayout)=>void;anchor:string;onAnchor:(date:string)=>void;
