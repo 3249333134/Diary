@@ -50,6 +50,7 @@
 .shared-window-sheet .social-list .glass-select { max-width:120px; }
 .shared-window-sheet input[type=color] { width:50px;min-height:44px;padding:3px; }
 .shared-scope { display:grid;gap:6px;margin-bottom:12px; }
+.shared-scope .glass-choices { flex-wrap:wrap; }
 .shared-scope small { font-size:12px;color:var(--muted);font-weight:400;line-height:1.5; }
 .shared-task-label { color:var(--purple-ink);font-size:11px; }
 .account-identity { display:flex;align-items:center;gap:12px;margin:8px 0 24px; }

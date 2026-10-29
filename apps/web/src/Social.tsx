@@ -4,6 +4,7 @@ import type {SocialSnapshot,SharedWindow,SocialPerson,SocialChange} from '@diary
 import {api,invalidatePlanReads} from './api';
 import {fullSocialChange,normalizeSocialChange,mergeSocialChanges,reconcileSocial,pendingSocialRequests} from './socialRefresh';
 import {GlassSelect} from './GlassSelect';
+import {GlassChoices} from './GlassChoices';
 import {ObsidianDevices} from './ObsidianDevices';
 import './social.css';
 
@@ -46,7 +47,8 @@ export const useSocial=()=>useContext(SocialContext);
 export const editableWindows=(windows:SharedWindow[])=>windows.filter(w=>w.role!=='viewer');
 export function SharedScope({value,onChange,disabled=false}:{value?:string;onChange:(id:string)=>void;disabled?:boolean}){
  const {data}=useSocial();
- return <label className="shared-scope">日程归属<GlassSelect label="日程归属" disabled={disabled} value={value||''} options={[{value:'',label:'私人日程'},...editableWindows(data.windows).map(w=>({value:w.id,label:`共享 · ${w.name}`,color:w.color}))]} onChange={onChange}/>{value&&<small>窗口成员可见 · 完成后所有成员分别生成日记事实</small>}</label>;
+ const opts=[{value:'',label:'私人日程',color:undefined as string|undefined},...editableWindows(data.windows).map(w=>({value:w.id,label:w.name,color:w.color}))];
+ return <label className="shared-scope">日程归属<GlassChoices label="日程归属" disabled={disabled} value={value||''} options={opts} onChange={onChange}/>{value&&<small>窗口成员可见 · 完成后所有成员分别生成日记事实</small>}</label>;
 }
 export type MainPage='plan'|'diary'|'communications'|'mine';
 export function MainNavigation({page,onPage,onCreate,trigger,hasDraft}:{page:MainPage;onPage:(page:MainPage)=>void;onCreate:()=>void;trigger:RefObject<HTMLButtonElement|null>;hasDraft:boolean}){

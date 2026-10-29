@@ -1026,7 +1026,7 @@ export function App() {
         <div className="workspace-track" ref={trackRef} onScroll={onTrackScroll}>{tabs.map((tab, index) => <div id={`panel-${tab.id}`} role="tabpanel" aria-hidden={activeTab !== index} inert={activeTab !== index} tabIndex={activeTab === index ? 0 : -1} data-active={activeTab === index} className={`workspace-panel${index === 4 ? " full-page" : ""}`} key={tab.id}>{panel(index)}</div>)}</div>
       </div>
       </div>
-      {socialPage==='communications'&&<Communications onOpenWindow={(windowId,taskId)=>{navigate('plan');requestPlanTool('window',windowId);if(taskId)setFocusRecord({date:date,kind:'todo',id:taskId,summary:'',windowId});}}/>}
+      {socialPage==='communications'&&<Communications onOpenWindow={(windowId,taskId)=>{navigate('plan');requestPlanTool('window',windowId);if(taskId)setFocusRecord({date:date,kind:'todo',id:taskId,summary:'',windowId});}} onPublishTask={(windowId)=>{navigate('plan');beginCreation('plan',{windowId});}}/>}
       {socialPage==='mine'&&<MyAccount username={authState.user.username} theme={theme} onTheme={toggleTheme} onLogout={()=>void handleLogout()} onDemo={async code=>{await prepareAction();if(hasCaptureDraft)throw new Error('请先保存新增草稿，再切换演示身份');await api.demoAccount(code);window.location.reload();}}/>}
     </main>
 
