@@ -192,11 +192,14 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
       if(!scroll.current)return;
       scroll.current.scrollTop=0;
       scroll.current.scrollLeft=showAllHours?Math.max(0,(times.filter(Boolean).length?Math.min(...times.filter(Boolean).map(t=>Number(t.slice(0,2)))):9)-1)*HOUR_WIDTH:0;
-      // 默认把今天居中
       if(view==='fortnight'||view==='week'){
         const today=planClock().date;
         const row=scroll.current.querySelector<HTMLElement>(`.calendar-timeline-row[data-date="${today}"]`);
-        row?.scrollIntoView({block:'center'});
+        if(row){
+          requestAnimationFrame(()=>{
+            row.scrollIntoView({block:'center',inline:'start'});
+          });
+        }
       }
     });
     return()=>cancelAnimationFrame(frame);

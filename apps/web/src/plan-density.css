@@ -13,7 +13,7 @@
 .plan-main-toolbar .plan-view-switch { display:flex; align-items:center; flex:1; justify-content:flex-start; min-width:0; padding:2px; gap:0; border-radius:12px; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; background:var(--glass-item); }
 .plan-main-toolbar .plan-view-switch::-webkit-scrollbar { display:none; }
 .plan-main-toolbar .plan-view-switch button { min-height:44px; }
-.plan-main-toolbar .plan-view-switch .glass-segments { min-width:0; flex-wrap:nowrap; }
+.plan-main-toolbar .plan-view-switch .glass-segments { flex:1; min-width:0; flex-wrap:nowrap; }
 .plan-main-toolbar .plan-view-switch .glass-segments button { flex:1 1 0; min-width:28px; padding:6px 6px; }
 .plan-main-toolbar .plan-view-switch [aria-pressed=true] { background:var(--purple-soft); color:var(--purple-ink); font-weight:600; }
 .plan-toolbar-actions { display:flex; gap:2px; flex-shrink:0; }
