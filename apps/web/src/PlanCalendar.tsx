@@ -188,7 +188,17 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     if(initialScroll.current===key)return;
     initialScroll.current=key;
     if(scrollRemembered&&initialNavigation.current===navigationRevision)return;
-    const frame=requestAnimationFrame(()=>{if(scroll.current){scroll.current.scrollTop=0;scroll.current.scrollLeft=showAllHours?Math.max(0,(times.filter(Boolean).length?Math.min(...times.filter(Boolean).map(t=>Number(t.slice(0,2)))):9)-1)*HOUR_WIDTH:0;}});
+    const frame=requestAnimationFrame(()=>{
+      if(!scroll.current)return;
+      scroll.current.scrollTop=0;
+      scroll.current.scrollLeft=showAllHours?Math.max(0,(times.filter(Boolean).length?Math.min(...times.filter(Boolean).map(t=>Number(t.slice(0,2)))):9)-1)*HOUR_WIDTH:0;
+      // 默认把今天居中
+      if(view==='fortnight'||view==='week'){
+        const today=planClock().date;
+        const row=scroll.current.querySelector<HTMLElement>(`.calendar-timeline-row[data-date="${today}"]`);
+        row?.scrollIntoView({block:'center'});
+      }
+    });
     return()=>cancelAnimationFrame(frame);
   },[view,anchor,showAllHours,navigationRevision]);
   /** 滑动到两周列表两端时继续向前/向后追加一周，并保持当前内容位置不跳 */

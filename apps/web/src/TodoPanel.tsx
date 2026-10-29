@@ -211,10 +211,11 @@ function ParsePreviewModal({ text, parsed, busy, error, onConfirm, onEdit, onClo
 }
 
 /** 修改安排模态框（完整属性） */
-function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries,onCopy }: {
+function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries,onCopy,onDelete }: {
   error: string;
   onSeries:(task:Todo,stop:boolean)=>void;
   onCopy:(task:Todo,windowId:string,id:string)=>void;
+  onDelete:()=>void;
   entityContext: EntityContext;
   row: ActionRow; busy: boolean;
   onSave: (task: Todo) => void;
@@ -318,7 +319,7 @@ function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries,
             </div>
           </div>
         </div>
-        <PlanActionDock busy={busy} disabled={!title.trim()||!permitted} onCancel={onClose} onConfirm={save} label="保存"/>
+        <div className="todo-modal-footer"><button type="button" className="quiet-button plan-delete-inline" disabled={busy||!permitted} onClick={()=>onDelete()}>{row.task.deletedAt?'永久删除':'删除任务'}</button><div style={{flex:1}}/><PlanActionDock busy={busy} disabled={!title.trim()||!permitted} onCancel={onClose} onConfirm={save} label="保存"/></div>
       </div>
     </PlanDialog>
   );
@@ -648,6 +649,7 @@ export function TodoPanel({ account='local',date, source, prepare, changed, onOp
           error={error}
           busy={busy}
           onSave={saveEdit}
+          onDelete={()=>{onDelete(editing);setEditing(null);}}
           onClose={() => setEditing(null)}
         />
       )}
