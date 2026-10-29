@@ -1,11 +1,12 @@
 import {createContext,useContext,useEffect,useRef,useState,useCallback,type RefObject} from 'react';
 import {CalendarDays,Feather,Plus,Users,UserRound,Copy,Check,LockKeyhole} from 'lucide-react';
-import type {SocialSnapshot,SharedWindow,SocialPerson,SocialChange} from '@diary/contracts';
+import type {SocialSnapshot,SharedWindow,SocialPerson,SocialChange,PlanCategory} from '@diary/contracts';
 import {api,invalidatePlanReads} from './api';
 import {fullSocialChange,normalizeSocialChange,mergeSocialChanges,reconcileSocial,pendingSocialRequests} from './socialRefresh';
 import {GlassSelect} from './GlassSelect';
 import {GlassChoices} from './GlassChoices';
 import {ObsidianDevices} from './ObsidianDevices';
+import {usePlanCategories} from './PlanCategories';
 import './social.css';
 
 const empty:SocialSnapshot={profile:{code:'',name:''},friends:[],requests:[],invitations:[],windows:[],notices:[],cursor:0};
@@ -35,7 +36,7 @@ export function useSocialState(userId?:number){
   const connect=()=>{if(!active)return;stream=new EventSource('/api/social/events',{withCredentials:true});stream.onopen=()=>{retry=0;setConnected(true);};stream.addEventListener('change',event=>{try{update(normalizeSocialChange(JSON.parse((event as MessageEvent).data)));}catch{update();}});stream.onerror=()=>{stream?.close();setConnected(false);reconnect=window.setTimeout(connect,Math.min(30000,1000*2**retry++));};};
   void refresh(fullSocialChange());connect();
   const poll=window.setInterval(()=>{if(document.visibilityState==='visible'&&stream?.readyState!==EventSource.OPEN)update();},15000);
-  const visible=()=>{if(document.visibilityState==='visible')update();};document.addEventListener('visibilitychange',visible);window.addEventListener('online',visible);
+  const visible=()=>{if(document.visibilityState==='visible'&&stream?.readyState!==EventSource.OPEN)update();};document.addEventListener('visibilitychange',visible);window.addEventListener('online',visible);
   return()=>{active=false;stream?.close();clearInterval(poll);window.clearTimeout(reconnect);window.clearTimeout(timer);document.removeEventListener('visibilitychange',visible);window.removeEventListener('online',visible);};
  },[userId,refresh]);
  return {data:loadedAccount.current===userId?data:empty,error,connected,planRevision,diaryChange,refresh};
@@ -49,6 +50,24 @@ export function SharedScope({value,onChange,disabled=false}:{value?:string;onCha
  const {data}=useSocial();
  const opts=[{value:'',label:'私人日程',color:undefined as string|undefined},...editableWindows(data.windows).map(w=>({value:w.id,label:w.name,color:w.color}))];
  return <label className="shared-scope">日程归属<GlassChoices label="日程归属" disabled={disabled} value={value||''} options={opts} onChange={onChange}/>{value&&<small>窗口成员可见 · 完成后所有成员分别生成日记事实</small>}</label>;
+}
+
+/** 合并"事项类别 + 日程归属"为一排快选按钮：私人窗口的类别 + 共享窗口，共享窗口前缀"共享" */
+export function WindowCategoryPicker({value,onChange,disabled=false}:{value:{windowId?:string;category?:string|null};onChange:(patch:{windowId?:string;category?:string|null})=>void;disabled?:boolean}){
+ const {data}=useSocial();
+ const {categories}:{categories:PlanCategory[]}=usePlanCategories();
+ return <label className="window-category-picker"><span>创建到</span>
+ <GlassChoices label="创建目标" disabled={disabled} value={value.windowId||value.category||''} onChange={pick=>{
+   if(!pick) onChange({windowId:undefined,category:null});
+   else if(editableWindows(data.windows).some(w=>w.id===pick)) onChange({windowId:pick,category:null});
+   else onChange({windowId:undefined,category:pick||null});
+ }} options={[
+   {value:'',label:'待分类'},
+   ...categories.map((c:PlanCategory)=>({value:c.id,label:c.name,color:c.color})),
+   ...editableWindows(data.windows).map(w=>({value:w.id,label:`共享 · ${w.name}`,color:w.color}))
+ ]}/>
+ {value.windowId&&<small>共享窗口 · 成员可见 · 完成后所有成员分别生成日记事实</small>}
+ </label>;
 }
 export type MainPage='plan'|'diary'|'communications'|'mine';
 export function MainNavigation({page,onPage,onCreate,trigger,hasDraft}:{page:MainPage;onPage:(page:MainPage)=>void;onCreate:()=>void;trigger:RefObject<HTMLButtonElement|null>;hasDraft:boolean}){
