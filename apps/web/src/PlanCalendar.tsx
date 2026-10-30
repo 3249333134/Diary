@@ -39,7 +39,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   const gesture=useRef<Gesture|undefined>(undefined);
   const [expanded,setExpanded]=useState<string>(),[drag,setDrag]=useState<{row:ActionRow;target?:Target}>(),[pending,setPending]=useState<CalendarPreview[]>([]);
   const {data:socialData}=useSocial();
-  const scrollRemembered=useScrollMemory(socialData.profile.code,`plan.calendar.${view}.${range.from}`,scroll,active&&rows.length>0&&!expanded);
+  useScrollMemory(socialData.profile.code,`plan.calendar.${view}.${range.from}`,scroll,active&&rows.length>0&&!expanded);
   const timelinePosition=useRef({left:0,top:0}),dayHeading=useRef<HTMLHeadingElement>(null),dayMode=useRef(false);
   const showDay=(date:string)=>{if(scroll.current)timelinePosition.current={left:scroll.current.scrollLeft,top:scroll.current.scrollTop};setExpanded(date);};
   const closeDay=()=>{const date=expanded;setExpanded(undefined);requestAnimationFrame(()=>scroll.current?.querySelector<HTMLButtonElement>(`.timeline-date[data-calendar-date="${date}"]`)?.focus({preventScroll:true}));};
@@ -150,7 +150,6 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   useEffect(()=>()=>{const current=pan.current;pan.current=undefined;if(current?.el.hasPointerCapture(current.pointer))current.el.releasePointerCapture(current.pointer);},[]);
   const hoursRef=useRef<number[]>([]);hoursRef.current=hours;
   const initialScroll=useRef('');
-  const initialNavigation=useRef(navigationRevision);
   const end=(retainHours=false)=>{pointerFrame.cancel();const g=gesture.current;if(g){if(g.mode!=='decide')suppressGestureClick.current=true;window.clearTimeout(g.timer);if(g.el.hasPointerCapture(g.pointer))g.el.releasePointerCapture(g.pointer);}gesture.current=undefined;setDrag(undefined);if(!retainHours)setFrozen(undefined);};
   useEffect(()=>{
     const allowed=new Set(rows.filter(row=>!row.readOnly).map(calendarRowKey));
@@ -184,26 +183,22 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   },[pending]);
   useEffect(()=>{
     if(view==='month'){initialScroll.current='';return;}
+    // 等日程数据到位再定位，避免空列表时把初始位置记成“已处理”
+    if(!active||!rows.length)return;
     const key=range.from+showAllHours+navigationRevision;
     if(initialScroll.current===key)return;
     initialScroll.current=key;
-    if(scrollRemembered&&initialNavigation.current===navigationRevision)return;
     const frame=requestAnimationFrame(()=>{
-      if(!scroll.current)return;
-      scroll.current.scrollTop=0;
-      scroll.current.scrollLeft=showAllHours?Math.max(0,(times.filter(Boolean).length?Math.min(...times.filter(Boolean).map(t=>Number(t.slice(0,2)))):9)-1)*HOUR_WIDTH:0;
-      if(view==='fortnight'||view==='week'){
-        const today=planClock().date;
-        const row=scroll.current.querySelector<HTMLElement>(`.calendar-timeline-row[data-date="${today}"]`);
-        if(row){
-          requestAnimationFrame(()=>{
-            row.scrollIntoView({block:'center',inline:'start'});
-          });
-        }
-      }
+      const box=scroll.current;if(!box)return;
+      box.scrollLeft=showAllHours?Math.max(0,(times.filter(Boolean).length?Math.min(...times.filter(Boolean).map(t=>Number(t.slice(0,2)))):9)-1)*HOUR_WIDTH:0;
+      // 双周/周视图打开时把今天居中显示
+      const row=view==='fortnight'||view==='week'?box.querySelector<HTMLElement>(`.calendar-timeline-row[data-date="${planClock().date}"]`):null;
+      if(!row){box.scrollTop=0;return;}
+      const rowBox=row.getBoundingClientRect(),viewport=box.getBoundingClientRect();
+      box.scrollTop+=(rowBox.top-viewport.top)-(box.clientHeight-rowBox.height)/2;
     });
     return()=>cancelAnimationFrame(frame);
-  },[view,anchor,showAllHours,navigationRevision]);
+  },[view,anchor,showAllHours,navigationRevision,rows.length,active]);
   /** 滑动到两周列表两端时继续向前/向后追加一周，并保持当前内容位置不跳 */
   const extendWeeks=()=>{
     const box=scroll.current;if(!box||view!=='fortnight'||performance.now()<edgeLock.current||edgePending.current)return;
