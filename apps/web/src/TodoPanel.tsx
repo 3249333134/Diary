@@ -34,9 +34,17 @@ import { PlanToolbar } from './PlanToolbar';
 import { PlanCalendar, calendarRange, shiftDate } from './PlanCalendar';
 import type { CaptureDraft } from '@diary/contracts';
 import { taskReceipt, type Receipt } from './receipts';
-const today = () => planClock().date;
 import './todos.css';
 import {useWorkspaceState} from './workspaceState';
+const today = () => planClock().date;
+/** 创建时间统一显示为「2026-10-30 13:20」 */
+const createdAtLabel = (value?: string) => {
+  if (!value) return '';
+  const at = new Date(value);
+  if (Number.isNaN(at.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())} ${pad(at.getHours())}:${pad(at.getMinutes())}`;
+};
 
 const PRIORITY_LABEL: Record<string, string> = { high: '高', medium: '中', low: '低' };
 const PRIORITY_COLOR: Record<string, string> = { high: '#bd3d4c', medium: '#b8860b', low: '#6b7280' };
@@ -118,6 +126,7 @@ function TodoItem({ row, busy, onCheck, onEdit, onDelete, onStatus, onOpenSource
 
         <PlanEntitySummary value={row.task.entities || []}/>
         <p className="plan-start">原定开始：{row.task.startDate ? `${row.task.startDate} ${row.task.startTime || '未设置时间'}` : '未设置'}</p>
+        {createdAtLabel(row.task.createdAt) && <p className="plan-start">创建时间：{createdAtLabel(row.task.createdAt)}</p>}
 
         <div className="todo-meta">
           {row.task.list && <span className="todo-list-chip">{row.task.list}</span>}
@@ -278,6 +287,7 @@ function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries,
           {!permitted&&<p role="status">共享权限已变化，编辑内容保留，当前无法保存。</p>}
           <label className="field"><span>标题</span><input value={title} onChange={e => setTitle(e.target.value)} /><FieldHint path="todos.0.title" value={title}/></label>
           <label className="field"><span>详情描述</span><textarea rows={2} value={description} onChange={e => setDescription(e.target.value)} placeholder="补充说明" /><FieldHint path="todos.0.description" value={description}/></label>
+          {createdAtLabel(row.task.createdAt) && <p className="plan-start">创建时间：{createdAtLabel(row.task.createdAt)}</p>}
           {row.windowId&&<p className="shared-task-label">共享窗口 · {row.windowName}</p>}
           <ClassificationFields hideCategory={!!row.windowId} value={classification} onChange={patch=>setClassification({...classification,...patch})} />
           {(plannedDate || time) && <details><summary>历史日期字段</summary><p>用于兼容旧计划；原定开始与截止分别在上方、下方设置。</p><div className="plan-form-pair" style={{ display: 'flex', gap: 12 }}>
