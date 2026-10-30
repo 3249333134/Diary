@@ -223,6 +223,26 @@ export function receiptsFor(diary: DiaryDocument): Receipt[] {
   return result.sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
 }
 
+/** 勾选完成/完成并记录后生成的「日程」小票 */
+export function taskReceipt(task: { id: string; title: string; completedAt?: string; list?: string; tags?: string[]; priority?: string; description?: string }): Receipt {
+  const at = task.completedAt ? new Date(task.completedAt) : new Date();
+  const pad = (value: number) => String(value).padStart(2, '0');
+  const date = `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
+  return {
+    id: `task:${task.id}:${date}`, date,
+    kind: '日程',
+    time: `${pad(at.getHours())}:${pad(at.getMinutes())}`,
+    content: task.title,
+    details: [
+      task.description?.trim() ? task.description.trim() : '',
+      task.list ? `清单：${task.list}` : '',
+      task.tags?.length ? `标签：${task.tags.map(tag => '#' + tag).join(' ')}` : '',
+      task.priority && task.priority !== 'medium' ? `优先级：${task.priority}` : '',
+    ].filter(Boolean),
+    remark: '完成一件事，向前一步。',
+  };
+}
+
 export function addedReceipts(previous: DiaryDocument, next: DiaryDocument): Receipt[] {
   const ids = new Set(receiptsFor(previous).map(r => r.id));
   return receiptsFor(next).filter(r => !ids.has(r.id));

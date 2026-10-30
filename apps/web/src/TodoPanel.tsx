@@ -33,6 +33,7 @@ import { RepeatFields } from './RepeatFields';
 import { PlanToolbar } from './PlanToolbar';
 import { PlanCalendar, calendarRange, shiftDate } from './PlanCalendar';
 import type { CaptureDraft } from '@diary/contracts';
+import { taskReceipt, type Receipt } from './receipts';
 const today = () => planClock().date;
 import './todos.css';
 import {useWorkspaceState} from './workspaceState';
@@ -327,7 +328,7 @@ function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries,
   );
 }
 
-export function TodoPanel({ account='local',date, source, prepare, changed, onOpen, onClose, revision = 0, focusId, toolbarAction, onNavigationChange, fullscreen, onToggleFullscreen, theme, onTheme, entityContext,active=true,onCreateRequest }: {
+export function TodoPanel({ account='local',date, source, prepare, changed, onOpen, onClose, onPrints, revision = 0, focusId, toolbarAction, onNavigationChange, fullscreen, onToggleFullscreen, theme, onTheme, entityContext,active=true,onCreateRequest }: {
   account?:string;
   onCreateRequest?:(preset?:Partial<CreationDraft>)=>void;entityContext: EntityContext; theme:'light'|'dark'; onTheme:()=>void;
   date: string; source?: RecordRef; revision?: number; focusId?: string;active?:boolean;
@@ -336,6 +337,8 @@ export function TodoPanel({ account='local',date, source, prepare, changed, onOp
   changed: () => Promise<void>;
   onOpen: (ref: RecordRef) => void;
   onClose: () => void;
+  /** 完成一条日程后把它的打印小票抛给外层（显示在页面的小票夹里） */
+  onPrints?: (receipts: Receipt[]) => void;
 }) {
   const {categories}=usePlanCategories();
   const social=useSocial();
@@ -429,6 +432,10 @@ export function TodoPanel({ account='local',date, source, prepare, changed, onOp
         const savedTask=result.row?.task||result.diary?.document.todos.find(t=>t.id===input.task.id)||input.task;
         const committed=(list:ActionRow[])=>list.map(row=>row.windowId===input.windowId&&row.date===input.date&&row.task.id===input.task.id?result.row||{...row,task:savedTask,version:result.diary?.version||row.version}:row);
         setRows(committed);setScheduleRows(committed);
+      }
+      if(input.mode==='complete'||(input.mode==='status'&&input.nextStatus==='done')){
+        const saved=result.row?.task||input.task;
+        onPrints?.([taskReceipt({...saved,completedAt:saved.completedAt||new Date().toISOString()})]);
       }
       if(result.refreshWarning)setRefreshWarning(result.refreshWarning);
       const refreshed=await Promise.allSettled([refresh(),changed()]);

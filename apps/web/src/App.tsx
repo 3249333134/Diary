@@ -31,7 +31,7 @@ import { addDays, shortDate, today, weekDates } from "./date";
 import { splitSentence, type SplitDraft } from "./sentence";
 import { RelationGraph } from "./RelationGraph";
 import { ReceiptCollection, ReceiptNotice } from "./ReceiptCollection";
-import { addedReceipts, type Receipt } from "./receipts";
+import { addedReceipts, receiptsFor, taskReceipt, type Receipt } from "./receipts";
 import { TodoPanel } from './TodoPanel';
 import { PlanNavigation, type PlanToolAction, type PlanNavigationState } from './PlanNavigation';
 import { Login } from './Login';
@@ -759,6 +759,7 @@ export function App() {
   const [focusRecord, setFocusRecord] = useState<RecordRef>();
   const [actionError, setActionError] = useState('');
   const [printedReceipts, setPrintedReceipts] = useState<Receipt[]>([]);
+  const [vault, setVault] = useState<{ open: boolean; loading: boolean; receipts: Receipt[] }>({ open: false, loading: false, receipts: [] });
   const [entities, setEntities] = useState<EntityRecord[]>([]);
   const [tags, setTags] = useState<TagStore>(EMPTY_TAGS);
   const [selectedEntity, setSelectedEntity] = useState<EntityRecord | null>(null);
@@ -991,6 +992,32 @@ export function App() {
   const diaryCount=diary.date!==date?0:activeTab===0?diary.facts.events.length:activeTab<4?(diary.entries?.[tabs[activeTab].id as TextKind]?.length||0):0;
   const openDiaryInformation=()=>activeTab<4?invokeDiary(activeTab,'information'):setDiaryTools(true);
     const toggleTheme=()=>setTheme(theme==='light'?'dark':'light');
+  // 小票夹：聚合近四周的日记小票 + 所有已完成日程的小票
+  const openReceiptVault = async () => {
+    setVault(old => ({ ...old, open: true, loading: true }));
+    try {
+      const [weeks, { tasks }] = await Promise.all([
+        Promise.all([0, -7, -14, -21].map(offset => api.week(addDays(date, offset)))),
+        api.actions(),
+      ]);
+      const entries = weeks.flatMap(result => result.entries);
+      const loadedDates = new Set(entries.map(entry => entry.date));
+      const list = entries.flatMap(entry => receiptsFor(entry.document));
+      for (const { task } of tasks) {
+        if (task.deletedAt || !(task.done || task.status === 'done')) continue;
+        // 完成并记录的日程，当天日记里已经有一张「事实」小票，不重复打印
+        if (task.completion && loadedDates.has(task.completion.date)) continue;
+        list.push(taskReceipt(task));
+      }
+      const seen = new Set<string>();
+      const unique = list.filter(receipt => seen.has(receipt.id) ? false : (seen.add(receipt.id), true));
+      unique.sort((a, b) => b.date.localeCompare(a.date) || (b.time || '').localeCompare(a.time || ''));
+      setVault({ open: true, loading: false, receipts: unique });
+    } catch (error) {
+      setVault({ open: true, loading: false, receipts: [] });
+      setActionError(error instanceof Error ? error.message : '小票夹读取失败');
+    }
+  };
   const navigate=(page:MainPage)=>{setCreationOpen(false);if(page!=='diary')setPrintedReceipts([]);if(page==='plan'||page==='diary'){setSocialPage(undefined);setShowTodos(page==='plan');}else setSocialPage(page);};
   const beginCreation=(kind:CreationKind=(!socialPage&&!showTodos&&activeTab<4?tabs[activeTab].id:'plan') as CreationKind,preset?:Partial<CreationDraft>)=>{setCreationNotice(undefined);setCreationRequest({id:++creationCounter.current,kind,date,preset,defaults:{learn:{entities:diary.learn.sources},input:{entities:diary.input.names,inputKind:diary.input.kind},idea:{tags:diary.idea.tags}}});setCreationOpen(true);};
   const diaryColumnSelector=<div className="diary-column-selector"><GlassSelect label="日记栏目" value={String(activeTab)} options={[...tabs.map((t,i)=>({value:String(i),label:`${t.label}${i===activeTab&&i<4?'·'+diaryCount:''}`})),{value:'information',label:informationLabel},{value:'today',label:'回到今天'},{value:'fullscreen',label:fullscreen?'退出全屏':'全屏显示'}]} onChange={value=>{if(value==='information')openDiaryInformation();else if(value==='today')setDate(today());else if(value==='fullscreen')setFullscreen(f=>!f);else selectTab(Number(value));}}/></div>;
@@ -1015,7 +1042,7 @@ export function App() {
       <Creation key={authState.user.id} account={authState.user.id} open={creationOpen} request={creationRequest} onClose={()=>setCreationOpen(false)} trigger={globalCreate} context={common} onSave={saveCreation} onCreated={setCreationNotice} onDraftChange={setHasCaptureDraft} planDisabled={!!planNavigation?.createDisabled} diaryDisabled={status==='loading'||status==='saving'||diary.date!==date}/>
       {creationNotice&&!creationOpen&&<div className="creation-toast" role="status"><span>{creationNotice.refreshWarning||(creationNotice.createdCount&&creationNotice.createdCount>1?`已创建 ${creationNotice.createdCount} 项`:'已创建')}</span><button type="button" onClick={()=>{const ref=creationNotice.ref;setCreationNotice(undefined);void openRecord(ref);}}>查看</button>{creationNotice.refreshWarning&&<button type="button" onClick={()=>void reloadAfterAction().then(()=>setCreationNotice(old=>old?{...old,refreshWarning:undefined}:old)).catch(()=>{})}>重试刷新</button>}<button type="button" aria-label="关闭创建提示" onClick={()=>setCreationNotice(undefined)}><X size={16}/></button></div>}
       <div className="workspace-footer"><MainNavigation page={socialPage||(showTodos?'plan':'diary')} onPage={navigate} onCreate={()=>beginCreation()} trigger={globalCreate} hasDraft={hasCaptureDraft}/></div>
-      <div className="workspace-root plan-workspace" hidden={!showTodos||!!socialPage}><TodoPanel account={account} onCreateRequest={preset=>beginCreation('plan',preset)} theme={theme==='dark'?'dark':'light'} onTheme={toggleTheme} active={showTodos&&!socialPage} onNavigationChange={setPlanNavigation} entityContext={common} toolbarAction={planToolbarAction} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} date={planClock().date} source={actionSource} revision={actionsRevision} focusId={focusRecord?.kind === 'todo' ? focusRecord.id : undefined} prepare={prepareAction} changed={reloadAfterAction} onOpen={ref => void openRecord(ref)} onClose={() => setShowTodos(false)} /></div>
+      <div className="workspace-root plan-workspace" hidden={!showTodos||!!socialPage}><TodoPanel account={account} onCreateRequest={preset=>beginCreation('plan',preset)} theme={theme==='dark'?'dark':'light'} onTheme={toggleTheme} active={showTodos&&!socialPage} onNavigationChange={setPlanNavigation} entityContext={common} toolbarAction={planToolbarAction} fullscreen={fullscreen} onToggleFullscreen={() => setFullscreen(f => !f)} date={planClock().date} source={actionSource} revision={actionsRevision} focusId={focusRecord?.kind === 'todo' ? focusRecord.id : undefined} prepare={prepareAction} changed={reloadAfterAction} onOpen={ref => void openRecord(ref)} onClose={() => setShowTodos(false)} onPrints={setPrintedReceipts} /></div>
       <div className="workspace-root diary-workspace" data-record-workspace={recordWorkspace||undefined} hidden={showTodos||!!socialPage}>
       {!showReceipts&&<DiaryToolbar compact={mobileLayout} date={date} onDate={setDate} label={diaryLabel} count={diaryCount} status={status} onSave={()=>void saveNow(diaryRef.current,true)} onInformation={openDiaryInformation} informationLabel={informationLabel} theme={theme} onTheme={toggleTheme} fullscreen={fullscreen} onToggleFullscreen={mobileLayout?undefined:()=>setFullscreen(f=>!f)} navigation={mobileLayout?diaryColumnSelector:fullscreen?diaryNavigation:undefined}/>}
 
@@ -1027,7 +1054,9 @@ export function App() {
       </div>
       </div>
       {socialPage==='communications'&&<Communications onOpenWindow={(windowId,taskId)=>{navigate('plan');requestPlanTool('window',windowId);if(taskId)setFocusRecord({date:date,kind:'todo',id:taskId,summary:'',windowId});}} onPublishTask={(windowId)=>{navigate('plan');beginCreation('plan',{windowId});}}/>}
-      {socialPage==='mine'&&<MyAccount username={authState.user.username} theme={theme} onTheme={toggleTheme} onLogout={()=>void handleLogout()} onDemo={async code=>{await prepareAction();if(hasCaptureDraft)throw new Error('请先保存新增草稿，再切换演示身份');await api.demoAccount(code);window.location.reload();}}/>}
+      {socialPage==='mine'&&(vault.open
+        ? vault.loading ? <p role="status">正在整理小票夹…</p> : <ReceiptCollection key="vault" diary={diary} saved receipts={vault.receipts} heading="小票夹" onClose={()=>setVault({open:false,loading:false,receipts:[]})} onWrite={()=>{setVault({open:false,loading:false,receipts:[]});navigate('plan');}} />
+        : <MyAccount username={authState.user.username} theme={theme} onTheme={toggleTheme} onLogout={()=>void handleLogout()} onReceipts={()=>void openReceiptVault()} onDemo={async code=>{await prepareAction();if(hasCaptureDraft)throw new Error('请先保存新增草稿，再切换演示身份');await api.demoAccount(code);window.location.reload();}}/>)}
     </main>
 
     {!showTodos&&!socialPage&&<aside className="context-rail" aria-label="本周概览">
@@ -1035,6 +1064,6 @@ export function App() {
       <section><div className="context-title"><Sparkles /><h2>周复盘</h2></div><p>汇总共享的每日记录，结果写入独立子目录，不覆盖项目方舟。</p><button type="button" className="summary-button" disabled={summaryLoading} onClick={async () => { setSummaryLoading(true); setSummaryMessage(""); try { const result = await api.summarize(date, true); setSummaryMessage(result.ok ? `已生成${result.mode === "ai" ? " AI" : "规则版"}周复盘` : result.reason || "未生成"); } catch (error) { setSummaryMessage(error instanceof Error ? error.message : "生成失败"); } finally { setSummaryLoading(false); } }}><Sparkles />{summaryLoading ? "正在整理" : "生成本周复盘"}</button>{summaryMessage && <p className="summary-message" role="status">{summaryMessage}</p>}</section>
       <section><div className="context-title"><Link2 /><h2>线索库</h2></div><p><strong>{entities.length}</strong> 个实体已经可以反查。</p><div className="type-counts">{entityTypes.map((type) => <span key={type}>{TYPE_LABEL[type]} <b>{entities.filter((entity) => entity.type === type).length}</b></span>)}</div></section>
     </aside>}
-    {!socialPage&&!showTodos&&printedReceipts.length > 0 && <ReceiptNotice key={`${printedReceipts[0].date}:${printedReceipts[0].id}`} receipts={printedReceipts} onClose={() => setPrintedReceipts([])} onOpen={() => { setDate(printedReceipts[0].date); setShowReceipts(true); setPrintedReceipts([]); }} />}
+    {!socialPage&&printedReceipts.length > 0 && <ReceiptNotice key={`${printedReceipts[0].date}:${printedReceipts[0].id}`} receipts={printedReceipts} onClose={() => setPrintedReceipts([])} onOpen={() => { if (showTodos) { navigate('mine'); void openReceiptVault(); } else { setDate(printedReceipts[0].date); setShowReceipts(true); } setPrintedReceipts([]); }} />}
   </div></RecordContext.Provider></DiaryControlsContext.Provider></SocialContext.Provider>;
 }

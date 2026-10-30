@@ -15,7 +15,7 @@ const SKINS: { id: Skin; name: string; swatch: [string, string] }[] = [
 const SKIN_STORAGE_KEY = 'diary.receipt-skin';
 
 const KIND_LABEL: Record<string, string> = {
-  '事实': '事实', '新知': '新知', '输入': '输入', '灵感': '灵感', '今日备注': '备注',
+  '事实': '事实', '新知': '新知', '输入': '输入', '灵感': '灵感', '今日备注': '备注', '待办': '待办', '日程': '日程',
 };
 
 /* ── 带吐纸动画的单张纸 wrapper ── */
@@ -130,9 +130,10 @@ function SkinSwitch({ value, onChange }: { value: Skin; onChange: (s: Skin) => v
   );
 }
 
-/** 收集面板 */
-export function ReceiptCollection({ diary, saved, onClose, onWrite }: { diary: DiaryDocument; saved: boolean; onClose: () => void; onWrite: () => void }) {
-  const receipts = receiptsFor(diary);
+/** 收集面板。传 receipts 时渲染外部聚合的小票夹，否则渲染单日日记小票 */
+export function ReceiptCollection({ diary, saved, onClose, onWrite, receipts: given, heading = '每日小票' }: { diary: DiaryDocument; saved: boolean; onClose: () => void; onWrite: () => void; receipts?: Receipt[]; heading?: string }) {
+  const receipts = given ?? receiptsFor(diary);
+  const vault = !!given;
   const [replayKey, setReplayKey] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
@@ -151,7 +152,7 @@ export function ReceiptCollection({ diary, saved, onClose, onWrite }: { diary: D
 
   const exportImage = async (items: Receipt[]) => {
     setExporting(true); setError('');
-    try { await downloadReceipts(items, diary.date); }
+    try { await downloadReceipts(items, receipts[0]?.date || diary.date); }
     catch (e) { setError(e instanceof Error ? e.message : '导出失败，请重试。'); }
     finally { setExporting(false); }
   };
@@ -189,16 +190,16 @@ export function ReceiptCollection({ diary, saved, onClose, onWrite }: { diary: D
     <section className="receipt-collection" aria-labelledby="receipt-heading" data-skin={skin}>
       <div className="receipt-collection-heading">
         <div>
-          <h2 id="receipt-heading">每日小票</h2>
-          <p>{diary.date} · {receipts.length} 张{!saved ? ' · 未保存预览' : ' · 已随日记收藏'}</p>
+          <h2 id="receipt-heading">{heading}</h2>
+          <p>{vault ? `全部日期 · ${receipts.length} 张` : `${diary.date} · ${receipts.length} 张${!saved ? ' · 未保存预览' : ' · 已随日记收藏'}`}</p>
         </div>
         <button className="quiet-button" onClick={onClose}><X size={18} />返回记录</button>
       </div>
 
       <div className="receipt-controls">
-        <button className="quiet-button" disabled={!receipts.length || exporting || !saved}
+        <button className="quiet-button" disabled={!receipts.length || exporting || (!vault && !saved)}
           onClick={() => void exportImage(receipts)}>
-          <Download size={18} />{exporting ? '正在生成图片' : '导出整日长图'}
+          <Download size={18} />{exporting ? '正在生成图片' : '导出长图'}
         </button>
         <button className="quiet-button" disabled={!receipts.length} onClick={triggerReplay}>
           <RotateCcw size={18} />重播出纸
@@ -212,19 +213,19 @@ export function ReceiptCollection({ diary, saved, onClose, onWrite }: { diary: D
       <div className={`receipt-printer${isPrinting ? ' is-printing' : ''}`}>
         <Printer size={22} />
         <strong>独立日记</strong>
-        <span><i />{saved ? '今日已归档' : '等待写入'}</span>
+        <span><i />{vault ? '小票夹收藏' : saved ? '今日已归档' : '等待写入'}</span>
         <div className="receipt-slot" />
       </div>
 
       {!receipts.length ? (
         <div className="receipt-empty">
           <Printer size={32} />
-          <h3>这一天的纸还是空白的</h3>
-          <p>写下并保存一条记录，小票就会从这里打印出来。</p>
-          <button className="quiet-button" onClick={onWrite}>去写一条</button>
+          <h3>{vault ? '小票夹还是空的' : '这一天的纸还是空白的'}</h3>
+          <p>{vault ? '完成一件日程或保存一条记录，小票就会收进这里。' : '写下并保存一条记录，小票就会从这里打印出来。'}</p>
+          <button className="quiet-button" onClick={onWrite}>{vault ? '去完成一件日程' : '去写一条'}</button>
         </div>
       ) : (
-        <div className="receipt-roll" key={`${diary.date}:${replayKey}`}>
+        <div className="receipt-roll" key={`${vault ? 'vault' : diary.date}:${replayKey}`}>
           <div
             ref={feedRef}
             className="receipt-feed"
@@ -232,7 +233,7 @@ export function ReceiptCollection({ diary, saved, onClose, onWrite }: { diary: D
           >
             {/* 日期标题栏 — 不动画，稳定显示 */}
             <div className="receipt-day-heading">
-              <strong>{diary.date.replaceAll('-', '.')}</strong>
+              <strong>{vault ? '我的小票夹' : diary.date.replaceAll('-', '.')}</strong>
               <span>生活留存凭证 · 共 {receipts.length} 张</span>
             </div>
             {/* 逐张吐纸 — replayKey 变化会重新挂载所有 wrapper */}
@@ -266,6 +267,8 @@ export function ReceiptCollection({ diary, saved, onClose, onWrite }: { diary: D
 /** 右下角新小票出纸通知 */
 export function ReceiptNotice({ receipts, onOpen, onClose }: { receipts: Receipt[]; onOpen: () => void; onClose: () => void }) {
   const [bottom,setBottom]=useState(16),close=useRef(onClose);close.current=onClose;
+  // 已完成日程的小票属于小票夹，不在某一天的日记里
+  const vaulted = receipts[0]?.kind === '日程';
   useEffect(() => {
     const timer = window.setTimeout(()=>close.current(), 6500);
     return () => window.clearTimeout(timer);
@@ -287,10 +290,10 @@ export function ReceiptNotice({ receipts, onOpen, onClose }: { receipts: Receipt
         <div className="receipt-slot" />
       </div>
       <div className="receipt-notice-clip">
-        <button className="receipt-notice-paper" onClick={onOpen} aria-label="查看今日小票">
-          <span role="status">已写入 · 已收进 {receipts[0].date} 的小票</span>
+        <button className="receipt-notice-paper" onClick={onOpen} aria-label={vaulted ? '打开小票夹' : '查看今日小票'}>
+          <span role="status">{vaulted ? '已完成 · 已收进小票夹' : `已写入 · 已收进 ${receipts[0].date} 的小票`}</span>
           <strong>{receipts[0].content}</strong>
-          <span>查看今日小票 →</span>
+          <span>{vaulted ? '打开小票夹 →' : '查看今日小票 →'}</span>
         </button>
       </div>
     </aside>
