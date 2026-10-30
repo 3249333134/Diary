@@ -1,11 +1,10 @@
 import { Maximize2,Minimize2,SlidersHorizontal } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import type { PlanLayout } from './PlanNavigation';
 import type { PlanFilter } from './planFilters';
 import { calendarRange, shiftDate } from './calendarDates';
 import { planClock } from './planFilters';
 import { WorkspaceToolbar } from './WorkspaceTools';
-import { GlassSelect } from './GlassSelect';
 import { GlassSegments } from './GlassSegments';
 
 export const PLAN_LAYOUTS = [['fortnight','两周'],['month','月'],['week','周'],['windows','窗口'],['list','列表']] as const;
@@ -15,16 +14,15 @@ export function PlanToolbar({layout,onLayout,anchor,onAnchor,filter,filterLabel,
   filter:PlanFilter;filterLabel:string;restricted:boolean;saving:boolean;onFilters:()=>void;
   theme:'light'|'dark';onTheme:()=>void;fullscreen?:boolean;onToggleFullscreen?:()=>void;
 }) {
-  const [compact,setCompact]=useState(()=>window.matchMedia('(max-width:899px)').matches);
-  useEffect(()=>{const media=window.matchMedia('(max-width:899px)'),changed=()=>setCompact(media.matches);media.addEventListener('change',changed);return()=>media.removeEventListener('change',changed);},[]);
   const viewScroller=useRef<HTMLElement>(null);
   useEffect(()=>{
-    const nav=viewScroller.current,selected=nav?.querySelector<HTMLElement>('[data-selected]');
-    if(nav&&selected){
+    const nav=viewScroller.current;if(!nav)return;
+    const reveal=()=>{const selected=nav.querySelector<HTMLElement>('[data-selected]');if(!selected||!nav.clientWidth)return;
       const item=selected.getBoundingClientRect(),box=nav.getBoundingClientRect();
       if(item.left<box.left)nav.scrollLeft+=item.left-box.left;
       else if(item.right>box.right)nav.scrollLeft+=item.right-box.right;
-    }
+    };
+    reveal();const observer=new ResizeObserver(reveal);observer.observe(nav);return()=>observer.disconnect();
   },[layout,filter]);
   const calendar=layout==='fortnight'||layout==='week'||layout==='month';
   const range=calendarRange(anchor,calendar?layout:'fortnight');
@@ -34,7 +32,7 @@ export function PlanToolbar({layout,onLayout,anchor,onAnchor,filter,filterLabel,
   return <WorkspaceToolbar className="plan-main-toolbar" label="计划工具栏">
     <div className="plan-date-tools">
       <strong className="plan-date-range" title={label} aria-label={`${range.from} 至 ${range.to}`}>{label}</strong>
-      <nav aria-label="日历日期"><button type="button" disabled={saving} onClick={()=>onAnchor(planClock().date)}>今天</button></nav>
+      <nav aria-label="日历日期"><button type="button" className="plan-today-button" title="回到今天" disabled={saving} onClick={()=>{if(!calendar)onLayout('fortnight');onAnchor(planClock().date);}}>今天</button></nav>
     </div>
     <nav ref={viewScroller} className="plan-view-switch" aria-label="计划视图"><GlassSegments label="选择计划视图" value={filter==='trash'?'list':layout} options={PLAN_LAYOUTS.map(([value,label])=>({value,label,disabled:filter==='trash'&&value!=='list'}))} onChange={onLayout} disabled={saving}/></nav>
     <div className="plan-toolbar-actions">

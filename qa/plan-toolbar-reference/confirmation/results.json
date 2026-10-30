@@ -1,0 +1,1196 @@
+{
+  "results": [
+    {
+      "width": 375,
+      "theme": "light",
+      "geometry": {
+        "toolbar": {
+          "x": 17,
+          "y": 13,
+          "width": 341,
+          "height": 64,
+          "right": 358,
+          "bottom": 77
+        },
+        "date": {
+          "x": 17,
+          "y": 30,
+          "width": 44,
+          "height": 44,
+          "right": 61,
+          "bottom": 74
+        },
+        "views": {
+          "x": 67,
+          "y": 27,
+          "width": 197,
+          "height": 50,
+          "right": 264,
+          "bottom": 77
+        },
+        "actions": {
+          "x": 270,
+          "y": 30,
+          "width": 88,
+          "height": 44,
+          "right": 358,
+          "bottom": 74
+        },
+        "scroll": {
+          "left": 0,
+          "width": 232,
+          "client": 195
+        },
+        "buttons": [
+          {
+            "label": "今天",
+            "x": 17,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 61,
+            "bottom": 74
+          },
+          {
+            "label": "两周",
+            "x": 70,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 114,
+            "bottom": 74
+          },
+          {
+            "label": "月",
+            "x": 116,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 160,
+            "bottom": 74
+          },
+          {
+            "label": "周",
+            "x": 162,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 206,
+            "bottom": 74
+          },
+          {
+            "label": "窗口",
+            "x": 208,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 252,
+            "bottom": 74
+          },
+          {
+            "label": "列表",
+            "x": 254,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 298,
+            "bottom": 74
+          },
+          {
+            "label": "筛选计划",
+            "x": 270,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 314,
+            "bottom": 74
+          },
+          {
+            "label": "全屏显示",
+            "x": 314,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 358,
+            "bottom": 74
+          }
+        ],
+        "overflow": false
+      },
+      "passed": true
+    },
+    {
+      "width": 375,
+      "theme": "dark",
+      "geometry": {
+        "toolbar": {
+          "x": 17,
+          "y": 13,
+          "width": 341,
+          "height": 64,
+          "right": 358,
+          "bottom": 77
+        },
+        "date": {
+          "x": 17,
+          "y": 30,
+          "width": 44,
+          "height": 44,
+          "right": 61,
+          "bottom": 74
+        },
+        "views": {
+          "x": 67,
+          "y": 27,
+          "width": 197,
+          "height": 50,
+          "right": 264,
+          "bottom": 77
+        },
+        "actions": {
+          "x": 270,
+          "y": 30,
+          "width": 88,
+          "height": 44,
+          "right": 358,
+          "bottom": 74
+        },
+        "scroll": {
+          "left": 0,
+          "width": 232,
+          "client": 195
+        },
+        "buttons": [
+          {
+            "label": "今天",
+            "x": 17,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 61,
+            "bottom": 74
+          },
+          {
+            "label": "两周",
+            "x": 70,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 114,
+            "bottom": 74
+          },
+          {
+            "label": "月",
+            "x": 116,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 160,
+            "bottom": 74
+          },
+          {
+            "label": "周",
+            "x": 162,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 206,
+            "bottom": 74
+          },
+          {
+            "label": "窗口",
+            "x": 208,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 252,
+            "bottom": 74
+          },
+          {
+            "label": "列表",
+            "x": 254,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 298,
+            "bottom": 74
+          },
+          {
+            "label": "筛选计划",
+            "x": 270,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 314,
+            "bottom": 74
+          },
+          {
+            "label": "全屏显示",
+            "x": 314,
+            "y": 30,
+            "width": 44,
+            "height": 44,
+            "right": 358,
+            "bottom": 74
+          }
+        ],
+        "overflow": false
+      },
+      "passed": true
+    },
+    {
+      "width": 624,
+      "theme": "light",
+      "geometry": {
+        "toolbar": {
+          "x": 21,
+          "y": 15,
+          "width": 582,
+          "height": 64,
+          "right": 603,
+          "bottom": 79
+        },
+        "date": {
+          "x": 21,
+          "y": 32,
+          "width": 44,
+          "height": 44,
+          "right": 65,
+          "bottom": 76
+        },
+        "views": {
+          "x": 71,
+          "y": 29,
+          "width": 438,
+          "height": 50,
+          "right": 509,
+          "bottom": 79
+        },
+        "actions": {
+          "x": 515,
+          "y": 32,
+          "width": 88,
+          "height": 44,
+          "right": 603,
+          "bottom": 76
+        },
+        "scroll": {
+          "left": 0,
+          "width": 436,
+          "client": 436
+        },
+        "buttons": [
+          {
+            "label": "今天",
+            "x": 21,
+            "y": 32,
+            "width": 44,
+            "height": 44,
+            "right": 65,
+            "bottom": 76
+          },
+          {
+            "label": "两周",
+            "x": 74,
+            "y": 32,
+            "width": 84.796875,
+            "height": 44,
+            "right": 158.796875,
+            "bottom": 76
+          },
+          {
+            "label": "月",
+            "x": 160.796875,
+            "y": 32,
+            "width": 84.8125,
+            "height": 44,
+            "right": 245.609375,
+            "bottom": 76
+          },
+          {
+            "label": "周",
+            "x": 247.609375,
+            "y": 32,
+            "width": 84.796875,
+            "height": 44,
+            "right": 332.40625,
+            "bottom": 76
+          },
+          {
+            "label": "窗口",
+            "x": 334.40625,
+            "y": 32,
+            "width": 84.796875,
+            "height": 44,
+            "right": 419.203125,
+            "bottom": 76
+          },
+          {
+            "label": "列表",
+            "x": 421.203125,
+            "y": 32,
+            "width": 84.796875,
+            "height": 44,
+            "right": 506,
+            "bottom": 76
+          },
+          {
+            "label": "筛选计划",
+            "x": 515,
+            "y": 32,
+            "width": 44,
+            "height": 44,
+            "right": 559,
+            "bottom": 76
+          },
+          {
+            "label": "全屏显示",
+            "x": 559,
+            "y": 32,
+            "width": 44,
+            "height": 44,
+            "right": 603,
+            "bottom": 76
+          }
+        ],
+        "overflow": false
+      },
+      "passed": true
+    },
+    {
+      "width": 624,
+      "theme": "dark",
+      "geometry": {
+        "toolbar": {
+          "x": 21,
+          "y": 15,
+          "width": 582,
+          "height": 64,
+          "right": 603,
+          "bottom": 79
+        },
+        "date": {
+          "x": 21,
+          "y": 32,
+          "width": 44,
+          "height": 44,
+          "right": 65,
+          "bottom": 76
+        },
+        "views": {
+          "x": 71,
+          "y": 29,
+          "width": 438,
+          "height": 50,
+          "right": 509,
+          "bottom": 79
+        },
+        "actions": {
+          "x": 515,
+          "y": 32,
+          "width": 88,
+          "height": 44,
+          "right": 603,
+          "bottom": 76
+        },
+        "scroll": {
+          "left": 0,
+          "width": 436,
+          "client": 436
+        },
+        "buttons": [
+          {
+            "label": "今天",
+            "x": 21,
+            "y": 32,
+            "width": 44,
+            "height": 44,
+            "right": 65,
+            "bottom": 76
+          },
+          {
+            "label": "两周",
+            "x": 74,
+            "y": 32,
+            "width": 84.796875,
+            "height": 44,
+            "right": 158.796875,
+            "bottom": 76
+          },
+          {
+            "label": "月",
+            "x": 160.796875,
+            "y": 32,
+            "width": 84.8125,
+            "height": 44,
+            "right": 245.609375,
+            "bottom": 76
+          },
+          {
+            "label": "周",
+            "x": 247.609375,
+            "y": 32,
+            "width": 84.796875,
+            "height": 44,
+            "right": 332.40625,
+            "bottom": 76
+          },
+          {
+            "label": "窗口",
+            "x": 334.40625,
+            "y": 32,
+            "width": 84.796875,
+            "height": 44,
+            "right": 419.203125,
+            "bottom": 76
+          },
+          {
+            "label": "列表",
+            "x": 421.203125,
+            "y": 32,
+            "width": 84.796875,
+            "height": 44,
+            "right": 506,
+            "bottom": 76
+          },
+          {
+            "label": "筛选计划",
+            "x": 515,
+            "y": 32,
+            "width": 44,
+            "height": 44,
+            "right": 559,
+            "bottom": 76
+          },
+          {
+            "label": "全屏显示",
+            "x": 559,
+            "y": 32,
+            "width": 44,
+            "height": 44,
+            "right": 603,
+            "bottom": 76
+          }
+        ],
+        "overflow": false
+      },
+      "passed": true
+    },
+    {
+      "width": 768,
+      "theme": "light",
+      "geometry": {
+        "toolbar": {
+          "x": 21,
+          "y": 15,
+          "width": 726,
+          "height": 64,
+          "right": 747,
+          "bottom": 79
+        },
+        "date": {
+          "x": 21,
+          "y": 32,
+          "width": 44,
+          "height": 44,
+          "right": 65,
+          "bottom": 76
+        },
+        "views": {
+          "x": 71,
+          "y": 29,
+          "width": 582,
+          "height": 50,
+          "right": 653,
+          "bottom": 79
+        },
+        "actions": {
+          "x": 659,
+          "y": 32,
+          "width": 88,
+          "height": 44,
+          "right": 747,
+          "bottom": 76
+        },
+        "scroll": {
+          "left": 0,
+          "width": 580,
+          "client": 580
+        },
+        "buttons": [
+          {
+            "label": "今天",
+            "x": 21,
+            "y": 32,
+            "width": 44,
+            "height": 44,
+            "right": 65,
+            "bottom": 76
+          },
+          {
+            "label": "两周",
+            "x": 74,
+            "y": 32,
+            "width": 113.59375,
+            "height": 44,
+            "right": 187.59375,
+            "bottom": 76
+          },
+          {
+            "label": "月",
+            "x": 189.59375,
+            "y": 32,
+            "width": 113.609375,
+            "height": 44,
+            "right": 303.203125,
+            "bottom": 76
+          },
+          {
+            "label": "周",
+            "x": 305.203125,
+            "y": 32,
+            "width": 113.59375,
+            "height": 44,
+            "right": 418.796875,
+            "bottom": 76
+          },
+          {
+            "label": "窗口",
+            "x": 420.796875,
+            "y": 32,
+            "width": 113.609375,
+            "height": 44,
+            "right": 534.40625,
+            "bottom": 76
+          },
+          {
+            "label": "列表",
+            "x": 536.40625,
+            "y": 32,
+            "width": 113.59375,
+            "height": 44,
+            "right": 650,
+            "bottom": 76
+          },
+          {
+            "label": "筛选计划",
+            "x": 659,
+            "y": 32,
+            "width": 44,
+            "height": 44,
+            "right": 703,
+            "bottom": 76
+          },
+          {
+            "label": "全屏显示",
+            "x": 703,
+            "y": 32,
+            "width": 44,
+            "height": 44,
+            "right": 747,
+            "bottom": 76
+          }
+        ],
+        "overflow": false
+      },
+      "passed": true
+    },
+    {
+      "width": 768,
+      "theme": "dark",
+      "geometry": {
+        "toolbar": {
+          "x": 21,
+          "y": 15,
+          "width": 726,
+          "height": 64,
+          "right": 747,
+          "bottom": 79
+        },
+        "date": {
+          "x": 21,
+          "y": 32,
+          "width": 44,
+          "height": 44,
+          "right": 65,
+          "bottom": 76
+        },
+        "views": {
+          "x": 71,
+          "y": 29,
+          "width": 582,
+          "height": 50,
+          "right": 653,
+          "bottom": 79
+        },
+        "actions": {
+          "x": 659,
+          "y": 32,
+          "width": 88,
+          "height": 44,
+          "right": 747,
+          "bottom": 76
+        },
+        "scroll": {
+          "left": 0,
+          "width": 580,
+          "client": 580
+        },
+        "buttons": [
+          {
+            "label": "今天",
+            "x": 21,
+            "y": 32,
+            "width": 44,
+            "height": 44,
+            "right": 65,
+            "bottom": 76
+          },
+          {
+            "label": "两周",
+            "x": 74,
+            "y": 32,
+            "width": 113.59375,
+            "height": 44,
+            "right": 187.59375,
+            "bottom": 76
+          },
+          {
+            "label": "月",
+            "x": 189.59375,
+            "y": 32,
+            "width": 113.609375,
+            "height": 44,
+            "right": 303.203125,
+            "bottom": 76
+          },
+          {
+            "label": "周",
+            "x": 305.203125,
+            "y": 32,
+            "width": 113.59375,
+            "height": 44,
+            "right": 418.796875,
+            "bottom": 76
+          },
+          {
+            "label": "窗口",
+            "x": 420.796875,
+            "y": 32,
+            "width": 113.609375,
+            "height": 44,
+            "right": 534.40625,
+            "bottom": 76
+          },
+          {
+            "label": "列表",
+            "x": 536.40625,
+            "y": 32,
+            "width": 113.59375,
+            "height": 44,
+            "right": 650,
+            "bottom": 76
+          },
+          {
+            "label": "筛选计划",
+            "x": 659,
+            "y": 32,
+            "width": 44,
+            "height": 44,
+            "right": 703,
+            "bottom": 76
+          },
+          {
+            "label": "全屏显示",
+            "x": 703,
+            "y": 32,
+            "width": 44,
+            "height": 44,
+            "right": 747,
+            "bottom": 76
+          }
+        ],
+        "overflow": false
+      },
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "theme": "light",
+      "geometry": {
+        "toolbar": {
+          "x": 225,
+          "y": 17,
+          "width": 1034,
+          "height": 60,
+          "right": 1259,
+          "bottom": 77
+        },
+        "date": {
+          "x": 227,
+          "y": 21,
+          "width": 185.015625,
+          "height": 44,
+          "right": 412.015625,
+          "bottom": 65
+        },
+        "views": {
+          "x": 422.015625,
+          "y": 17,
+          "width": 236,
+          "height": 52,
+          "right": 658.015625,
+          "bottom": 69
+        },
+        "actions": {
+          "x": 1167,
+          "y": 21,
+          "width": 90,
+          "height": 44,
+          "right": 1257,
+          "bottom": 65
+        },
+        "scroll": {
+          "left": 0,
+          "width": 234,
+          "client": 234
+        },
+        "buttons": [
+          {
+            "label": "今天",
+            "x": 368.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 412.015625,
+            "bottom": 65
+          },
+          {
+            "label": "两周",
+            "x": 426.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 470.015625,
+            "bottom": 65
+          },
+          {
+            "label": "月",
+            "x": 472.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 516.015625,
+            "bottom": 65
+          },
+          {
+            "label": "周",
+            "x": 518.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 562.015625,
+            "bottom": 65
+          },
+          {
+            "label": "窗口",
+            "x": 564.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 608.015625,
+            "bottom": 65
+          },
+          {
+            "label": "列表",
+            "x": 610.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 654.015625,
+            "bottom": 65
+          },
+          {
+            "label": "筛选计划",
+            "x": 1167,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 1211,
+            "bottom": 65
+          },
+          {
+            "label": "全屏显示",
+            "x": 1213,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 1257,
+            "bottom": 65
+          }
+        ],
+        "overflow": false
+      },
+      "passed": true
+    },
+    {
+      "width": 1280,
+      "theme": "dark",
+      "geometry": {
+        "toolbar": {
+          "x": 225,
+          "y": 17,
+          "width": 1034,
+          "height": 60,
+          "right": 1259,
+          "bottom": 77
+        },
+        "date": {
+          "x": 227,
+          "y": 21,
+          "width": 185.015625,
+          "height": 44,
+          "right": 412.015625,
+          "bottom": 65
+        },
+        "views": {
+          "x": 422.015625,
+          "y": 17,
+          "width": 236,
+          "height": 52,
+          "right": 658.015625,
+          "bottom": 69
+        },
+        "actions": {
+          "x": 1167,
+          "y": 21,
+          "width": 90,
+          "height": 44,
+          "right": 1257,
+          "bottom": 65
+        },
+        "scroll": {
+          "left": 0,
+          "width": 234,
+          "client": 234
+        },
+        "buttons": [
+          {
+            "label": "今天",
+            "x": 368.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 412.015625,
+            "bottom": 65
+          },
+          {
+            "label": "两周",
+            "x": 426.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 470.015625,
+            "bottom": 65
+          },
+          {
+            "label": "月",
+            "x": 472.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 516.015625,
+            "bottom": 65
+          },
+          {
+            "label": "周",
+            "x": 518.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 562.015625,
+            "bottom": 65
+          },
+          {
+            "label": "窗口",
+            "x": 564.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 608.015625,
+            "bottom": 65
+          },
+          {
+            "label": "列表",
+            "x": 610.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 654.015625,
+            "bottom": 65
+          },
+          {
+            "label": "筛选计划",
+            "x": 1167,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 1211,
+            "bottom": 65
+          },
+          {
+            "label": "全屏显示",
+            "x": 1213,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 1257,
+            "bottom": 65
+          }
+        ],
+        "overflow": false
+      },
+      "passed": true
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "geometry": {
+        "toolbar": {
+          "x": 225,
+          "y": 17,
+          "width": 1194,
+          "height": 60,
+          "right": 1419,
+          "bottom": 77
+        },
+        "date": {
+          "x": 227,
+          "y": 21,
+          "width": 185.015625,
+          "height": 44,
+          "right": 412.015625,
+          "bottom": 65
+        },
+        "views": {
+          "x": 422.015625,
+          "y": 17,
+          "width": 236,
+          "height": 52,
+          "right": 658.015625,
+          "bottom": 69
+        },
+        "actions": {
+          "x": 1327,
+          "y": 21,
+          "width": 90,
+          "height": 44,
+          "right": 1417,
+          "bottom": 65
+        },
+        "scroll": {
+          "left": 0,
+          "width": 234,
+          "client": 234
+        },
+        "buttons": [
+          {
+            "label": "今天",
+            "x": 368.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 412.015625,
+            "bottom": 65
+          },
+          {
+            "label": "两周",
+            "x": 426.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 470.015625,
+            "bottom": 65
+          },
+          {
+            "label": "月",
+            "x": 472.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 516.015625,
+            "bottom": 65
+          },
+          {
+            "label": "周",
+            "x": 518.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 562.015625,
+            "bottom": 65
+          },
+          {
+            "label": "窗口",
+            "x": 564.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 608.015625,
+            "bottom": 65
+          },
+          {
+            "label": "列表",
+            "x": 610.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 654.015625,
+            "bottom": 65
+          },
+          {
+            "label": "筛选计划",
+            "x": 1327,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 1371,
+            "bottom": 65
+          },
+          {
+            "label": "全屏显示",
+            "x": 1373,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 1417,
+            "bottom": 65
+          }
+        ],
+        "overflow": false
+      },
+      "passed": true
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "geometry": {
+        "toolbar": {
+          "x": 225,
+          "y": 17,
+          "width": 1194,
+          "height": 60,
+          "right": 1419,
+          "bottom": 77
+        },
+        "date": {
+          "x": 227,
+          "y": 21,
+          "width": 185.015625,
+          "height": 44,
+          "right": 412.015625,
+          "bottom": 65
+        },
+        "views": {
+          "x": 422.015625,
+          "y": 17,
+          "width": 236,
+          "height": 52,
+          "right": 658.015625,
+          "bottom": 69
+        },
+        "actions": {
+          "x": 1327,
+          "y": 21,
+          "width": 90,
+          "height": 44,
+          "right": 1417,
+          "bottom": 65
+        },
+        "scroll": {
+          "left": 0,
+          "width": 234,
+          "client": 234
+        },
+        "buttons": [
+          {
+            "label": "今天",
+            "x": 368.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 412.015625,
+            "bottom": 65
+          },
+          {
+            "label": "两周",
+            "x": 426.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 470.015625,
+            "bottom": 65
+          },
+          {
+            "label": "月",
+            "x": 472.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 516.015625,
+            "bottom": 65
+          },
+          {
+            "label": "周",
+            "x": 518.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 562.015625,
+            "bottom": 65
+          },
+          {
+            "label": "窗口",
+            "x": 564.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 608.015625,
+            "bottom": 65
+          },
+          {
+            "label": "列表",
+            "x": 610.015625,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 654.015625,
+            "bottom": 65
+          },
+          {
+            "label": "筛选计划",
+            "x": 1327,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 1371,
+            "bottom": 65
+          },
+          {
+            "label": "全屏显示",
+            "x": 1373,
+            "y": 21,
+            "width": 44,
+            "height": 44,
+            "right": 1417,
+            "bottom": 65
+          }
+        ],
+        "overflow": false
+      },
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "writes": []
+}

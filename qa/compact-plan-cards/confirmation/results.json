@@ -1,0 +1,492 @@
+[
+  {
+    "width": 375,
+    "theme": "light",
+    "windows": [
+      {
+        "id": "short",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "long",
+        "height": 80,
+        "summary": 66,
+        "meta": 18,
+        "title": 40,
+        "font": "14px"
+      },
+      {
+        "id": "personal",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "shared",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "year",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      }
+    ],
+    "errors": [],
+    "writes": [],
+    "passed": true
+  },
+  {
+    "width": 375,
+    "theme": "dark",
+    "windows": [
+      {
+        "id": "short",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "long",
+        "height": 80,
+        "summary": 66,
+        "meta": 18,
+        "title": 40,
+        "font": "14px"
+      },
+      {
+        "id": "personal",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "shared",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "year",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      }
+    ],
+    "errors": [],
+    "writes": [],
+    "passed": true
+  },
+  {
+    "width": 624,
+    "theme": "light",
+    "windows": [
+      {
+        "id": "short",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "long",
+        "height": 80,
+        "summary": 66,
+        "meta": 18,
+        "title": 40,
+        "font": "14px"
+      },
+      {
+        "id": "personal",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "shared",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "year",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      }
+    ],
+    "errors": [],
+    "writes": [],
+    "passed": true
+  },
+  {
+    "width": 624,
+    "theme": "dark",
+    "windows": [
+      {
+        "id": "short",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "long",
+        "height": 80,
+        "summary": 66,
+        "meta": 18,
+        "title": 40,
+        "font": "14px"
+      },
+      {
+        "id": "personal",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "shared",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "year",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      }
+    ],
+    "errors": [],
+    "writes": [],
+    "passed": true
+  },
+  {
+    "width": 768,
+    "theme": "light",
+    "windows": [
+      {
+        "id": "short",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "long",
+        "height": 80,
+        "summary": 66,
+        "meta": 18,
+        "title": 40,
+        "font": "14px"
+      },
+      {
+        "id": "personal",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "shared",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "year",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      }
+    ],
+    "errors": [],
+    "writes": [],
+    "passed": true
+  },
+  {
+    "width": 768,
+    "theme": "dark",
+    "windows": [
+      {
+        "id": "short",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "long",
+        "height": 80,
+        "summary": 66,
+        "meta": 18,
+        "title": 40,
+        "font": "14px"
+      },
+      {
+        "id": "personal",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "shared",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "year",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      }
+    ],
+    "errors": [],
+    "writes": [],
+    "passed": true
+  },
+  {
+    "width": 1280,
+    "theme": "light",
+    "windows": [
+      {
+        "id": "short",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "long",
+        "height": 80,
+        "summary": 66,
+        "meta": 18,
+        "title": 40,
+        "font": "14px"
+      },
+      {
+        "id": "personal",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "shared",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "year",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      }
+    ],
+    "errors": [],
+    "writes": [],
+    "passed": true
+  },
+  {
+    "width": 1280,
+    "theme": "dark",
+    "windows": [
+      {
+        "id": "short",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "long",
+        "height": 80,
+        "summary": 66,
+        "meta": 18,
+        "title": 40,
+        "font": "14px"
+      },
+      {
+        "id": "personal",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "shared",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "year",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      }
+    ],
+    "errors": [],
+    "writes": [],
+    "passed": true
+  },
+  {
+    "width": 1440,
+    "theme": "light",
+    "windows": [
+      {
+        "id": "short",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "long",
+        "height": 80,
+        "summary": 66,
+        "meta": 18,
+        "title": 40,
+        "font": "14px"
+      },
+      {
+        "id": "personal",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "shared",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "year",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      }
+    ],
+    "errors": [],
+    "writes": [],
+    "passed": true
+  },
+  {
+    "width": 1440,
+    "theme": "dark",
+    "windows": [
+      {
+        "id": "short",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "long",
+        "height": 80,
+        "summary": 66,
+        "meta": 18,
+        "title": 40,
+        "font": "14px"
+      },
+      {
+        "id": "personal",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "shared",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      },
+      {
+        "id": "year",
+        "height": 66,
+        "summary": 52,
+        "meta": 21,
+        "title": 20,
+        "font": "14px"
+      }
+    ],
+    "errors": [],
+    "writes": [],
+    "passed": true
+  }
+]

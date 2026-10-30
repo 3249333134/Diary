@@ -71,6 +71,8 @@ function TodoItem({ row, busy, onCheck, onEdit, onDelete, onStatus, onOpenSource
 }) {
   const due = row.task.dueDate || row.task.plannedDate || '';
   const dueTime = row.task.dueDate ? row.task.dueTime : row.task.time;
+  const dueDisplay=due?(due.slice(0,4)===planClock().date.slice(0,4)?due.slice(5):due)+(dueTime?' '+dueTime:''):'未安排日期';
+  const dueLabel=due?'截止 '+due+(dueTime?' '+dueTime:''):'未安排日期';
   const overdue = matchesPlan(row.task, 'overdue');
   const status = row.task.done ? 'done' : row.task.status || 'todo';
   const {data}=useSocial();
@@ -105,9 +107,9 @@ function TodoItem({ row, busy, onCheck, onEdit, onDelete, onStatus, onOpenSource
         />
       </label>
 
-      <button type="button" className="plan-card-summary" title={row.task.title} aria-label={'计划详情：'+row.task.title} aria-expanded={expanded} aria-controls={expanded?detailsId:undefined} onClick={()=>{setExpanded(value=>!value);}}>
+      <button type="button" className="plan-card-summary" title={row.task.title} aria-label={'计划详情：'+row.task.title} aria-describedby={detailsId+'-summary'} aria-expanded={expanded} aria-controls={expanded?detailsId:undefined} onClick={()=>{setExpanded(value=>!value);}}>
         <span className="plan-summary-heading"><strong className="todo-title">{row.task.title}</strong><ChevronDown size={18} className="plan-expand-icon"/></span>
-        <span className="plan-summary-meta">{row.windowId?<SharedPlanBadge name={row.windowName}/>:<span className="plan-category-label">{categoryLabel}</span>}<span className="plan-urgency-label">{urgency(row.task)?.label || '象限待分类'}</span><span className="plan-summary-due"><Calendar size={13}/>{due ? due+(dueTime?' '+dueTime:'') : '未安排日期'}</span>{(row.task.seriesId||row.task.recurrenceAnchor)&&row.task.checkinEnabled!==false&&(row.task.checkinEnabled===true||!!row.task.checkins)&&<span className="plan-checkin-badge" title={`重复日程已打卡 ${row.task.checkins} 次`}><Flame size={12}/>{row.task.checkins}</span>}{state!=='neutral'&&<strong className={'plan-state-badge badge-'+state}>{({done:'已完成',overdue:'已超期',soon:'即将到期',neutral:''})[state]}</strong>}</span>
+        <span className="plan-summary-meta" id={detailsId+'-summary'}>{row.windowId?<SharedPlanBadge name={row.windowName}/>:<span className="plan-category-label">{categoryLabel}</span>}<span className="plan-urgency-label sr-only">{urgency(row.task)?.label || '象限待分类'}</span><span className="plan-summary-due" title={dueLabel}><Calendar size={12} aria-hidden="true"/><span className="plan-due-label" aria-hidden="true">{dueDisplay}</span><span className="sr-only">{dueLabel}</span></span>{(row.task.seriesId||row.task.recurrenceAnchor)&&row.task.checkinEnabled!==false&&(row.task.checkinEnabled===true||!!row.task.checkins)&&<span className="plan-checkin-badge" title={`重复日程已打卡 ${row.task.checkins} 次`}><Flame size={12}/>{row.task.checkins}</span>}{state!=='neutral'&&<strong className={'plan-state-badge badge-'+state}>{({done:'已完成',overdue:'已超期',soon:'即将到期',neutral:''})[state]}</strong>}</span>
       </button>
       {expanded&&<div id={detailsId} className="todo-copy plan-card-details">
         <div className="plan-detail-classification"><PriorityBadge priority={row.task.priority}/><span>{urgency(row.task)?.label || '象限待分类'}</span><span>{STATUS_LABEL[status]}</span></div>

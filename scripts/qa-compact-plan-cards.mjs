@@ -1,0 +1,34 @@
+import {chromium} from 'playwright-core';
+import {mkdir,writeFile} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import {emptyDiary,todoSchema} from '../packages/contracts/dist/index.js';
+import {selectPlanView} from './plan-view.mjs';
+
+const before=process.argv.includes('--before'),out=`qa/compact-plan-cards/${before?'before':'confirmation'}`;
+await mkdir(out,{recursive:true});
+const browser=await chromium.launch({executablePath:'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true}),results=[];
+const date='2026-10-29',win={id:'shared-demo',name:'共享演示 · 一起安排',color:'#8066c5',role:'editor',version:'v1',members:[]};
+const task=(id,title,patch={})=>({date,version:'v1',task:todoSchema.parse({id,title,dueDate:'2026-10-11',dueTime:'17:00',category:'work',important:true,urgent:true,...patch}),sourceExists:false,completionExists:false});
+const privateRows=[task('short','提交报表'),task('long','处理项目风险并准备下阶段的详细评审材料'),task('personal','安排家人出行',{category:'personal',important:true,urgent:false})];
+const sharedRows=[{...task('shared','一起阅读与复盘',{dueDate:date,dueTime:'23:45',category:null}),windowId:win.id,windowName:win.name,role:'editor'}, {...task('year','跨年准备事项',{dueDate:'2027-01-01',dueTime:'08:30',category:null}),windowId:win.id,windowName:win.name,role:'editor'}];
+try{for(const width of before?[375,1440]:[375,624,768,1280,1440])for(const theme of before?['light']:['light','dark']){
+ const page=await browser.newPage({viewport:{width,height:900},hasTouch:width<900}),errors=[],writes=[];page.setDefaultTimeout(9000);await page.clock.install({time:new Date(date+'T04:00:00Z')});
+ await page.addInitScript(theme=>localStorage.setItem('diary.theme',theme),theme);page.on('pageerror',e=>errors.push(e.message));
+ await page.route('**/api/**',async route=>{const request=route.request(),path=new URL(request.url()).pathname;if(request.method()!=='GET')writes.push(path);let json={};
+  if(path==='/api/auth/me')json={id:1,username:'卡片检查'};else if(path==='/api/social')json={profile:{code:'CARD',name:'卡片检查'},windows:[win],friends:[],requests:[],invitations:[],notices:[],cursor:0};else if(path==='/api/actions'||path==='/api/schedule')json={tasks:privateRows};else if(path==='/api/shared-tasks')json={tasks:sharedRows};else if(path.startsWith('/api/diaries/'))json={document:emptyDiary(path.split('/').pop()),version:'v1',exists:true};else if(path==='/api/plan-categories')json={categories:[{id:'work',name:'工作',color:'#7bb4de',order:0},{id:'personal',name:'个人生活',color:'#c5a27e',order:1}]};else if(path==='/api/plan-window-order')json={ids:[]};else if(path==='/api/plan-views')json={views:[]};else if(path==='/api/entities')json={entities:[]};else if(path==='/api/tags')json={tags:{person:[],place:[],activity:[],food:[],thing:[]}};else if(path==='/api/weeks')json={start:date,end:date,entries:[]};else if(path==='/api/quick-facts')json={facts:[]};else if(path==='/api/tag-library')json={tags:[]};await route.fulfill({json});});
+ await page.goto('http://127.0.0.1:4320/');await page.locator('.todo-panel[aria-busy=false]').waitFor();await selectPlanView(page,'窗口');await page.locator('.plan-window-list .plan-card').first().waitFor();
+ const measure=()=>page.locator('.plan-card').evaluateAll(cards=>cards.map(card=>{const box=card.getBoundingClientRect(),summary=card.querySelector('.plan-card-summary'),meta=card.querySelector('.plan-summary-meta'),title=card.querySelector('.todo-title');return{id:card.dataset.recordId,height:box.height,summary:summary.getBoundingClientRect().height,meta:meta.getBoundingClientRect().height,title:title.getBoundingClientRect().height,font:getComputedStyle(title).fontSize};}));
+ const windows=await measure();
+ if(before||[375,1440].includes(width)){await page.waitForTimeout(100);await page.screenshot({path:`${out}/${width}-${theme}-windows.png`});}
+ if(!before){
+  assert(!await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth));for(const card of windows){assert(card.height<=82,JSON.stringify(card));assert(card.title<=40.5,JSON.stringify(card));assert(card.meta<=24,JSON.stringify(card));}
+  const short=page.locator('.plan-card[data-record-id=short]'),summary=short.locator('.plan-card-summary');assert((await short.boundingBox()).height<=70);assert.equal(await short.evaluate(el=>el.nextElementSibling.getBoundingClientRect().top-el.getBoundingClientRect().bottom),8);assert((await short.locator('.todo-check').boundingBox()).height>=44);assert((await short.locator('.plan-drag-handle').boundingBox()).width>=44);await summary.click();assert.equal(await summary.getAttribute('aria-expanded'),'true');await short.getByRole('button',{name:'修改',exact:true}).waitFor();await summary.click();assert((await short.boundingBox()).height<=70);
+  const handle=short.locator('.plan-drag-handle');const r=await handle.boundingBox();await page.mouse.move(r.x+r.width/2,r.y+r.height/2);await page.mouse.down();await page.mouse.move(r.x+r.width/2+12,r.y+r.height/2+8);await page.locator('.plan-card-dragging').waitFor();await page.keyboard.press('Escape');await page.mouse.up();assert.equal(await page.locator('.plan-card-dragging,.plan-card-placeholder').count(),0);
+  await selectPlanView(page,'列表');await page.locator('.plan-list-view').waitFor();const list=await measure();assert.equal(list.find(card=>card.id==='short').font,windows.find(card=>card.id==='short').font);assert.equal(list.find(card=>card.id==='short').height,windows.find(card=>card.id==='short').height);
+  assert((await page.locator('.plan-card[data-record-id=year] .plan-summary-due').getAttribute('title')).includes('2027-01-01 08:30'));
+  if([375,1440].includes(width))await page.screenshot({path:`${out}/${width}-${theme}-list.png`});
+  await selectPlanView(page,'窗口');await page.getByRole('navigation',{name:'日历日期'}).getByRole('button',{name:'今天',exact:true}).click();await page.locator('.calendar-timeline-canvas').waitFor();assert.equal(await page.getByRole('navigation',{name:'计划视图'}).getByRole('button',{name:'两周',exact:true}).getAttribute('aria-pressed'),'true');const today=page.locator('.plan-today-button');const style=await today.evaluate(el=>({background:getComputedStyle(el).backgroundColor,color:getComputedStyle(el).color}));assert.notEqual(style.background,'rgba(0, 0, 0, 0)');assert.equal(style.color,'rgb(255, 255, 255)');
+  await page.setViewportSize({width,height:560});await page.waitForTimeout(100);const footer=await page.locator('.workspace-footer').boundingBox();assert(footer.y+footer.height<=561);assert(!await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth));
+ }
+ assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);results.push({width,theme,windows,errors,writes,passed:true});await page.close();
+}}finally{await browser.close();await writeFile(out+'/results.json',JSON.stringify(results,null,2));}

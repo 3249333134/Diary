@@ -14,7 +14,7 @@
 .plan-window-count { font-size:11px; color:var(--muted); white-space:nowrap; }
 .plan-window-list.todo-list { flex:1; min-height:0; list-style:none; padding:10px; margin:0; display:flex; flex-direction:column; gap:10px; overflow-y:auto; overscroll-behavior-y:contain; scrollbar-width:thin; }
 .plan-window-list>li { list-style:none; flex-shrink:0; }
-.plan-window-list .plan-card { padding:12px; border-radius:12px; min-height:104px; }
+.plan-window-list .plan-card { border-radius:12px; }
 .plan-window-list .plan-card-summary { min-width:0; }
 .plan-window-list .plan-summary-heading { font-size:14px; }
 .plan-window-list .plan-summary-meta { font-size:11px; gap:6px; flex-wrap:wrap; }
