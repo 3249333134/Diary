@@ -128,6 +128,29 @@
 .receipt-explanation { color: var(--muted, #8e897c); font-size: 14px; }
 .receipt-controls { justify-content: flex-start; margin: 18px 0 28px; }
 
+/* ── 小票夹日期翻页 ── */
+.receipt-day-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 6px 8px;
+  border: 1px solid var(--line, #e2e1e8);
+  border-radius: 12px;
+  background: var(--surface-2, #f5f4f8);
+}
+.receipt-day-nav > .quiet-button {
+  flex: 0 0 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+.receipt-day-nav > div { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.receipt-day-nav strong { font-size: 15px; letter-spacing: 0.02em; }
+.receipt-day-nav span { font-size: 11px; color: var(--muted, #8e897c); }
+
 /* ── 皮肤选择器 — 常显色块组 ── */
 .receipt-skin-switch {
   display: flex;

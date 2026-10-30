@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Download, Printer, RotateCcw, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Printer, RotateCcw, X } from 'lucide-react';
 import type { DiaryDocument } from '@diary/contracts';
 import { downloadReceipts, receiptsFor, summarizeDay, type Receipt } from './receipts';
 import './receipts.css';
@@ -131,9 +131,17 @@ function SkinSwitch({ value, onChange }: { value: Skin; onChange: (s: Skin) => v
 }
 
 /** 收集面板。传 receipts 时渲染外部聚合的小票夹，否则渲染单日日记小票 */
-export function ReceiptCollection({ diary, saved, onClose, onWrite, receipts: given, heading = '每日小票' }: { diary: DiaryDocument; saved: boolean; onClose: () => void; onWrite: () => void; receipts?: Receipt[]; heading?: string }) {
+export function ReceiptCollection({ diary, saved, onClose, onWrite, receipts: given, heading = '每日小票', days, day, onDay, total }: { diary: DiaryDocument; saved: boolean; onClose: () => void; onWrite: () => void; receipts?: Receipt[]; heading?: string; days?: string[]; day?: string; onDay?: (day: string) => void; total?: number }) {
   const receipts = given ?? receiptsFor(diary);
   const vault = !!given;
+  // 小票夹按日期翻页：days 从新到旧排列
+  const dayIndex = days && day ? days.indexOf(day) : -1;
+  const stepDay = (delta: number) => {
+    if (!days || dayIndex < 0 || !onDay) return;
+    const next = days[dayIndex + delta];
+    if (next) onDay(next);
+  };
+  const swipe = useRef<{ x: number; y: number } | null>(null);
   const [replayKey, setReplayKey] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
@@ -187,14 +195,45 @@ export function ReceiptCollection({ diary, saved, onClose, onWrite, receipts: gi
   const feedTotalDuration = receipts.length * 160 + 1400;
 
   return (
-    <section className="receipt-collection" aria-labelledby="receipt-heading" data-skin={skin}>
+    <section
+      className="receipt-collection"
+      aria-labelledby="receipt-heading"
+      data-skin={skin}
+      onTouchStart={e => { const touch = e.touches[0]; swipe.current = { x: touch.clientX, y: touch.clientY }; }}
+      onTouchEnd={e => {
+        const start = swipe.current; swipe.current = null;
+        if (!start) return;
+        const touch = e.changedTouches[0];
+        const dx = touch.clientX - start.x, dy = touch.clientY - start.y;
+        if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+        // 左滑看更早一天，右滑看更新一天
+        stepDay(dx < 0 ? 1 : -1);
+      }}
+    >
       <div className="receipt-collection-heading">
         <div>
           <h2 id="receipt-heading">{heading}</h2>
-          <p>{vault ? `全部日期 · ${receipts.length} 张` : `${diary.date} · ${receipts.length} 张${!saved ? ' · 未保存预览' : ' · 已随日记收藏'}`}</p>
+          <p>{vault
+            ? (days && day ? `${day.replaceAll('-', '.')} · ${receipts.length} 张 / 共 ${total ?? receipts.length} 张` : `全部日期 · ${receipts.length} 张`)
+            : `${diary.date} · ${receipts.length} 张${!saved ? ' · 未保存预览' : ' · 已随日记收藏'}`}</p>
         </div>
         <button className="quiet-button" onClick={onClose}><X size={18} />返回记录</button>
       </div>
+
+      {days && day && (
+        <div className="receipt-day-nav" role="group" aria-label="切换小票日期">
+          <button className="quiet-button" type="button" onClick={() => stepDay(-1)} disabled={dayIndex <= 0} aria-label="更新一天">
+            <ChevronLeft size={18} />
+          </button>
+          <div>
+            <strong>{day.replaceAll('-', '.')}</strong>
+            <span>{dayIndex + 1} / {days.length} 天 · 左右滑动切换</span>
+          </div>
+          <button className="quiet-button" type="button" onClick={() => stepDay(1)} disabled={dayIndex >= days.length - 1} aria-label="更早一天">
+            <ChevronRight size={18} />
+          </button>
+        </div>
+      )}
 
       <div className="receipt-controls">
         <button className="quiet-button" disabled={!receipts.length || exporting || (!vault && !saved)}
@@ -225,7 +264,7 @@ export function ReceiptCollection({ diary, saved, onClose, onWrite, receipts: gi
           <button className="quiet-button" onClick={onWrite}>{vault ? '去完成一件日程' : '去写一条'}</button>
         </div>
       ) : (
-        <div className="receipt-roll" key={`${vault ? 'vault' : diary.date}:${replayKey}`}>
+        <div className="receipt-roll" key={`${vault ? `vault:${day || ''}` : diary.date}:${replayKey}`}>
           <div
             ref={feedRef}
             className="receipt-feed"
@@ -233,7 +272,7 @@ export function ReceiptCollection({ diary, saved, onClose, onWrite, receipts: gi
           >
             {/* 日期标题栏 — 不动画，稳定显示 */}
             <div className="receipt-day-heading">
-              <strong>{vault ? '我的小票夹' : diary.date.replaceAll('-', '.')}</strong>
+              <strong>{vault ? (day ? day.replaceAll('-', '.') : '我的小票夹') : diary.date.replaceAll('-', '.')}</strong>
               <span>生活留存凭证 · 共 {receipts.length} 张</span>
             </div>
             {/* 逐张吐纸 — replayKey 变化会重新挂载所有 wrapper */}

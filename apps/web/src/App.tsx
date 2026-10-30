@@ -759,7 +759,7 @@ export function App() {
   const [focusRecord, setFocusRecord] = useState<RecordRef>();
   const [actionError, setActionError] = useState('');
   const [printedReceipts, setPrintedReceipts] = useState<Receipt[]>([]);
-  const [vault, setVault] = useState<{ open: boolean; loading: boolean; receipts: Receipt[] }>({ open: false, loading: false, receipts: [] });
+  const [vault, setVault] = useState<{ open: boolean; loading: boolean; day?: string; receipts: Receipt[] }>({ open: false, loading: false, receipts: [] });
   const [entities, setEntities] = useState<EntityRecord[]>([]);
   const [tags, setTags] = useState<TagStore>(EMPTY_TAGS);
   const [selectedEntity, setSelectedEntity] = useState<EntityRecord | null>(null);
@@ -1012,12 +1012,15 @@ export function App() {
       const seen = new Set<string>();
       const unique = list.filter(receipt => seen.has(receipt.id) ? false : (seen.add(receipt.id), true));
       unique.sort((a, b) => b.date.localeCompare(a.date) || (b.time || '').localeCompare(a.time || ''));
-      setVault({ open: true, loading: false, receipts: unique });
+      setVault({ open: true, loading: false, day: unique[0]?.date, receipts: unique });
     } catch (error) {
       setVault({ open: true, loading: false, receipts: [] });
       setActionError(error instanceof Error ? error.message : '小票夹读取失败');
     }
   };
+  const vaultDays = [...new Set(vault.receipts.map(receipt => receipt.date))];
+  const vaultDay = vault.day || vaultDays[0] || '';
+  const closeVault = () => setVault({ open: false, loading: false, receipts: [] });
   const navigate=(page:MainPage)=>{setCreationOpen(false);if(page!=='diary')setPrintedReceipts([]);if(page==='plan'||page==='diary'){setSocialPage(undefined);setShowTodos(page==='plan');}else setSocialPage(page);};
   const beginCreation=(kind:CreationKind=(!socialPage&&!showTodos&&activeTab<4?tabs[activeTab].id:'plan') as CreationKind,preset?:Partial<CreationDraft>)=>{setCreationNotice(undefined);setCreationRequest({id:++creationCounter.current,kind,date,preset,defaults:{learn:{entities:diary.learn.sources},input:{entities:diary.input.names,inputKind:diary.input.kind},idea:{tags:diary.idea.tags}}});setCreationOpen(true);};
   const diaryColumnSelector=<div className="diary-column-selector"><GlassSelect label="日记栏目" value={String(activeTab)} options={[...tabs.map((t,i)=>({value:String(i),label:`${t.label}${i===activeTab&&i<4?'·'+diaryCount:''}`})),{value:'information',label:informationLabel},{value:'today',label:'回到今天'},{value:'fullscreen',label:fullscreen?'退出全屏':'全屏显示'}]} onChange={value=>{if(value==='information')openDiaryInformation();else if(value==='today')setDate(today());else if(value==='fullscreen')setFullscreen(f=>!f);else selectTab(Number(value));}}/></div>;
@@ -1055,7 +1058,7 @@ export function App() {
       </div>
       {socialPage==='communications'&&<Communications onOpenWindow={(windowId,taskId)=>{navigate('plan');requestPlanTool('window',windowId);if(taskId)setFocusRecord({date:date,kind:'todo',id:taskId,summary:'',windowId});}} onPublishTask={(windowId)=>{navigate('plan');beginCreation('plan',{windowId});}}/>}
       {socialPage==='mine'&&(vault.open
-        ? vault.loading ? <p role="status">正在整理小票夹…</p> : <ReceiptCollection key="vault" diary={diary} saved receipts={vault.receipts} heading="小票夹" onClose={()=>setVault({open:false,loading:false,receipts:[]})} onWrite={()=>{setVault({open:false,loading:false,receipts:[]});navigate('plan');}} />
+        ? vault.loading ? <div className="receipt-vault"><p role="status">正在整理小票夹…</p></div> : <div className="receipt-vault"><ReceiptCollection key="vault" diary={diary} saved receipts={vault.receipts.filter(receipt=>receipt.date===vaultDay)} total={vault.receipts.length} days={vaultDays} day={vaultDay} onDay={next=>setVault(old=>({...old,day:next}))} heading="小票夹" onClose={closeVault} onWrite={()=>{closeVault();navigate('plan');}} /></div>
         : <MyAccount username={authState.user.username} theme={theme} onTheme={toggleTheme} onLogout={()=>void handleLogout()} onReceipts={()=>void openReceiptVault()} onDemo={async code=>{await prepareAction();if(hasCaptureDraft)throw new Error('请先保存新增草稿，再切换演示身份');await api.demoAccount(code);window.location.reload();}}/>)}
     </main>
 

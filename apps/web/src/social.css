@@ -4,6 +4,9 @@
 .social-app .main-content>.workspace-footer { position:relative;display:block;order:3;flex:0 0 60px;height:60px;padding:0;margin:0;background:none;border:0; }
 .social-app .main-content>.workspace-root { flex:1;min-height:0;overflow:hidden; }
 .social-app .main-content>.workspace-root[hidden] { display:none; }
+/* 小票夹：内容区自己滚动，底部导航保留在底部 */
+.social-app .main-content>.receipt-vault { flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch; }
+.social-app .main-content>.receipt-vault .receipt-collection { margin:8px 0 24px; }
 .global-navigation { height:60px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;align-items:center;gap:4px;padding:3px 5px;box-sizing:border-box;border:1px solid var(--glass-edge);border-radius:16px;background:var(--glass);backdrop-filter:var(--glass-blur); }
 .global-navigation>button { position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:44px;min-height:48px;border:0;border-radius:12px;background:transparent;color:var(--muted);font:inherit;cursor:pointer;padding:4px; }
 .global-navigation>button[aria-current=page] { color:var(--purple-ink);background:var(--purple-soft);font-weight:600; }
