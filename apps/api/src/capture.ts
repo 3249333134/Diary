@@ -51,8 +51,38 @@ function sanitizeDraft(item: Record<string, unknown>): Record<string, unknown> {
   if (out.checkinEnabled !== undefined && typeof out.checkinEnabled !== 'boolean') out.checkinEnabled = undefined;
   for (const k of ['description', 'reviewReason']) if (out[k] !== undefined && typeof out[k] !== 'string') out[k] = undefined;
   for (const k of ['important', 'urgent', 'needsReview']) if (out[k] !== undefined && typeof out[k] !== 'boolean' && !(out[k]===null&&k!=='needsReview')) out[k] = undefined;
-  const repeat=todoRepeatSchema.safeParse(out.repeat);out.repeat=repeat.success?repeat.data:null;
+  out.repeat = normalizeRepeat(out.repeat);
   return out;
+}
+
+/** 兼容 AI 的 repeat 写法（字符串简写、数字为字符串），再交给 zod 校验 */
+function normalizeRepeat(value: unknown) {
+  if (typeof value === 'string') return /^(daily|weekly|monthly|yearly|none)$/.test(value) ? { type: value } : null;
+  if (value && typeof value === 'object') {
+    const r = { ...(value as Record<string, unknown>) };
+    if (Array.isArray(r.weekdays)) r.weekdays = r.weekdays.map(Number).filter(n => Number.isInteger(n) && n >= 0 && n <= 6);
+    if (r.monthDay !== undefined) r.monthDay = Number(r.monthDay);
+    if (r.interval !== undefined) r.interval = Math.max(1, Number(r.interval) || 1) || undefined;
+    if (r.until !== undefined && typeof r.until !== 'string') r.until = '';
+    if (r.afterDays !== undefined) r.afterDays = Number(r.afterDays);
+    const parsed = todoRepeatSchema.safeParse(r);
+    return parsed.success ? parsed.data : null;
+  }
+  return null;
+}
+
+const CN_WEEKDAY: Record<string, number> = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 日: 0, 天: 0 };
+/** 从正文里的频率词直接推断重复规则，避免模型漏填 repeat */
+export function inferRepeat(text: string) {
+  if (/每年/.test(text)) return { type: 'yearly' as const };
+  const monthly = /每(?:个)?月(?:的|份)?(\d{1,2})[号日]/.exec(text);
+  if (monthly) return { type: 'monthly' as const, monthDay: Number(monthly[1]) };
+  if (/每月|每个月/.test(text)) return { type: 'monthly' as const };
+  const weekly = /每(?:周|个?星期)([一二三四五六日天])/.exec(text);
+  if (weekly) return { type: 'weekly' as const, weekdays: [CN_WEEKDAY[weekly[1]] ?? 1] };
+  if (/周[一二三四五六日天]/.test(text) && /每/.test(text)) return { type: 'weekly' as const };
+  if (/每天|每日|每晚|天天|每个工作日/.test(text)) return { type: 'daily' as const };
+  return null;
 }
 
 const KIND_LABEL: Record<string, string> = { plan: '日程', facts: '记录', learn: '学习', input: '摘录', idea: '灵感' };
@@ -134,6 +164,8 @@ export async function parseCapture(input: z.infer<typeof captureRequestSchema>, 
           if(draft.category&&!categories.some(c=>c.id===draft.category))draft.category=null;
           if(draft.windowId&&!windows.some(w=>w.id===draft.windowId))draft.windowId=undefined;
           if (draft.date) assertDate(draft.date);
+          if (draft.kind === 'plan' && !draft.repeat) draft.repeat = inferRepeat(draft.content);
+          if (draft.repeat && /打卡|坚持|习惯/.test(draft.content)) draft.checkinEnabled = true;
           if(draft.kind==='plan')draft.date=firstOccurrence(draft.date,draft.repeat);
           if (draft.startDate) assertDate(draft.startDate);
           if (!draft.tags.length) draft.tags = [draft.list || (draft.category ? categories.find(c=>c.id===draft.category)?.name || '' : '') || KIND_LABEL[draft.kind]];
