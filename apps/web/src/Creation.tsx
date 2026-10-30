@@ -1,4 +1,4 @@
-import {useEffect,useRef,useState,type RefObject} from 'react';
+import {useEffect,useLayoutEffect,useRef,useState,type RefObject} from 'react';
 import {ArrowUp,Trash2} from 'lucide-react';
 import {validationMessage,type RecordRef,type FieldIssue} from '@diary/contracts';
 import {GlassDialog} from './GlassUI';
@@ -24,7 +24,7 @@ export function Creation({account,open,request,onClose,trigger,context,onSave,on
  const [session,setSession]=useState(()=>{try{const restored=restoreCreationSession(localStorage.getItem(creationStorageKey(account)));return {...restored,rows:restored.rows.filter(row=>row.state!=='saved')};}catch{return emptyCreationSession();}});
  const [manualKey,setManualKey]=useState(''),[activeRow,setActiveRow]=useState<string>(),[lastDiaryKind,setLastDiaryKind]=useState<CreationKind>('facts');
  const [saving,setSaving]=useState(false),[parsing,setParsing]=useState(false),[uploading,setUploading]=useState(false),[listening,setListening]=useState(false),[error,setError]=useState(''),[storageError,setStorageError]=useState(''),[message,setMessage]=useState(''),[progress,setProgress]=useState({current:0,total:0});
- const guard=useRef(false),parseGuard=useRef(false),mounted=useRef(true),body=useRef<HTMLDivElement>(null),input=useRef<HTMLTextAreaElement>(null);
+ const guard=useRef(false),parseGuard=useRef(false),mounted=useRef(true),body=useRef<HTMLDivElement>(null),input=useRef<HTMLTextAreaElement>(null),autoFocused=useRef(false);
  const current=session.rows.find(row=>row.draft.id===activeRow),draft=current?.draft||session.manual[manualKey],submitted=current?.submitted||(!activeRow?session.submitted[manualKey]:undefined);
  const busy=saving||uploading;
  const selectManual=(kind:CreationKind,init=request)=>{
@@ -39,6 +39,15 @@ export function Creation({account,open,request,onClose,trigger,context,onSave,on
  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
  useEffect(()=>{if(body.current)body.current.scrollTop=0;},[manualKey,activeRow]);
  useEffect(()=>{const el=input.current;if(el){el.style.height='44px';el.style.height=Math.min(88,Math.max(44,el.scrollHeight))+'px';el.scrollTop=el.scrollHeight;}},[session.text,open]);
+ // 打开新增弹窗时默认落到下方 AI 输入：同步聚焦（保留移动端唤起键盘的手势链），再补一帧覆盖对话框自身的自动聚焦
+ useLayoutEffect(()=>{
+  if(!open||!request){autoFocused.current=false;return;}
+  if(autoFocused.current)return;
+  const focus=()=>{const el=input.current;if(!el)return;el.focus({preventScroll:true});if(body.current)body.current.scrollTop=body.current.scrollHeight;};
+  focus();
+  const frame=requestAnimationFrame(()=>{focus();autoFocused.current=true;});
+  return()=>cancelAnimationFrame(frame);
+ },[open,request?.id,draft?.id]);
  const close=()=>{if(guard.current||uploading)return;onClose();requestAnimationFrame(()=>trigger.current?.focus({preventScroll:true}));};
  const patch=(value:Partial<CreationDraft>)=>{if(guard.current||parsing||submitted)return;setError('');setSession(old=>activeRow?{...old,rows:old.rows.map(row=>row.draft.id===activeRow?{...row,draft:{...row.draft,...value},error:undefined}:row)}:{...old,manual:{...old.manual,[manualKey]:{...old.manual[manualKey],...value,edited:true}}});};
  const switchKind=(kind:CreationKind)=>{
@@ -113,7 +122,7 @@ export function Creation({account,open,request,onClose,trigger,context,onSave,on
    <div className="creation-form">
     {draft?.kind!=='plan'&&<GlassSegments label="日记类型" value={draft?.kind||'facts'} options={(['facts','learn','input','idea'] as const).map(value=>({value,label:creationLabels[value]}))} disabled={busy||parsing||!!submitted} onChange={switchKind}/>}
     <nav className="creation-modes" aria-label="新增方式"><button type="button" disabled={busy} aria-pressed={!queueActive} onClick={()=>{setActiveRow(undefined);setError('');}}>手动填写</button><button type="button" disabled={busy||!pending.length} aria-pressed={queueActive} onClick={()=>{setActiveRow(pending[0]?.draft.id);setError('');}}>AI草稿 · {pending.length}</button><small>{session.rows.filter(row=>row.state==='error').length?`${session.rows.filter(row=>row.state==='error').length}条待重试`:queueActive?'核对后一起创建':'先填写常用信息'}</small></nav>
-    {queueActive&&<GlassSelect label="核对AI草稿" value={activeRow||''} disabled={busy} onChange={id=>{setActiveRow(id);setError(session.rows.find(row=>row.draft.id===id)?.error||'');}} options={session.rows.map((row,i)=>({value:row.draft.id,label:`${i+1} · ${creationLabels[row.draft.kind]} · ${row.draft.content.slice(0,28)||'空内容'}${row.state==='error'?' · 待重试':''}`}))}/>}
+    {queueActive&&<GlassSelect label="核对AI草稿" value={activeRow||''} disabled={busy} onChange={id=>{setActiveRow(id);setError(session.rows.find(row=>row.draft.id===id)?.error||'');}} options={session.rows.map((row,i)=>({value:row.draft.id,label:`${i+1} · ${creationLabels[row.draft.kind]} · ${row.draft.content.slice(0,24)||'空内容'}${row.draft.tags.length?' · '+row.draft.tags.slice(0,3).map(tag=>'#'+tag).join(''):''}${row.state==='error'?' · 待重试':''}`}))}/>}
     {!queueActive&&otherManual.length>0&&<GlassSelect label="切换手动草稿" value={manualKey} disabled={busy} onChange={key=>{setManualKey(key);setError('');}} options={[{value:manualKey,label:'当前填写'},...otherManual.map(([key,row])=>({value:key,label:`${creationLabels[row.kind]} · ${row.content.slice(0,24)||row.date}`}))]}/>}
 
     {(storageError||error)&&<p className="creation-error" role="alert">{error||storageError}</p>}

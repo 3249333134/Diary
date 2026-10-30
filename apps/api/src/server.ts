@@ -1,6 +1,6 @@
 import { registerObsidianSync } from "./obsidian-sync.js";
 import { ensureSyncTables } from "./sync-db.js";
-import {registerSocial} from './social.js';
+import {registerSocial,socialSnapshot} from './social.js';
 import Fastify from "fastify";
 import { captureRequestSchema, validationIssues, DIARY_BODY_LIMIT } from '@diary/contracts';
 import { parseCapture } from './capture.js';
@@ -268,7 +268,8 @@ export async function buildServer() {
   app.post('/api/capture/parse', async (request) => {
     const userId = request.userId!;
     const idx = await getIndex(userId);
-    return parseCapture(captureRequestSchema.parse(request.body), { names: idx.list('', undefined, 500).map(entity => entity.name), tags: await tagLibrary(idx.getTags(), userId),categories:await getPlanCategories(userId) });
+    const windows = (await socialSnapshot(userId)).windows.map(window => ({ id: window.id, name: window.name }));
+    return parseCapture(captureRequestSchema.parse(request.body), { names: idx.list('', undefined, 500).map(entity => entity.name), tags: await tagLibrary(idx.getTags(), userId),categories:await getPlanCategories(userId),windows });
   });
 
   app.post("/api/split-sentence", async (request) => {
