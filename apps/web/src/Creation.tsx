@@ -1,5 +1,5 @@
 import {useEffect,useLayoutEffect,useRef,useState,type RefObject} from 'react';
-import {ArrowUp,Trash2} from 'lucide-react';
+import {Trash2} from 'lucide-react';
 import {validationMessage,type RecordRef,type FieldIssue} from '@diary/contracts';
 import {GlassDialog} from './GlassUI';
 import {GlassSegments} from './GlassSegments';
@@ -57,6 +57,8 @@ export function Creation({account,open,request,onClose,trigger,context,onSave,on
  const focusIssue=(issue?:FieldIssue)=>requestAnimationFrame(()=>focusCreationIssue(body.current,issue?.path));
  const pending=session.rows.filter(row=>row.state!=='saved');
  const canParse=!!session.text.trim()&&session.text.length<=10000&&!parsing&&!listening&&!busy;
+ // 输入框里有文字时，主按钮改为「分析」；分析完成后原文清空、按钮回到「创建」
+ const analyzing=!!session.text.trim()&&!busy;
  const parse=async(text=session.text)=>{
   if(parseGuard.current||guard.current||!text.trim()||text.length>10000)return;
   parseGuard.current=true;setParsing(true);setError('');setMessage('');
@@ -136,7 +138,7 @@ export function Creation({account,open,request,onClose,trigger,context,onSave,on
   </div>
   <footer className="creation-footer">
    {(pending.length>0||listening||parsing||!!session.text)&&<div className="creation-assist" role="status">{listening?'正在聆听…':parsing?'AI 正在整理，原文已保留…':pending.length?`待创建 ${pending.length} 条，可继续输入 AI 内容`:'交给已配置的 AI 整理，核对后创建。'}</div>}
-   <div className="creation-action-bar"><div className="creation-ai-input"><textarea ref={input} aria-label="AI 输入" rows={1} value={session.text} disabled={busy||parsing||listening} placeholder="AI 输入…" onChange={e=>setSession(old=>({...old,text:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing&&e.keyCode!==229){e.preventDefault();if(canParse)void parse();}}}/><VoiceInput compact text={session.text} disabled={busy||parsing} onText={text=>setSession(old=>({...old,text}))} onParse={text=>void parse(text)} onListening={setListening}/>{!listening&&<button type="button" aria-label="识别 AI 输入" title="识别为草稿" disabled={!canParse} onClick={()=>void parse()}>{parsing?<span className="creation-working">…</span>:<ArrowUp size={19}/>}</button>}</div><div className="creation-buttons"><button type="button" className="creation-cancel" disabled={busy} aria-label="取消新增" onClick={close}>取消</button><button type="button" className="creation-submit" disabled={disabled} onClick={()=>void create()}>{saving?`创建 ${progress.current}/${progress.total}`:submitted&&!queueActive?'重试创建':label}</button></div></div>
+   <div className="creation-action-bar"><div className="creation-ai-input"><textarea ref={input} aria-label="AI 输入" rows={1} value={session.text} disabled={busy||parsing||listening} placeholder="AI 输入…" onChange={e=>setSession(old=>({...old,text:e.target.value}))} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing&&e.keyCode!==229){e.preventDefault();if(canParse)void parse();}}}/><VoiceInput compact text={session.text} disabled={busy||parsing} onText={text=>setSession(old=>({...old,text}))} onParse={text=>void parse(text)} onListening={setListening}/></div><div className="creation-buttons"><button type="button" className="creation-cancel" disabled={busy} aria-label="取消新增" onClick={close}>取消</button><button type="button" className="creation-submit" disabled={analyzing?!canParse:disabled} onClick={()=>{if(analyzing&&canParse)void parse();else void create();}}>{saving?`创建 ${progress.current}/${progress.total}`:analyzing?(parsing?'分析中…':'分析'):submitted&&!queueActive?'重试创建':label}</button></div></div>
    <FieldHint path="content" limit={10000} value={session.text}/>
   </footer>
  </GlassDialog>;

@@ -32,7 +32,14 @@
 .social-app .plan-window .plan-category-label { display:none; }
 .social-app .plan-window .plan-summary-meta>.shared-plan-badge { padding:2px 3px; }
 .social-app .plan-window .plan-summary-meta>.shared-plan-badge>span { display:none; }
-.social-app .plan-window .plan-window-list { gap:8px;padding:8px; }
+.social-app .plan-window .plan-window-list { gap:6px;padding:6px; }
+/* 窗口视图：卡片压到单行标题 + 单行信息，一屏显示更多条目 */
+.social-app .plan-window-list>li.plan-card { padding:2px 6px;min-height:0; }
+.social-app .plan-window-list .plan-card-summary { min-height:40px;padding:4px 0;gap:2px; }
+.social-app .plan-window-list .plan-card .todo-title { font-size:13px;line-height:18px;-webkit-line-clamp:1; }
+.social-app .plan-window-list .plan-summary-meta { font-size:10px;line-height:15px;gap:3px; }
+.social-app .plan-window-list .plan-card .todo-check { top:2px;height:40px;min-height:40px; }
+.social-app .plan-window-list .plan-card .plan-card-tools { top:2px; }
 .social-app .plan-window { background:var(--surface-2);border-color:var(--line); }
 .social-app .plan-window-name { font-size:15px; }
 .social-app .plan-window-count { font-size:12px; }

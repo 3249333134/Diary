@@ -4,7 +4,7 @@
 .plan-windows-controls>span { min-width:0;overflow-wrap:anywhere; }
 .plan-windows-controls button { min-height:44px; padding:8px 12px; border:1px solid var(--line); border-radius:10px; display:flex; align-items:center; gap:6px; background:var(--glass-item); color:var(--purple-ink); font:inherit; font-size:12px; cursor:pointer; }
 .plan-windows-scroll { flex:1; width:100%; min-height:0; overflow-x:auto; overflow-y:hidden; padding-bottom:8px; overscroll-behavior:contain; scrollbar-width:thin; }
-.plan-windows-track { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(288px,1fr); gap:12px; height:100%; min-width:100%; }
+.plan-windows-track { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(252px,1fr); gap:10px; height:100%; min-width:100%; }
 .plan-window { position:relative; min-width:0; min-height:0; display:flex; flex-direction:column; border:1px solid var(--line); border-radius:14px; background:var(--glass-item); overflow:hidden; }
 .plan-window-header { display:flex; align-items:center; gap:8px; min-height:52px; flex-shrink:0; padding:8px 12px; border-top:2px solid transparent; border-bottom:1px solid var(--line); user-select:none; cursor:grab; }
 .plan-window-header:active { cursor:grabbing; }
@@ -32,7 +32,8 @@
 .plan-card-placeholder { list-style:none; opacity:.6; }
 .plan-windows button:focus-visible,.plan-window-header:focus-visible { outline:2px solid var(--purple); outline-offset:-2px; }
 @media(max-width:899px) {
- .plan-windows-track { grid-auto-columns:minmax(280px,82vw); gap:10px; }
- .plan-window-list { padding:8px; }
+ .plan-windows-track { grid-auto-columns:minmax(200px,60vw); gap:8px; }
+ .plan-window-header { min-height:44px; padding:6px 10px; }
+ .plan-window-list { padding:6px; }
  .plan-windows-controls { flex-wrap:wrap; }
 }
