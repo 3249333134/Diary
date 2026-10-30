@@ -85,6 +85,23 @@ export function inferRepeat(text: string) {
   return null;
 }
 
+/** 正文被模型精简掉频率词时，回到原文里找与该条最相关的那一句再推断 */
+export function inferRepeatFromSource(source: string, content: string) {
+  const direct = inferRepeat(content);
+  if (direct) return direct;
+  const segments = source.split(/[。；;！!？?\n]+/).map(part => part.trim()).filter(Boolean);
+  if (!segments.length) return null;
+  if (segments.length === 1) return inferRepeat(segments[0]);
+  const keys: string[] = [];
+  for (let i = 0; i + 1 < content.length; i++) keys.push(content.slice(i, i + 2));
+  let best = '', score = 0;
+  for (const segment of segments) {
+    const hit = keys.reduce((total, key) => total + (segment.includes(key) ? 1 : 0), 0);
+    if (hit > score) { score = hit; best = segment; }
+  }
+  return score ? inferRepeat(best) : null;
+}
+
 const KIND_LABEL: Record<string, string> = { plan: '日程', facts: '记录', learn: '学习', input: '摘录', idea: '灵感' };
 
 /** 录入助手的系统提示：覆盖全部创建字段，并给出中文相对日期的推理规则 */
@@ -164,7 +181,7 @@ export async function parseCapture(input: z.infer<typeof captureRequestSchema>, 
           if(draft.category&&!categories.some(c=>c.id===draft.category))draft.category=null;
           if(draft.windowId&&!windows.some(w=>w.id===draft.windowId))draft.windowId=undefined;
           if (draft.date) assertDate(draft.date);
-          if (draft.kind === 'plan' && !draft.repeat) draft.repeat = inferRepeat(draft.content);
+          if (draft.kind === 'plan' && !draft.repeat) draft.repeat = inferRepeatFromSource(input.text, draft.content);
           if (draft.repeat && /打卡|坚持|习惯/.test(draft.content)) draft.checkinEnabled = true;
           if(draft.kind==='plan')draft.date=firstOccurrence(draft.date,draft.repeat);
           if (draft.startDate) assertDate(draft.startDate);
