@@ -1,7 +1,7 @@
 import { it, expect, vi } from 'vitest';
 const { request }=vi.hoisted(()=>({request:vi.fn()}));
 vi.mock('undici',()=>({request,ProxyAgent:class{}}));
-vi.mock('./config.js',()=>({config:{timezone:'Asia/Shanghai',ai:{key:'mock',url:'http://local.invalid/v1',model:'mock',proxy:''}}}));
+vi.mock('./config.js',()=>({config:{timezone:'Asia/Shanghai',ai:{key:'mock',url:'http://local.invalid/v1',model:'mock',proxy:'',timeout:18_000}}}));
 import { parseCapture } from './capture.js';
 it('configured AI splits mixed input and supplies the real Shanghai date and known tags',async()=>{
   vi.useFakeTimers();vi.setSystemTime(new Date('2026-09-30T16:01:00Z'));

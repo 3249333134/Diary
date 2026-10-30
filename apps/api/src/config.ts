@@ -25,6 +25,7 @@ export const config = {
     model: process.env.AI_MODEL || "gpt-4o-mini",
     automatic: process.env.AI_AUTO_SUMMARY === "true",
     proxy: process.env.AI_PROXY || "",
+    timeout: Number(process.env.AI_TIMEOUT_MS || 18_000),
   },
 } as const;
 

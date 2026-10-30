@@ -149,6 +149,7 @@ export async function parseCapture(input: z.infer<typeof captureRequestSchema>, 
     let repair = '';
     for (let attempt = 1; attempt <= 2; attempt++) {
       let lastRaw = '';
+      const attemptStart = Date.now();
       try {
         const messages = [
           { role: 'system', content: capturePrompt(today, time) },
@@ -163,7 +164,7 @@ export async function parseCapture(input: z.infer<typeof captureRequestSchema>, 
         ];
         const response = await request(`${config.ai.url}/chat/completions`, {
           method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${config.ai.key}` },
-          dispatcher: config.ai.proxy ? new ProxyAgent(config.ai.proxy) : undefined, signal: AbortSignal.timeout(14_000),
+          dispatcher: config.ai.proxy ? new ProxyAgent(config.ai.proxy) : undefined, signal: AbortSignal.timeout(config.ai.timeout),
           body: JSON.stringify({ model: config.ai.model, temperature: attempt === 1 ? .1 : 0, max_tokens: 1600, messages }),
         });
         if (response.statusCode >= 300) { await response.body.dump(); throw new Error(`AI 服务响应 ${response.statusCode}`); }
@@ -191,7 +192,7 @@ export async function parseCapture(input: z.infer<typeof captureRequestSchema>, 
         return { today, timezone: config.timezone, mode: 'ai', drafts };
       } catch (error) {
         if (lastRaw) repair = lastRaw;
-        console.error(`[capture] AI 解析第 ${attempt} 次失败:`, error instanceof Error ? error.message : error);
+        console.error(`[capture] AI 解析第 ${attempt} 次失败(耗时 ${Date.now() - attemptStart}ms):`, error instanceof Error ? error.message : error);
       }
     }
   }

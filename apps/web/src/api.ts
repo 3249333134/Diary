@@ -26,7 +26,7 @@ function request<T>(path:string,init?:RequestInit):Promise<T>{
 
 async function requestRaw<T>(path: string, init?: RequestInit): Promise<T> {
   const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), (path === "/api/split-sentence" || path === "/api/parse-todo" || path === "/api/capture/parse") ? 30_000 : 15_000);
+  const timer = window.setTimeout(() => controller.abort(), (path === "/api/split-sentence" || path === "/api/parse-todo" || path === "/api/capture/parse") ? 45_000 : 15_000);
   try {
     const hasBody = init?.body != null;
     const response = await fetch(path, { ...init, credentials: 'include', signal: controller.signal, headers: hasBody ? { "content-type": "application/json", ...init?.headers } : init?.headers });
