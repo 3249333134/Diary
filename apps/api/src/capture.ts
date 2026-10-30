@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { captureDraftSchema, captureRequestSchema, todoRepeatSchema, defaultPlanCategories, type PlanCategory } from '@diary/contracts';
 import type { z } from 'zod';
-import { assertDate, zonedClock } from './date.js';
+import { assertDate, addDays, zonedClock } from './date.js';
 import { firstOccurrence } from './recurrence.js';
 import { config } from './config.js';
 import { request, ProxyAgent } from 'undici';
@@ -16,6 +16,7 @@ function normalizeEntities(value: unknown) {
   const bucketOf = (key: string) => key === 'person' || key === 'people' ? 'people' as const : key === 'place' || key === 'places' ? 'places' as const : key === 'activity' || key === 'activities' ? 'activities' as const : key === 'food' || key === 'foods' ? 'foods' as const : '';
   const typeOf = { people: 'person', places: 'place', activities: 'activity', foods: 'food' } as const;
   const push = (bucket: 'people' | 'places' | 'activities' | 'foods', item: unknown) => {
+    if (typeof item === 'string') { if (item.trim()) grouped[bucket].push({ type: typeOf[bucket], name: item.trim(), tags: [] }); return; }
     if (!item || typeof item !== 'object') return;
     const entry = item as { name?: unknown; tags?: unknown };
     grouped[bucket].push({ type: typeOf[bucket], name: entry.name, tags: entry.tags });
@@ -106,32 +107,32 @@ const KIND_LABEL: Record<string, string> = { plan: '日程', facts: '记录', le
 
 /** 录入助手的系统提示：覆盖全部创建字段，并给出中文相对日期的推理规则 */
 function capturePrompt(today: string, time: string) {
+  const tomorrow = addDays(today, 1);
   return [
-    '你是「独立日记」的智能录入助手。把用户的一段自然语言拆成若干独立条目，只输出一个 JSON 对象：{"drafts":[...]}。禁止输出任何解释、前后缀文字或 Markdown 代码块标记。',
-    '每条草稿的字段（严格按此命名）：',
-    '- kind：plan(未来要做/安排)｜facts(已发生的事)｜learn(学到的知识)｜input(阅读观看的摘录)｜idea(想法灵感)',
-    '- content：该条目正文，保留原意，可精简到 100 字内',
-    '- description：补充说明，可为空字符串',
-    '- date：YYYY-MM-DD 或 ""；plan 表示截止日期，facts 表示发生日期',
-    '- time：24 小时制 HH:mm 或 ""；plan 表示截止时刻',
-    '- startDate / startTime：仅当原文明确说“从…开始/开始于…”时才填，否则留空；不要把截止时间当成开始时间',
-    '- category：只能取“已知类别”列表里的 id，没有依据填 null',
-    '- windowId：只能取“已知共享窗口”列表里的 id；仅当原文明确说“发到/共享到/安排给…”某个窗口时才填，否则省略该字段',
-    '- important / urgent：true｜false｜null；出现“重要/必须/务必”→important=true，出现“紧急/马上/立刻/今天必须”→urgent=true，没有明确依据填 null',
-    '- priority："high"｜"medium"｜"low"；有紧急或重要信号时 high，琐碎小事 low，其余 medium',
-    '- list：清单名（如 工作/学习/购物/家务），无则 ""',
-    '- tags：1-4 个、每个 2-6 字的名词短语，概括该条目的主题；优先复用“已知标签”；每条草稿都必须至少 1 个标签',
-    '- entities：必须是对象 {"people":[{"name","tags"}],"places":[],"activities":[],"foods":[]}，禁止输出为数组；没有就各为空数组',
-    '- repeat：null，或 {"type":"daily"|"weekly"|"monthly","interval":1,"weekdays":[0-6],"monthDay":1-31,"until":"YYYY-MM-DD"}；星期天是 0；每天→daily，每周三→weekly 且 weekdays:[3]，每月 5 号→monthly 且 monthDay:5；原文出现“每天/每日/每晚/每周X/每月X/每年/以后每…”等频率词时**必须**填写对应 repeat，绝不能返回 null',
-    '- checkinEnabled：true｜false；习惯类计划（每天/每周坚持、用户说“打卡”）为 true；已填 repeat 且原文提到打卡/坚持/养成习惯时为 true',
-    '- needsReview：日期或意图含糊（如“改天”“最近”“有机会”）时为 true，并在 reviewReason 写一句原因',
-    `【日期推理】现实今天是 ${today}，当前时刻 ${time}，时区 Asia/Shanghai。`,
-    '今天/明天/后天/大后天/昨天/前天→对应日期；本周X/这周X/下周X→算出具体日期；只说“周三”取未来最近的那个周三；“月底”=本月最后一天，“下月初”=下月 1 号，“三天后”=今天加 3 天。',
-    '“下午三点”→15:00，“晚上八点”→20:00，“中午”→12:00，“早八点”→08:00。只有模糊时段（早上/上午/下午/傍晚/晚上/睡前）且没给点数时，time 留空。',
-    `没有给日期时：plan 和 facts 都用今天；没有给时间时：plan 用 ${time}，facts 用 ""。`,
-    '【示例】输入："明天下午三点提醒我交周报，顺便记一下今天中午和小李在楼下吃了麻辣烫"',
-    '输出：{"drafts":[{"kind":"plan","content":"提交周报","description":"","date":"<明天>","time":"15:00","startDate":"","startTime":"","category":null,"important":true,"urgent":false,"priority":"high","list":"工作","tags":["工作","周报"],"entities":{"people":[],"places":[],"activities":[],"foods":[]},"repeat":null,"checkinEnabled":false,"needsReview":false,"reviewReason":""},{"kind":"facts","content":"和小李在楼下吃了麻辣烫","description":"","date":"<今天>","time":"","tags":["美食","午餐"],"entities":{"people":[{"name":"小李","tags":["同事"]}],"places":[{"name":"楼下","tags":[]}],"activities":[{"name":"吃麻辣烫","tags":["午餐"]}],"foods":[{"name":"麻辣烫","tags":[]}]},"repeat":null,"needsReview":false,"reviewReason":""}]}',
-    '【铁律】不要把字段名（在哪/和谁/做了什么/吃了什么）当作实体名；不要臆造原文没有的人物、地点、成果或感受；计划目标不能写成已发生事实；可空字符串字段用 ""，不要写 null；数值和布尔值不要加引号。',
+    '你是「独立日记」的智能录入助手。把用户的一段自然语言拆成若干独立条目，只输出一个 JSON 对象：{"drafts":[...]}。不要任何解释文字或代码块标记。',
+    '每条草稿只输出有意义的字段，空值一律省略（不要写 null、""、[]）：',
+    '- kind：plan(未来要做)｜facts(已发生)｜learn(学到的知识)｜input(阅读观看的摘录)｜idea(想法灵感)',
+    '- content：正文，保留原意，100 字内',
+    '- date：YYYY-MM-DD；plan 是截止日，facts 是发生日',
+    '- time：HH:mm；plan 是截止时刻',
+    '- startDate/startTime：仅当原文说“从…开始”才填',
+    '- category：只能取“已知类别”里的 id',
+    '- windowId：只能取“已知共享窗口”里的 id；仅当原文说“发到/共享给某个窗口”才填',
+    '- important / urgent：true｜false；“重要/必须/务必”→important，“紧急/马上/立刻”→urgent',
+    '- priority：high｜medium｜low；有紧急或重要→high，琐碎小事→low，其余省略',
+    '- list：清单名（工作/学习/购物/家务）',
+    '- tags：1-4 个 2-6 字名词短语，优先复用“已知标签”，每条至少 1 个',
+    '- entities：{"people":["张三"],"places":["楼下"],"activities":["吃麻辣烫"],"foods":["麻辣烫"]}；值为字符串数组，没有就省略整个字段',
+    '- repeat：原文出现“每天/每日/每晚/每周X/每月X号/每年/以后每…”等频率词时必须填，格式 {"type":"daily"|"weekly"|"monthly"|"yearly","weekdays":[0-6],"monthDay":1-31}，星期天是 0；每周三→{"type":"weekly","weekdays":[3]}，每月 5 号→{"type":"monthly","monthDay":5}',
+    '- checkinEnabled：true（原文说打卡/坚持/养成习惯）',
+    '- description：仅当 content 不足以表达时补充',
+    '- needsReview：true（日期或意图含糊，如“改天/最近/有机会”），并写 reviewReason',
+    `【日期】今天是 ${today} ${time}（Asia/Shanghai）。今天/明天/后天/昨天；本周X/下周X 算出具体日期；只写“周三”取未来最近的周三；“月底”=本月最后一天，“三天后”=今天+3 天。`,
+    '“下午三点”→15:00，“晚上八点”→20:00，“中午”→12:00，“早八点”→08:00；只说早上/上午/下午/傍晚/晚上/睡前又没给点数时省略 time。',
+    `没给日期时 plan 和 facts 都用今天；plan 没给时间用 ${time}，facts 不填 time。`,
+    '【示例】输入："明天下午三点交周报；中午和小李在楼下吃麻辣烫；以后每晚八点去健身房打卡"',
+    `输出：{"drafts":[{"kind":"plan","content":"交周报","date":"${tomorrow}","time":"15:00","list":"工作","tags":["工作","周报"],"important":true,"priority":"high"},{"kind":"facts","content":"和小李在楼下吃麻辣烫","date":"${today}","entities":{"people":["小李"],"places":["楼下"],"foods":["麻辣烫"]},"tags":["美食","午餐"]},{"kind":"plan","content":"去健身房打卡","date":"${today}","time":"20:00","tags":["健身","习惯"],"repeat":{"type":"daily"},"checkinEnabled":true}]}`,
+    '【铁律】不要把字段名（在哪/和谁/做了什么/吃了什么）当实体名；不要臆造原文没有的人物、地点；计划目标不能写成已发生事实；日期必须写真实日期，不要写占位符。',
   ].join('\n');
 }
 
@@ -143,8 +144,8 @@ export async function parseCapture(input: z.infer<typeof captureRequestSchema>, 
     const context = [
       `已知类别（category 只能取这里的 id 或 null）：${JSON.stringify(categories.map(c => ({ id: c.id, name: c.name })))}。`,
       `已知共享窗口（windowId 只能取这里的 id）：${JSON.stringify(windows)}。`,
-      `已知标签（优先复用）：${JSON.stringify(known.tags.slice(0, 50))}。`,
-      `已知实体（可复用，不要臆造）：${JSON.stringify(known.names.slice(0, 60))}。`,
+      `已知标签（优先复用）：${JSON.stringify(known.tags.slice(0, 20))}。`,
+      `已知实体（可复用，不要臆造）：${JSON.stringify(known.names.slice(0, 30))}。`,
     ].join('\n');
     let repair = '';
     for (let attempt = 1; attempt <= 2; attempt++) {
@@ -157,7 +158,7 @@ export async function parseCapture(input: z.infer<typeof captureRequestSchema>, 
           ...(repair ? [
             { role: 'user', content: JSON.stringify({ text: input.text, completion: input.completion }) },
             { role: 'assistant', content: repair },
-            { role: 'user', content: '上一条输出不是合法 JSON 或缺少必需字段。请重新输出：只输出一个合法 JSON 对象 {"drafts":[...]}，每条都包含 kind、content、date、time、tags、entities、repeat，不要任何解释文字或代码块。' },
+            { role: 'user', content: '上一条输出不是合法 JSON。请重新输出：只输出一个合法 JSON 对象 {"drafts":[...]}，每条必须有 kind 和 content，空字段省略，不要任何解释文字或代码块。' },
           ] : [
             { role: 'user', content: JSON.stringify({ text: input.text, completion: input.completion }) },
           ]),
@@ -165,7 +166,7 @@ export async function parseCapture(input: z.infer<typeof captureRequestSchema>, 
         const response = await request(`${config.ai.url}/chat/completions`, {
           method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${config.ai.key}` },
           dispatcher: config.ai.proxy ? new ProxyAgent(config.ai.proxy) : undefined, signal: AbortSignal.timeout(config.ai.timeout),
-          body: JSON.stringify({ model: config.ai.model, temperature: attempt === 1 ? .1 : 0, max_tokens: 1600, messages }),
+          body: JSON.stringify({ model: config.ai.model, temperature: attempt === 1 ? .1 : 0, max_tokens: 1200, messages }),
         });
         if (response.statusCode >= 300) { await response.body.dump(); throw new Error(`AI 服务响应 ${response.statusCode}`); }
         const payload = await response.body.json() as { choices?: { message?: { content?: string } }[] };
