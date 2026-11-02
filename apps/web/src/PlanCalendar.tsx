@@ -45,11 +45,13 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   const [hovered,setHovered]=useState<{key:string;edge:'start'|'end'}>(),[focused,setFocused]=useState<{key:string;edge:'start'|'end'}>();
   const hoverLeave=useRef<ReturnType<typeof setTimeout>|undefined>(undefined);
   const clearHover=()=>{clearTimeout(hoverLeave.current);hoverLeave.current=undefined;setHovered(undefined);};
-  const clearOperation=()=>{clearHover();setFocused(undefined);setSelectedKey(undefined);};
+  /** 拖动选中的时间条后，所选时间段保持展开，直到用户点「收起」 */
+  const pinned=useRef(false);
+  const clearOperation=()=>{clearHover();setFocused(undefined);if(!pinned.current)setSelectedKey(undefined);};
   const editRow=(row:ActionRow)=>{clearOperation();onEdit(row);};
   const rangeTarget=(target:EventTarget|null)=>target instanceof Element?target.closest<HTMLElement>('[data-range-key]'):null;
   const enterRange=(event:PointerEvent<HTMLElement>)=>{if(event.pointerType!=='mouse'||event.buttons||gesture.current||!active||view==='month'||expanded)return;const target=rangeTarget(event.target);if(!target)return;clearTimeout(hoverLeave.current);const next={key:target.dataset.rangeKey!,edge:target.dataset.rangeEdge==='end'?'end' as const:'start' as const};setHovered(old=>old?.key===next.key&&old.edge===next.edge?old:next);};
-  const leaveRange=(event:PointerEvent<HTMLElement>)=>{if(event.pointerType!=='mouse'||gesture.current)return;const from=rangeTarget(event.target),to=rangeTarget(event.relatedTarget);if(!from||from.dataset.rangeKey===to?.dataset.rangeKey)return;clearTimeout(hoverLeave.current);hoverLeave.current=setTimeout(()=>{setHovered(undefined);if(!gesture.current&&!pending.length&&!focused)setSelectedKey(old=>old===from.dataset.rangeKey?undefined:old);},140);};
+  const leaveRange=(event:PointerEvent<HTMLElement>)=>{if(event.pointerType!=='mouse'||gesture.current)return;const from=rangeTarget(event.target),to=rangeTarget(event.relatedTarget);if(!from||from.dataset.rangeKey===to?.dataset.rangeKey)return;clearTimeout(hoverLeave.current);hoverLeave.current=setTimeout(()=>{setHovered(undefined);if(!gesture.current&&!pending.length&&!focused&&!pinned.current)setSelectedKey(old=>old===from.dataset.rangeKey?undefined:old);},140);};
   useEffect(()=>()=>clearTimeout(hoverLeave.current),[]);
   const selectedFocus=useRef<{key:string;date:string;time:string}|undefined>(undefined);
   const [expanded,setExpanded]=useState<string>(),[drag,setDrag]=useState<{row:ActionRow;target?:Target}>(),[pending,setPending]=useState<CalendarPreview[]>([]);
@@ -93,7 +95,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   const rangeRows=useMemo(()=>displayRows.filter(row=>days.some(date=>rowsByDate.get(date)?.includes(row))),[displayRows,days,rowsByDate]);
   useEffect(()=>{if(search?.query)search.onCount((view==='month'?rangeRows.filter(row=>monthDays.some(date=>(rowsByDate.get(date)||[]).includes(row))):rangeRows).length+displayRows.filter(row=>!row.task.dueDate&&!row.task.plannedDate).length+(diarySearch?.items||[]).filter(item=>(view==='month'?monthDays:days).includes(item.date)).length);},[rangeRows,displayRows,view,monthDays,rowsByDate,search?.query,search?.onCount,diarySearch?.items]);
   const searchDayOrigin=useRef<{scope:string;expanded?:string;monthDate:string}|undefined>(undefined);
-  useEffect(()=>{clearOperation();const scope=view+':'+anchor;if(search?.query){if(searchDayOrigin.current?.scope!==scope)searchDayOrigin.current={scope,expanded,monthDate:agendaDate};}else if(searchDayOrigin.current){if(searchDayOrigin.current.scope===scope){setExpanded(searchDayOrigin.current.expanded);if(view==='month')onMonthDate(searchDayOrigin.current.monthDate);}searchDayOrigin.current=undefined;}},[search?.query,view,anchor]);
+  useEffect(()=>{pinned.current=false;clearOperation();const scope=view+':'+anchor;if(search?.query){if(searchDayOrigin.current?.scope!==scope)searchDayOrigin.current={scope,expanded,monthDate:agendaDate};}else if(searchDayOrigin.current){if(searchDayOrigin.current.scope===scope){setExpanded(searchDayOrigin.current.expanded);if(view==='month')onMonthDate(searchDayOrigin.current.monthDate);}searchDayOrigin.current=undefined;}},[search?.query,view,anchor]);
 
   const times=useMemo(()=>intervalHours(rangeRows,selectedKey),[rangeRows,selectedKey]);
   const hours=useMemo(()=>frozen?.hours||visibleWeekHours(times,showAllHours),[frozen,times,showAllHours]);
@@ -174,7 +176,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     e.preventDefault();
     current.nextX=e.clientX;current.nextY=e.clientY;panFrame.schedule();
   };
-  const releasePan=(e:PointerEvent<HTMLDivElement>)=>{if(pan.current?.pointer===e.pointerId){if(!pan.current.moved&&e.type!=='pointercancel')setSelectedKey(undefined);if(e.type!=='pointercancel')panFrame.flush();endPan();}};
+  const releasePan=(e:PointerEvent<HTMLDivElement>)=>{if(pan.current?.pointer===e.pointerId){if(!pan.current.moved&&e.type!=='pointercancel'){pinned.current=false;setSelectedKey(undefined);}if(e.type!=='pointercancel')panFrame.flush();endPan();}};
   useEffect(()=>{endPan();},[view,anchor,active]);
   useEffect(()=>()=>{const current=pan.current;pan.current=undefined;if(current?.el.hasPointerCapture(current.pointer))current.el.releasePointerCapture(current.pointer);},[]);
   const hoursRef=useRef<number[]>([]);hoursRef.current=hours;
@@ -200,9 +202,9 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     freeze(row,true);
   };
   const publishDrag=(g:Gesture)=>setDrag(old=>old?.row===g.row&&old.target?.date===g.target?.date&&old.target?.time===g.target?.time?old:{row:g.row,target:g.target});
-  const cancel=()=>{if(saving.current)return;clearOperation();setPending([]);setBatchMessage('');end();};
-  useEffect(()=>{clearOperation();setExpanded(undefined);setPending([]);setBatchMessage('');setMonthFocus('');setWeeks({before:0,after:0});edgeLock.current=performance.now()+700;end();},[view,anchor,navigationRevision]);
-  useEffect(()=>{if(!active){clearOperation();setPending([]);setBatchMessage('');end();}},[active]);
+  const cancel=()=>{if(saving.current)return;pinned.current=false;clearOperation();setPending([]);setBatchMessage('');end();};
+  useEffect(()=>{pinned.current=false;clearOperation();setExpanded(undefined);setPending([]);setBatchMessage('');setMonthFocus('');setWeeks({before:0,after:0});edgeLock.current=performance.now()+700;end();},[view,anchor,navigationRevision]);
+  useEffect(()=>{if(!active){pinned.current=false;clearOperation();setPending([]);setBatchMessage('');end();}},[active]);
   useEffect(()=>{
     if(!pending.length)return;
     const frame=requestAnimationFrame(()=>{
@@ -272,7 +274,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     const g:Gesture={row,edge,timeOffset:(e.target as HTMLElement).closest('.lifecycle-start')?e.clientX-rect.left:0,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,offsetX:Math.min(e.clientX-rect.left,240),offsetY:e.clientY-rect.top,width:Math.max(160,Math.min(rect.width,280)),startTop,mode:'decide',pointer:e.pointerId,el,date,startMinutes:minutes,minutes,edgeTick:0};
     gesture.current=g;
     el.setPointerCapture(e.pointerId);
-    if(e.pointerType!=='mouse')g.timer=window.setTimeout(()=>{if(gesture.current!==g||g.mode!=='decide')return;g.mode='drag';freezeFull(row,edge);setDrag({row});},350);
+    if(e.pointerType!=='mouse')g.timer=window.setTimeout(()=>{if(gesture.current!==g||g.mode!=='decide')return;g.mode='drag';if(selectedKey===calendarRowKey(g.row))pinned.current=true;freezeFull(row,edge);setDrag({row});},350);
   };
   const move=(e:PointerEvent<HTMLDivElement>)=>{
     const g=gesture.current;if(!g||e.pointerId!==g.pointer)return;
@@ -280,6 +282,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
       const dx=e.clientX-g.startX,dy=e.clientY-g.startY;
       if(e.pointerType==='mouse'){
         if(Math.hypot(dx,dy)<=6)return;
+        if(selectedKey===calendarRowKey(g.row))pinned.current=true;
         g.mode='drag';freezeFull(g.row,g.edge);setDrag({row:g.row});
       }else if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){
         // Vertical intent: hand the gesture to manual container scrolling.
@@ -288,6 +291,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
         window.clearTimeout(g.timer);
         if(view!=='month'&&(planDueTime(g.row.task)||rowSpan(g.row))){
           // 拖动期间切换完整时间线，时间连续可落点
+          if(selectedKey===calendarRowKey(g.row))pinned.current=true;
           g.mode='scrub';freezeFull(g.row,g.edge);
         }else{g.mode='scroll';g.lastX=e.clientX;g.lastY=e.clientY;return;}
       }else return;
@@ -342,7 +346,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
       if(saved===batch.length&&saved>1)setBatchMessage(`已保存 ${saved} 项改期`);
     }finally{saving.current=false;setSubmitting(false);clearOperation();if(saved===batch.length||saved===batch.length-1)setFrozen(undefined);}
   };
-  const selectTask=(row:ActionRow,edge:'start'|'end'='start')=>{if(expanded)closeDay();clearHover();setFocused(undefined);const key=calendarRowKey(row);const span=rowSpan(row),point=span?(edge==='start'?span.start:span.end):`${row.task.dueDate||row.task.plannedDate}T${planDueTime(row.task)||'00:00'}`;if(point)selectedFocus.current={key,date:point.slice(0,10),time:point.slice(11)};setSelectedKey(key);setSelectionRevision(value=>value+1);};
+  const selectTask=(row:ActionRow,edge:'start'|'end'='start')=>{if(expanded)closeDay();pinned.current=false;clearHover();setFocused(undefined);const key=calendarRowKey(row);const span=rowSpan(row),point=span?(edge==='start'?span.start:span.end):`${row.task.dueDate||row.task.plannedDate}T${planDueTime(row.task)||'00:00'}`;if(point)selectedFocus.current={key,date:point.slice(0,10),time:point.slice(11)};setSelectedKey(key);setSelectionRevision(value=>value+1);};
   useEffect(()=>{if(inspectRequest&&active)selectTask(inspectRequest.row);},[inspectRequest]);
   const chip=(row:ActionRow,timed=false,edge:'start'|'end'='end')=>{
     const key=calendarRowKey(row);
@@ -434,13 +438,13 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     {!!unarranged.length&&<div className="timeline-unarranged-wrap"><details className="calendar-unarranged" style={{width:viewportWidth||'100%'}}><summary>未安排 · {unarranged.length}项</summary><div>{unarranged.map(row=>chip(row))}</div></details></div>}
   </div>;
   return <div className="plan-calendar" data-dragging={!!drag||undefined}>
-    {selected&&view!=='month'&&!expanded&&<div className="calendar-selection-bar" role="region" aria-label="所选日程时间段"><div><strong>{selected.task.title}</strong><small>{rowSpan(selected)?`${rowSpan(selected)!.startKind==='planned'?'开始':rowSpan(selected)!.startKind==='created'?'创建（未设开始）':'期次起点（未设开始）'} ${rowSpan(selected)!.start.replace('T',' ')} → 截止 ${rowSpan(selected)!.end.replace('T',' ')}`:'尚未设置完整开始和截止'}{selected.readOnly?' · 仅查看':''}</small></div><button type="button" className="quiet-button" onClick={()=>editRow(rows.find(row=>calendarRowKey(row)===selectedKey)||selected)}>编辑详情</button><button type="button" className="quiet-button" aria-label="收起时间段" onClick={()=>setSelectedKey(undefined)}>收起</button></div>}
+    {selected&&view!=='month'&&!expanded&&<div className="calendar-selection-bar" role="region" aria-label="所选日程时间段"><div><strong>{selected.task.title}</strong><small>{rowSpan(selected)?`${rowSpan(selected)!.startKind==='planned'?'开始':rowSpan(selected)!.startKind==='created'?'创建（未设开始）':'期次起点（未设开始）'} ${rowSpan(selected)!.start.replace('T',' ')} → 截止 ${rowSpan(selected)!.end.replace('T',' ')}`:'尚未设置完整开始和截止'}{selected.readOnly?' · 仅查看':''}</small></div><button type="button" className="quiet-button" onClick={()=>editRow(rows.find(row=>calendarRowKey(row)===selectedKey)||selected)}>编辑详情</button><button type="button" className="quiet-button" aria-label="收起时间段" onClick={()=>{pinned.current=false;setSelectedKey(undefined);}}>收起</button></div>}
 
     {drag&&gesture.current?.mode==='drag'&&createPortal(<div ref={ghost} className="calendar-drag-ghost" aria-hidden="true" style={{...urgencyStyle(drag.row.task),width:gesture.current.width,transform:`translate3d(${gesture.current.x-gesture.current.offsetX}px,${gesture.current.y-gesture.current.offsetY}px,0)`}}><strong>{drag.row.task.title}</strong><div className="calendar-ghost-meta">{drag.row.windowId&&<SharedPlanBadge name={drag.row.windowName} compact/>}<small>{gesture.current?.edge==='start'?'开始':'截止'} {drag.target?`${drag.target.date} ${drag.target.time||'全天'}`:'拖动到目标日期'}</small></div></div>,document.body)}
     {drag&&<p className="calendar-feedback" role="status">{gesture.current?.mode==='scrub'?'左右滑动调整':'拖动'}「{drag.row.task.title}」{drag.target?` → ${drag.target.date} ${drag.target.time||'全天'}`:'到目标日期'} · Escape 取消</p>}
 
     {batchMessage&&<p className="calendar-batch-message" role="status">{batchMessage}</p>}
-    <div ref={scroll} className="calendar-scroll" data-view={view} data-panning={panning||undefined} onScroll={()=>{if(!gesture.current&&!pending.length)clearHover();viewportFrame.schedule();extendWeeks();}} onPointerOver={enterRange} onPointerOut={leaveRange} onPointerLeave={()=>{if(!gesture.current){clearHover();if(!pending.length&&!focused)setSelectedKey(undefined);}}} onFocusCapture={e=>{const target=rangeTarget(e.target);if(target&&(e.target as HTMLElement).matches(':focus-visible'))setFocused({key:target.dataset.rangeKey!,edge:target.dataset.rangeEdge==='end'?'end':'start'});}} onBlurCapture={e=>{if(rangeTarget(e.target)?.dataset.rangeKey!==rangeTarget(e.relatedTarget)?.dataset.rangeKey)setFocused(undefined);}} onPointerDownCapture={()=>{suppressGestureClick.current=false;}} onClickCapture={e=>{if(suppressGestureClick.current&&e.detail>0){suppressGestureClick.current=false;e.preventDefault();e.stopPropagation();}}} onPointerDown={beginPan} onPointerMove={movePan} onPointerUp={releasePan} onPointerCancel={releasePan} onLostPointerCapture={releasePan}>
+    <div ref={scroll} className="calendar-scroll" data-view={view} data-panning={panning||undefined} onScroll={()=>{if(!gesture.current&&!pending.length)clearHover();viewportFrame.schedule();extendWeeks();}} onPointerOver={enterRange} onPointerOut={leaveRange} onPointerLeave={()=>{if(!gesture.current){clearHover();if(!pending.length&&!focused&&!pinned.current)setSelectedKey(undefined);}}} onFocusCapture={e=>{const target=rangeTarget(e.target);if(target&&(e.target as HTMLElement).matches(':focus-visible'))setFocused({key:target.dataset.rangeKey!,edge:target.dataset.rangeEdge==='end'?'end':'start'});}} onBlurCapture={e=>{if(rangeTarget(e.target)?.dataset.rangeKey!==rangeTarget(e.relatedTarget)?.dataset.rangeKey)setFocused(undefined);}} onPointerDownCapture={()=>{suppressGestureClick.current=false;}} onClickCapture={e=>{if(suppressGestureClick.current&&e.detail>0){suppressGestureClick.current=false;e.preventDefault();e.stopPropagation();}}} onPointerDown={beginPan} onPointerMove={movePan} onPointerUp={releasePan} onPointerCancel={releasePan} onLostPointerCapture={releasePan}>
       {expanded&&view!=='month'&&<section className="calendar-focused-day calendar-day-agenda" hidden={!!drag} aria-label={`${expanded} 当天日程`}><header><h3 ref={dayHeading} tabIndex={-1}>{expanded} · 周{['日','一','二','三','四','五','六'][new Date(expanded+'T00:00:00Z').getUTCDay()]}</h3><small>{dayRows(expanded).length} 项日程{diaryRows(expanded).length?` · ${diaryRows(expanded).length} 条日记`:""}</small><button type="button" onClick={closeDay}>返回{view==='fortnight'?'两周':'周视图'}</button></header>{monthAgendaGroups(dayRows(expanded),expanded).map(group=><section className="month-agenda-group" key={group.time}><h4>{group.time||'全天'}{group.time&&group.time!=='持续中'&&<small>截止</small>}</h4><div>{group.rows.map(row=>chip(row))}</div></section>)}{diaryCards(expanded)}{!dayRows(expanded).length&&!diaryRows(expanded).length&&<p className="calendar-day-agenda-empty">这天暂无日程，可通过底部＋新增。</p>}</section>}
       {view==='month'?renderMonth():<div className="calendar-timeline-shell" hidden={!!expanded&&!drag}>{renderTimeline()}</div>}
     </div>
