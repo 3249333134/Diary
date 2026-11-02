@@ -25,7 +25,7 @@ import {SearchDiaryHits} from './GlobalSearch';
 
 type Target=CalendarTarget;
 type GestureMode='decide'|'drag'|'scrub'|'scroll';
-type Gesture={row:ActionRow;edge:'start'|'end';timeOffset:number;x:number;y:number;startX:number;startY:number;lastX:number;lastY:number;offsetX:number;offsetY:number;width:number;startTop:number;mode:GestureMode;timer?:number;pointer:number;el:HTMLElement;target?:Target;date:string;startMinutes:number;minutes:number;edgeTick:number};
+type Gesture={row:ActionRow;edge:'start'|'end';timeOffset:number;x:number;y:number;startX:number;startY:number;lastX:number;lastY:number;offsetX:number;offsetY:number;width:number;startTop:number;mode:GestureMode;armed?:boolean;timer?:number;pointer:number;el:HTMLElement;target?:Target;date:string;startMinutes:number;minutes:number;edgeTick:number};
 type CanvasPan={pointer:number;x:number;y:number;nextX:number;nextY:number;left:number;top:number;el:HTMLDivElement;moved:boolean};
 const minutesOf=(time:string)=>{const[h,m]=time.split(':').map(Number);return(h||0)*60+(m||0);};
 const formatMinutes=(minutes:number)=>`${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;
@@ -261,7 +261,8 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     },35);
     return()=>window.clearInterval(timer);
   },[!!drag]);
-  const begin=(e:PointerEvent<HTMLElement>,row:ActionRow,edge:'start'|'end'='end')=>{
+  /** immediate：端点抓手按下即进入拖动，避免和点击编辑抢手势 */
+  const begin=(e:PointerEvent<HTMLElement>,row:ActionRow,edge:'start'|'end'='end',immediate=false)=>{
     if((view==='month'||expanded)&&!(e.target as HTMLElement).closest('.calendar-chip-drag'))return;
     if(gesture.current)end(!!pending.length);
     if(blocked||saving.current||!active||row.readOnly)return;
@@ -271,10 +272,11 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     const el=e.currentTarget.closest<HTMLElement>('.calendar-chip')!,rect=el.getBoundingClientRect(),minutes=minutesOf((edge==='start'?rowSpan(row)?.start.slice(11):planDueTime(row.task)||rowSpan(row)?.end.slice(11))||'12:00');
     const date=(edge==='start'?rowSpan(row)?.start.slice(0,10):row.task.dueDate||row.task.plannedDate)||'';
     const startTop=(markersFor(date).get(calendarRowKey(row)+':'+(selectedKey===calendarRowKey(row)?'span':edge))?.lane||0)*LANE_HEIGHT+4;
-    const g:Gesture={row,edge,timeOffset:(e.target as HTMLElement).closest('.lifecycle-start')?e.clientX-rect.left:0,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,offsetX:Math.min(e.clientX-rect.left,240),offsetY:e.clientY-rect.top,width:Math.max(160,Math.min(rect.width,280)),startTop,mode:'decide',pointer:e.pointerId,el,date,startMinutes:minutes,minutes,edgeTick:0};
+    const g:Gesture={row,edge,timeOffset:(e.target as HTMLElement).closest('.lifecycle-start')?e.clientX-rect.left:0,x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,lastX:e.clientX,lastY:e.clientY,offsetX:Math.min(e.clientX-rect.left,240),offsetY:e.clientY-rect.top,width:Math.max(160,Math.min(rect.width,280)),startTop,mode:immediate?'drag':'decide',armed:immediate?false:undefined,pointer:e.pointerId,el,date,startMinutes:minutes,minutes,edgeTick:0};
     gesture.current=g;
     el.setPointerCapture(e.pointerId);
-    if(e.pointerType!=='mouse')g.timer=window.setTimeout(()=>{if(gesture.current!==g||g.mode!=='decide')return;g.mode='drag';if(selectedKey===calendarRowKey(g.row))pinned.current=true;freezeFull(row,edge);setDrag({row});},350);
+    if(immediate)return;
+    if(e.pointerType!=='mouse')g.timer=window.setTimeout(()=>{if(gesture.current!==g||g.mode!=='decide')return;g.mode='drag';g.armed=true;if(selectedKey===calendarRowKey(g.row))pinned.current=true;freezeFull(row,edge);setDrag({row});},350);
   };
   const move=(e:PointerEvent<HTMLDivElement>)=>{
     const g=gesture.current;if(!g||e.pointerId!==g.pointer)return;
@@ -283,7 +285,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
       if(e.pointerType==='mouse'){
         if(Math.hypot(dx,dy)<=6)return;
         if(selectedKey===calendarRowKey(g.row))pinned.current=true;
-        g.mode='drag';freezeFull(g.row,g.edge);setDrag({row:g.row});
+        g.mode='drag';g.armed=true;freezeFull(g.row,g.edge);setDrag({row:g.row});
       }else if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){
         // Vertical intent: hand the gesture to manual container scrolling.
         g.mode='scroll';window.clearTimeout(g.timer);g.lastX=e.clientX;g.lastY=e.clientY;return;
@@ -292,9 +294,16 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
         if(view!=='month'&&(planDueTime(g.row.task)||rowSpan(g.row))){
           // 拖动期间切换完整时间线，时间连续可落点
           if(selectedKey===calendarRowKey(g.row))pinned.current=true;
-          g.mode='scrub';freezeFull(g.row,g.edge);
+          g.mode='scrub';g.armed=true;freezeFull(g.row,g.edge);
         }else{g.mode='scroll';g.lastX=e.clientX;g.lastY=e.clientY;return;}
       }else return;
+    }
+    // 端点抓手：先等一小段位移再出现拖动预览，轻点不会闪出幽灵卡片
+    if(g.mode==='drag'&&g.armed===false){
+      if(Math.hypot(e.clientX-g.startX,e.clientY-g.startY)<=4)return;
+      g.armed=true;
+      if(selectedKey===calendarRowKey(g.row))pinned.current=true;
+      freezeFull(g.row,g.edge);setDrag({row:g.row});
     }
     if(g.mode==='scroll'){
       g.x=e.clientX;g.y=e.clientY;pointerFrame.schedule();return;
@@ -315,7 +324,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
   };
   const release=(e:PointerEvent<HTMLDivElement>)=>{
     const g=gesture.current;if(!g||e.pointerId!==g.pointer)return;
-    if(g.mode==='decide'){end(!!pending.length);return;}
+    if(g.mode==='decide'||(g.mode==='drag'&&g.armed===false)){end(!!pending.length);return;}
     // A released drag can otherwise click a checkbox now under the moved card.
     suppressGestureClick.current=true;
     pointerFrame.flush();
@@ -363,6 +372,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
       {edge==='end'&&<label className="calendar-chip-check" data-done={done||undefined} onPointerDown={e=>e.stopPropagation()} onClick={e=>e.stopPropagation()}>
         <input type="checkbox" checked={done} disabled={blocked||row.readOnly||row.task.status==='cancelled'||!!row.task.deletedAt} aria-label={`完成：${row.task.title}`} onChange={()=>onToggle(row)}/>
       </label>}
+      {timed&&<button type="button" className="endpoint-grip" aria-label={`拖动调整${edge==='start'?'开始':'截止'}时间：${row.task.title}`} title={edge==='start'?'拖动调整开始时间':'拖动调整截止时间'} disabled={blocked||row.readOnly||done||row.task.status==='cancelled'||!!row.task.deletedAt} onPointerDown={e=>{e.stopPropagation();begin(e,row,edge,true);}} onClick={e=>e.stopPropagation()}><span/></button>}
       <button type="button" className="calendar-chip-copy" aria-label={description} disabled={blocked} onClick={e=>{e.stopPropagation();if(view==='month'){cancel();editRow(rows.find(r=>calendarRowKey(r)===key)||row);}else editRow(rows.find(r=>calendarRowKey(r)===key)||row);}}>{row.windowId?<small className="calendar-shared-meta"><SharedPlanBadge name={row.windowName} compact={view!=='month'}/><span className="calendar-deadline-text">{scheduled?pointLabel+' '+((view==='month'||expanded)&&scheduled!==(expanded||agendaDate)?scheduled?.slice(5)+' ':'')+(shownTime||'全天'):'未安排'}</span><span className="calendar-meta-overflow">{view!=='month'?row.windowName:''}{row.task.seriesId||row.task.recurrenceAnchor?' · 重复':''}{isPending?' · 待确认':''}</span></small>:<small>{scheduled?pointLabel+' '+((view==='month'||expanded)&&scheduled!==(expanded||agendaDate)?scheduled?.slice(5)+' ':'')+(shownTime||'全天'):'未安排'} · {c?.name||'待分类'}{row.task.seriesId||row.task.recurrenceAnchor?' · 重复':''}{row.task.checkinEnabled!==false&&(row.task.checkinEnabled===true||row.task.checkins)?` · 打卡${row.task.checkins||0}次`:''}{isPending?' · 待确认':''}</small>}<strong>{span&&<span className="plan-duration-badge">持续</span>}{row.task.title}</strong>{(edge==='end'||!timed)&&planState(row.task)!=='neutral'&&<span className={'calendar-state-badge badge-'+planState(row.task)}>{({done:'已完成',overdue:'已超期',soon:'即将到期',neutral:''})[planState(row.task)]}</span>}{row.task.status==='cancelled'&&<span className="calendar-state-badge">已取消</span>}</button>
       {(view==='month'||!!expanded)&&<button type="button" className="calendar-chip-drag" disabled={blocked||row.readOnly||done||row.task.status==='cancelled'||!!row.task.deletedAt} aria-label={`拖动改期：${row.task.title}`} title="拖动到日期改期；键盘可按 Enter 打开编辑" onClick={e=>{if(e.detail===0)editRow(rows.find(r=>calendarRowKey(r)===key)||row);}}><GripVertical size={18}/></button>}
     </div>;
@@ -380,8 +390,8 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     <button type="button" className="calendar-chip-copy" aria-label={label} onClick={()=>editRow(rows.find(r=>calendarRowKey(r)===key)||row)}><small>{row.windowId&&<SharedPlanBadge name={row.windowName} compact/>}{starts?(span.startKind==='planned'?'开始 ':span.startKind==='created'?'创建 ':'期次 ')+span.start.slice(11):'持续中'}{ends?' → 截止 '+(planDueTime(row.task)||'全天'):''}</small><strong>{row.task.title}</strong>{planState(row.task)!=='neutral'&&<span className={'calendar-state-badge badge-'+planState(row.task)}>{({done:'已完成',overdue:'已超期',soon:'即将到期',neutral:''})[planState(row.task)]}</span>}</button>
     {execution!==undefined&&execution>=0&&execution<=marker.width&&<i className="lifecycle-execution" style={{left:execution}} title={`执行开始 ${row.task.startTime}`} aria-label={`执行开始 ${row.task.startTime}`}/>}
     {completion!==undefined&&completion>=0&&completion<=marker.width&&<i className="lifecycle-completed" style={{left:completion}} title={`实际完成 ${actual}`} aria-label={`实际完成 ${actual}`}>✓</i>}
-    {starts&&<button type="button" className="lifecycle-start" style={{left:0}} disabled={blocked||row.readOnly||done||row.task.status==='cancelled'||!!row.task.deletedAt} aria-label={`调整开始：${row.task.title}`} title="拖动修改原定开始；创建时间不变" onPointerDown={e=>begin(e,row,'start')} onClick={e=>e.stopPropagation()}><span/></button>}
-    {ends&&<button type="button" className="lifecycle-deadline" style={{left:marker.width-22}} disabled={blocked||row.readOnly||done||row.task.status==='cancelled'||!!row.task.deletedAt} aria-label={`调整截止：${row.task.title}`} title="拖动末端调整截止，15分钟吸附；点击编辑" onPointerDown={e=>begin(e,row)} onClick={e=>e.stopPropagation()}><span/></button>}
+    {starts&&<button type="button" className="lifecycle-start" style={{left:0}} disabled={blocked||row.readOnly||done||row.task.status==='cancelled'||!!row.task.deletedAt} aria-label={`调整开始：${row.task.title}`} title="拖动修改原定开始；创建时间不变" onPointerDown={e=>begin(e,row,'start',true)} onClick={e=>e.stopPropagation()}><span/></button>}
+    {ends&&<button type="button" className="lifecycle-deadline" style={{left:marker.width-22}} disabled={blocked||row.readOnly||done||row.task.status==='cancelled'||!!row.task.deletedAt} aria-label={`调整截止：${row.task.title}`} title="拖动末端调整截止，15分钟吸附" onPointerDown={e=>begin(e,row,'end',true)} onClick={e=>e.stopPropagation()}><span/></button>}
    </div>;
   };
   const operationPreview=(date:string)=>{

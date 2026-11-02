@@ -32,6 +32,15 @@
 .calendar-selection-bar{display:flex;align-items:center;gap:8px;flex:none;padding:8px 4px;border-bottom:1px solid var(--line);background:var(--surface)}
 .calendar-selection-bar>div{flex:1;min-width:0}.calendar-selection-bar strong{font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.calendar-selection-bar small{display:block;font-size:11px;color:var(--muted);line-height:1.6}.calendar-selection-bar button{flex:none;min-height:44px;padding:6px 10px;font-size:12px}
 .calendar-endpoint[data-endpoint=start]{border-left-width:3px}.calendar-endpoint[data-endpoint=start] .calendar-chip-copy{padding-left:10px}
+/* 持续任务的两个端点：直接拖动时间轴上的节点即可改开始/截止 */
+.timeline-markers .calendar-endpoint{overflow:visible;touch-action:none}
+.timeline-markers .calendar-endpoint .calendar-chip-copy,.timeline-markers .calendar-endpoint .calendar-chip-check{touch-action:none}
+/* 抓手骑在端点上：卡片左边缘就是开始/截止的时间点，两边都能按住拖动 */
+.calendar-endpoint .endpoint-grip{position:absolute;top:0;bottom:0;left:-12px;width:18px;padding:0;border:0;background:transparent;display:grid;place-items:center;z-index:5;cursor:ew-resize;touch-action:none;color:var(--purple-ink);-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+.calendar-endpoint .endpoint-grip span{display:block;width:5px;height:24px;border-radius:3px;background:currentColor;box-shadow:0 0 0 2px color-mix(in srgb,var(--surface) 72%,transparent);opacity:.8}
+.calendar-endpoint .endpoint-grip:hover span,.calendar-endpoint .endpoint-grip:active span{opacity:1}
+.calendar-endpoint .endpoint-grip:disabled{opacity:.35;cursor:default}
+.calendar-endpoint .endpoint-grip:disabled span{opacity:.45}
 .calendar-continuous .lifecycle-track{outline:1px solid color-mix(in srgb,var(--purple) 45%,transparent);outline-offset:1px}
 @media(max-width:623px){.calendar-selection-bar{gap:4px}.calendar-selection-bar small{font-size:10px}.calendar-selection-bar button{padding:6px}.timeline-date small{max-width:100%;overflow:hidden;text-overflow:ellipsis}}
 
