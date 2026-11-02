@@ -2,7 +2,7 @@
 .date-control>button.glass-date-trigger{display:flex;width:auto;min-width:136px;white-space:nowrap;font-weight:700}
 /* Reveal positioned ComboBox overlays even when entry preparation leaves stale hidden styles. */
 .glass-popup[data-trigger=ComboBox][data-placement]{opacity:1!important;clip:auto!important;clip-path:none!important;mask-image:none!important}
-.glass-popup.glass-date-popup{display:flex;flex-direction:column;overflow:hidden}.glass-date-popup>[role=dialog]{display:flex;flex-direction:column;min-height:0}.glass-date-body{overflow:auto;min-height:0}.glass-date-popup footer{flex-shrink:0;padding:10px 0 2px;background:var(--plan-glass)}
+.glass-popup.glass-date-popup{display:flex;flex-direction:column;overflow:hidden;max-height:min(520px,calc(100dvh - 16px))!important}.glass-date-popup>[role=dialog]{display:flex;flex-direction:column;min-height:0;flex:1}.glass-date-body{overflow:auto;min-height:0;flex:1}.glass-date-popup footer{flex-shrink:0;padding:10px 0 2px;background:var(--plan-glass)}
 .glass-modal .login-page{min-height:0;padding:16px;background:transparent}.glass-modal .login-card{max-width:420px;width:100%;padding:24px;background:transparent;border:0;box-shadow:none}.reauth-note{padding:16px;margin:0}
 .glass-popup{box-sizing:border-box;z-index:1000;width:max(var(--trigger-width),232px);max-width:calc(100vw - 16px);max-height:min(var(--available-height,420px),420px);padding:6px;border:1px solid var(--plan-edge);border-radius:16px;background:var(--plan-glass);color:var(--text);backdrop-filter:var(--plan-blur);-webkit-backdrop-filter:var(--plan-blur);box-shadow:var(--plan-shadow);overflow:auto;overscroll-behavior:contain;outline:none}
 .glass-listbox{outline:none}.glass-option{display:flex;align-items:center;gap:10px;min-height:44px;padding:10px 12px;border-radius:10px;font-size:14px;cursor:pointer;outline:none;overflow-wrap:anywhere}.glass-option>span{flex:1}
@@ -20,3 +20,8 @@
 
 .glass-modal.plan-edit-dialog .todo-modal{max-height:none;overflow:visible;animation:none;width:100%;max-width:none}.glass-modal .plan-dialog-content{overflow:visible}.glass-modal.todo-modal{background:var(--plan-glass)}
 .facts-panel .overview-item .glass-combo-control button{min-width:44px}
+
+/* Date and time stay together above the calendar; only the calendar can scroll. */
+.glass-date-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;flex:none}.glass-date-fields[data-has-time]{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}.glass-date-field{min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:4px}.glass-date-field>.react-aria-Label,.glass-time-caption{min-height:36px;display:flex;align-items:center;font-size:12px;color:var(--muted)}.glass-time-caption{justify-content:space-between;gap:4px}.glass-date-all-day{display:flex;align-items:center;gap:4px;min-height:36px;cursor:pointer}.glass-date-all-day input{accent-color:var(--purple);width:16px;height:16px}.glass-date-field .glass-date-segments{margin:0;min-height:44px;box-sizing:border-box;flex-wrap:nowrap;padding:8px 6px;font-size:16px}.glass-date-field[data-disabled] .glass-date-segments{opacity:.45}.glass-date-popup .glass-date-body{margin-top:8px}.glass-date-popup footer{margin-top:8px}.glass-date-fields:has(>.glass-date-field:only-child){grid-template-columns:minmax(0,1fr)}
+
+@media(max-height:600px){.glass-popup.glass-date-popup{position:fixed!important;top:8px!important;bottom:8px!important;max-height:calc(100dvh - 16px)!important;height:auto!important;transform:none!important}}

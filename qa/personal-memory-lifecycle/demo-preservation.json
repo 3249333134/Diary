@@ -1,0 +1,31 @@
+{
+  "unchanged": false,
+  "organizations": [
+    {
+      "name": "双瑞",
+      "departments": 0
+    },
+    {
+      "name": "多部门协作示例",
+      "departments": 14
+    }
+  ],
+  "taskCount": 38,
+  "parseStatus": 200,
+  "parseMode": "ai",
+  "draftKind": "plan",
+  "deadline": "",
+  "unknownTimePrompt": [
+    "还不知道你的下班时间，请补充原定开始时间"
+  ],
+  "memoryCount": 0,
+  "finalCheck": "2026-11-02",
+  "originalTaskIdentitiesRetained": true,
+  "originalTaskCount": 37,
+  "organizationsAndWindowsUnchanged": true,
+  "additionalOccurrence": {
+    "title": "每周项目例会",
+    "occurrenceDate": "2026-11-04"
+  },
+  "note": "最终快照较初始多一条已物化期次，源日记版本推进；未根据仅身份与版本的快照归因，不回退并发使用中的数据。原37个任务身份、组织和窗口均保留。"
+}

@@ -8,14 +8,14 @@ export function useOverlayControl(){
  const setOpen=useCallback((next:boolean)=>{if(next)document.dispatchEvent(new Event('glass-menu-close'));update(next);},[]);
  useEffect(()=>{
   if(!open)return;
-  const close=()=>update(false),started=performance.now();
-  const scroll=(e:Event)=>{if(performance.now()-started<180||e.target instanceof Element&&e.target.closest('.glass-popup'))return;if(e.target instanceof Element&&e.target.closest('.workspace-panel,.calendar-scroll,.todo-list,.glass-modal,.main-content'))close();};
+  const close=()=>update(false),started=performance.now();let repositioningUntil=0;const resize=()=>{repositioningUntil=performance.now()+450;};
+  const scroll=(e:Event)=>{if(performance.now()-started<180||performance.now()<repositioningUntil||e.target instanceof Element&&e.target.closest('.glass-popup'))return;if(e.target instanceof Element&&e.target.closest('.workspace-panel,.calendar-scroll,.todo-list,.glass-modal,.main-content'))close();};
   const main=document.querySelector('main'),observer=new MutationObserver(close);
   if(main)observer.observe(main,{attributes:true,attributeFilter:['data-workspace']});
-  const visible=new IntersectionObserver(entries=>{if(entries.some(e=>!e.isIntersecting))close();});
+  const visible=new IntersectionObserver(entries=>{if(performance.now()>=repositioningUntil&&entries.some(e=>!e.isIntersecting))close();});
   if(trigger.current)visible.observe(trigger.current);
-  document.addEventListener('glass-menu-close',close);document.addEventListener('scroll',scroll,true);
-  return()=>{observer.disconnect();visible.disconnect();document.removeEventListener('glass-menu-close',close);document.removeEventListener('scroll',scroll,true);};
+  document.addEventListener('glass-menu-close',close);document.addEventListener('scroll',scroll,true);window.addEventListener('resize',resize);window.visualViewport?.addEventListener('resize',resize);
+  return()=>{observer.disconnect();visible.disconnect();document.removeEventListener('glass-menu-close',close);document.removeEventListener('scroll',scroll,true);window.removeEventListener('resize',resize);window.visualViewport?.removeEventListener('resize',resize);};
  },[open]);
  return {open,setOpen,trigger};
 }

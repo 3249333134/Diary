@@ -1,3 +1,7 @@
+import {matchingDates,nearestSearchDate,mergeSearchRows,searchTaskKey} from './searchViews';
+import {useGlobalSearch,SearchDiaryHits,PlanSearchBox,useWideSearch} from './GlobalSearch';
+import {rowSpan} from './calendarIntervals';
+import {calendarTimeConflict} from './calendarPreview';
 import type {CreationDraft} from './creationDraft';
 import {PlanCreateFields} from './PlanCreateFields';
 import {validationMessage} from '@diary/contracts';
@@ -13,7 +17,7 @@ import { GlassChoices } from './GlassChoices';
 import { PlanActionDock } from './PlanActionDock';
 import { urgency, urgencyStyle } from './planUrgency';
 import { useGlassConfirm } from './GlassConfirm';
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ListTodo, Plus, Trash2, X, Clock, Calendar, Check, Pencil, RotateCcw, Link2, CheckCircle2, Sparkles, Flag, ChevronDown, Flame, Loader2 } from 'lucide-react';
 import type { RecordRef, Todo,SharedWindow,DiaryResponse } from '@diary/contracts';
 import { api, type ActionRow, type ActionInput, type ParsedTodo } from './api';
@@ -51,7 +55,7 @@ const PRIORITY_COLOR: Record<string, string> = { high: '#bd3d4c', medium: '#b886
 const STATUS_LABEL: Record<string, string> = { todo: '待开始', doing: '进行中', done: '已完成', cancelled: '已取消' };
 
 function TodoStats({ rows, filter, onFilter }: { rows: ActionRow[]; filter: PlanFilter; onFilter: (f: PlanFilter) => void }) {
-  return <div className="todo-stats">{([['all','全部'],['overdue','逾期'],['today','今日'],['upcoming','即将开始'],['done','已完成']] as const).map(([key,label]) => { const count=rows.filter(r=>matchesPlan(r.task,key)).length;const Icon=key==='all'?ListTodo:key==='overdue'?Flag:key==='today'?Calendar:key==='upcoming'?Clock:CheckCircle2;return <button key={key} className={`todo-stat-chip ${key} ${filter === key ? 'active' : ''}`} aria-label={`${label} ${count} 项`} title={label} aria-pressed={filter === key} onClick={() => onFilter(key)}><Icon className="compact-stat-icon" size={16}/><strong>{count}</strong><span>{label}</span></button>;})}</div>;
+  return <div className="todo-stats">{([['all','全部'],['overdue','逾期'],['today','今日'],['upcoming','即将开始'],['done','已完成']] as const).map(([key,label]) => { const count=rows.filter(r=>matchesPlan(r.task,key,undefined,r.span)).length;const Icon=key==='all'?ListTodo:key==='overdue'?Flag:key==='today'?Calendar:key==='upcoming'?Clock:CheckCircle2;return <button key={key} className={`todo-stat-chip ${key} ${filter === key ? 'active' : ''}`} aria-label={`${label} ${count} 项`} title={label} aria-pressed={filter === key} onClick={() => onFilter(key)}><Icon className="compact-stat-icon" size={16}/><strong>{count}</strong><span>{label}</span></button>;})}</div>;
 }
 
 function PlanDialog({ children, busy, onClose, label = "计划编辑", taskForm = false }: { children: ReactNode; busy: boolean; onClose: () => void; label?: string; taskForm?: boolean }) {
@@ -87,7 +91,7 @@ function TodoItem({ row, busy, onCheck, onEdit, onDelete, onStatus, onOpenSource
   const {data}=useSocial();
   const [expanded,setExpanded]=useWorkspaceState(data.profile.code,`plan.expanded.${row.windowId||'private'}:${row.date}:${row.task.id}`,false);
   const detailsId = useId();
-  const state = planState(row.task);
+  const state = planState(row.task),span=rowSpan(row);
   const {categories}=usePlanCategories();
   const category=categories.find(c=>c.id===row.task.category);
   const categoryLabel = row.windowName?`共享 · ${row.windowName}`:category?.name || (row.task.category ? '自定义类别' : '待分类');
@@ -116,10 +120,11 @@ function TodoItem({ row, busy, onCheck, onEdit, onDelete, onStatus, onOpenSource
         />
       </label>
 
-      <button type="button" className="plan-card-summary" title={row.task.title} aria-label={'计划详情：'+row.task.title} aria-describedby={detailsId+'-summary'} aria-expanded={expanded} aria-controls={expanded?detailsId:undefined} onClick={()=>{setExpanded(value=>!value);}}>
-        <span className="plan-summary-heading"><strong className="todo-title">{row.task.title}</strong><ChevronDown size={18} className="plan-expand-icon"/></span>
+      <button type="button" className="plan-card-summary" title={row.task.title} aria-label={'编辑计划：'+row.task.title} aria-describedby={detailsId+'-summary'} onClick={()=>onEdit(row)}>
+        <span className="plan-summary-heading"><strong className="todo-title">{span&&<span className="plan-duration-badge">持续</span>}{row.task.title}</strong></span>
         <span className="plan-summary-meta" id={detailsId+'-summary'}>{row.windowId?<SharedPlanBadge name={row.windowName}/>:<span className="plan-category-label">{categoryLabel}</span>}<span className="plan-urgency-label sr-only">{urgency(row.task)?.label || '象限待分类'}</span><span className="plan-summary-due" title={dueLabel}><Calendar size={12} aria-hidden="true"/><span className="plan-due-label" aria-hidden="true">{dueDisplay}</span><span className="sr-only">{dueLabel}</span></span>{(row.task.seriesId||row.task.recurrenceAnchor)&&row.task.checkinEnabled!==false&&(row.task.checkinEnabled===true||!!row.task.checkins)&&<span className="plan-checkin-badge" title={`重复日程已打卡 ${row.task.checkins} 次`}><Flame size={12}/>{row.task.checkins}</span>}{state!=='neutral'&&<strong className={'plan-state-badge badge-'+state}>{({done:'已完成',overdue:'已超期',soon:'即将到期',neutral:''})[state]}</strong>}</span>
       </button>
+      {!handle&&<button type="button" className="plan-detail-toggle" aria-label={(expanded?'收起':'展开')+'任务信息：'+row.task.title} aria-expanded={expanded} aria-controls={detailsId} onClick={()=>setExpanded(v=>!v)}><ChevronDown size={18}/></button>}
       {expanded&&<div id={detailsId} className="todo-copy plan-card-details">
         <div className="plan-detail-classification"><PriorityBadge priority={row.task.priority}/><span>{urgency(row.task)?.label || '象限待分类'}</span><span>{STATUS_LABEL[status]}</span></div>
         {row.task.description && <p className="todo-desc">{row.task.description}</p>}
@@ -160,7 +165,7 @@ function TodoItem({ row, busy, onCheck, onEdit, onDelete, onStatus, onOpenSource
             <div className="plan-move-menu"><GlassSelect action placeholder="移动到…" label={'移动到：'+row.task.title} disabled={busy||!!row.task.deletedAt} value={row.task.category||''} options={[...categories.map(c=>({value:c.id,label:c.name,group:'事项类别',color:c.color,selected:row.task.category===c.id})),...QUADRANTS.map(q=>({value:q.id,label:q.label,group:'四象限',selected:q.id===urgency(row.task)?.id,color:q.color}))]} onChange={id=>{const q=QUADRANTS.find(q=>q.id===id);onMove(row,q?{important:q.important,urgent:q.urgent}:{category:id});}}/></div>
             <GlassSelect label={'计划状态：'+row.task.title} value={status} disabled={busy||!!row.task.deletedAt} options={Object.entries(STATUS_LABEL).map(([value,label])=>({value,label,color:({todo:'#9296a3',doing:'#7856bd',done:'#258378',cancelled:'#a36b76'} as Record<string,string>)[value]}))} onChange={status=>onStatus(row,status as 'todo'|'doing'|'done'|'cancelled')}/>
             <button className="quiet-button" disabled={busy || row.readOnly || !!row.task.deletedAt} onClick={() => onEdit(row)}>
-              <Pencil size={15} />修改
+              <Pencil size={15} />编辑 / 改截止
             </button>
             {(row.task.done || row.task.deletedAt || row.restorePending) && (
               <button className="quiet-button" disabled={busy} onClick={() => onCheck(row)}>
@@ -223,11 +228,11 @@ function ParsePreviewModal({ text, parsed, busy, error, onConfirm, onEdit, onClo
 }
 
 /** 修改安排模态框（完整属性） */
-function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries,onCopy,onDelete }: {
+function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries,onCopy,onDelete,onInspect }: {
   error: string;
   onSeries:(task:Todo,stop:boolean)=>void;
   onCopy:(task:Todo,windowId:string,id:string)=>void;
-  onDelete:()=>void;
+  onDelete:()=>void;onInspect:()=>void;
   entityContext: EntityContext;
   row: ActionRow; busy: boolean;
   onSave: (task: Todo) => void;
@@ -273,6 +278,8 @@ function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries,
     if(scope==='future')onSeries(updated,false);else onSave(updated);
   };
 
+  const displayedSpan=rowSpan({...row,task:{...row.task,...classification,dueDate,dueTime}});
+  const changed=title!==row.task.title||description!==(row.task.description||'')||dueDate!==(row.task.dueDate||'')||dueTime!==(row.task.dueTime||'')||JSON.stringify(classification)!==JSON.stringify({category:row.task.category,important:row.task.important,urgent:row.task.urgent,startDate:row.task.startDate,startTime:row.task.startTime})||plannedDate!==(row.task.plannedDate||'')||time!==(row.task.time||'')||priority!==(row.task.priority||'medium')||list!==(row.task.list||'')||tagsInput!==(row.task.tags||[]).join(', ')||JSON.stringify(planEntities)!==JSON.stringify(row.task.entities||[])||JSON.stringify(subtasks)!==JSON.stringify(row.task.subtasks||[])||JSON.stringify(repeat)!==JSON.stringify(row.task.repeat)||checkinEnabled!==row.task.checkinEnabled;
   const addSubtask = () => setSubtasks([...subtasks, { id: crypto.randomUUID(), title: '', done: false }]);
 
   return (
@@ -280,7 +287,8 @@ function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries,
       <div className="todo-modal todo-modal-large" onClick={e => e.stopPropagation()}>
         <div className="todo-modal-header">
           <h3>编辑计划</h3>
-          <p>修改任务属性</p>
+          {displayedSpan?<section className="plan-interval-summary" aria-label="持续任务起止时间"><span className="plan-duration-badge">持续任务</span><dl><div><dt>{displayedSpan.startKind==='planned'?'原定开始':displayedSpan.startKind==='created'?'创建（未设开始）':'期次起点（未设开始）'}</dt><dd>{displayedSpan.start.replace('T',' ')}</dd></div><span aria-hidden="true">→</span><div><dt>截止</dt><dd>{displayedSpan.end.replace('T',' ')}</dd></div></dl><button type="button" className="quiet-button" disabled={busy||changed} title={changed?'保存修改后可在日历查看':'在日历展开完整时间段，拖动两端修改'} onClick={onInspect}>{changed?'保存后查看时间段':'查看时间段'}</button></section>:<p>尚未设置完整时间段，可在下面补充开始和截止。</p>}
+          <small>修改开始和截止后点击保存；创建时间保持不变。</small>
         </div>
         <div className="todo-modal-body">
           {error && <p role="alert">{error}</p>}
@@ -338,7 +346,7 @@ function EditModal({ row, busy, error, onSave, onClose, entityContext, onSeries,
   );
 }
 
-export function TodoPanel({ account='local',date, source, prepare, changed, onOpen, onClose, onPrints, revision = 0, focusId, toolbarAction, onNavigationChange, fullscreen, onToggleFullscreen, theme, onTheme, entityContext,active=true,onCreateRequest }: {
+export function TodoPanel({ account='local',date, source, prepare, changed, onOpen, onClose, onPrints, revision = 0, focusId, toolbarAction, onNavigationChange, fullscreen, onToggleFullscreen, theme, onTheme, entityContext,active=true,onCreateRequest,searchTask }: {searchTask?:{id:number;row:ActionRow};
   account?:string;
   onCreateRequest?:(preset?:Partial<CreationDraft>)=>void;entityContext: EntityContext; theme:'light'|'dark'; onTheme:()=>void;
   date: string; source?: RecordRef; revision?: number; focusId?: string;active?:boolean;
@@ -351,7 +359,7 @@ export function TodoPanel({ account='local',date, source, prepare, changed, onOp
   onPrints?: (receipts: Receipt[]) => void;
 }) {
   const {categories}=usePlanCategories();
-  const social=useSocial();
+  const social=useSocial();const wideSearch=useWideSearch();
   const [newSharedWindow,setNewSharedWindow]=useState(false),[managingWindow,setManagingWindow]=useState<SharedWindow>();
   const [windowFilter,setWindowFilter]=useWorkspaceState(account,'plan.window','');
   const [addingCategory,setAddingCategory]=useState(false);
@@ -381,6 +389,32 @@ export function TodoPanel({ account='local',date, source, prepare, changed, onOp
   const [monthDates,setMonthDates]=useWorkspaceState<Record<string,string>>(account,'plan.monthDates',{});
   const [showAllHours,setShowAllHours]=useWorkspaceState(account,'plan.allHours',false);
   const [calendarInteraction,setCalendarInteraction]=useState({dragging:false,pending:false,saving:false});
+  const panel=useRef<HTMLElement>(null),searchTimer=useRef<ReturnType<typeof setTimeout>|undefined>(undefined),searchSequence=useRef(0);
+  const recordSearch=useGlobalSearch(),searchText=recordSearch.query,setSearchText=recordSearch.setQuery,searchQuery=recordSearch.expression;
+  const [knownSearch,setKnownSearch]=useState<{account:string;rows:ActionRow[]}>({account,rows:[]});
+  useEffect(()=>{const found=recordSearch.items.flatMap(item=>item.row?[item.row]:[]);if(found.length)setKnownSearch(old=>({account,rows:mergeSearchRows(old.account===account?old.rows:[],found)}));},[recordSearch.items,account]);
+  const foundRows=useMemo(()=>recordSearch.items.flatMap(item=>item.row?[item.row]:[]),[recordSearch.items]);
+  const foundKeys=useMemo(()=>new Set(foundRows.map(searchTaskKey)),[foundRows]);
+  const diaryHits=useMemo(()=>recordSearch.items.filter(item=>!item.row),[recordSearch.items]);
+  const searchDates=useMemo(()=>matchingDates(recordSearch.items),[recordSearch.items]);
+  const [searchDate,setSearchDate]=useState('');
+  const calendarOrigin=useRef<{account:string;date:string;monthDates:Record<string,string>}|undefined>(undefined),locatedExpression=useRef('');
+  type SearchPosition={selector:string;index:number;left:number;top:number;open?:boolean};
+  const searchOrigins=useRef(new Map<string,SearchPosition[]>()),searchScope=`${account}:${layout}:${calendarDate}`;
+  const [searchRequest,setSearchRequest]=useState<{id:number;locate:boolean;restore?:SearchPosition[]}>(),[calendarSearchCount,setCalendarSearchCount]=useState(0);
+  const matchesSearch=useCallback((row:ActionRow)=>!searchQuery||foundKeys.has(searchTaskKey(row)),[searchQuery,foundKeys]);
+  const reportSearchCount=useCallback((count:number)=>setCalendarSearchCount(old=>old===count?old:count),[]);
+  const goSearchDate=(target:string)=>{if(calendarInteraction.pending||calendarInteraction.dragging||calendarInteraction.saving)return;setSearchDate(target);setCalendarDate(target);setMonthDates(old=>({...old,[target.slice(0,7)]:target}));setSearchRequest({id:++searchSequence.current,locate:true});};
+  useEffect(()=>{if(!searchQuery){locatedExpression.current='';return;}if(recordSearch.loading||recordSearch.error||locatedExpression.current===recordSearch.scope+':'+searchQuery)return;locatedExpression.current=recordSearch.scope+':'+searchQuery;const target=nearestSearchDate(searchDates,calendarDate);if(target)goSearchDate(target);else setSearchRequest({id:++searchSequence.current,locate:true});},[searchQuery,recordSearch.scope,recordSearch.loading,recordSearch.error,searchDates]);
+  useEffect(()=>{if(!searchQuery&&!calendarInteraction.pending&&calendarOrigin.current){const origin=calendarOrigin.current;calendarOrigin.current=undefined;if(origin.account===account){setCalendarDate(origin.date);setMonthDates(origin.monthDates);}}},[searchQuery,calendarInteraction.pending,account]);
+  useEffect(()=>{locatedExpression.current='';calendarOrigin.current=undefined;setSearchDate('');},[account]);
+  const applySearch=(value:string,locate=false)=>{clearTimeout(searchTimer.current);const text=value.trim();if(text&&!calendarOrigin.current)calendarOrigin.current={account,date:calendarDate,monthDates};if(text&&!searchOrigins.current.has(searchScope)){
+    const positions:SearchPosition[]=[];for(const selector of ['.calendar-scroll','.plan-list-view','.plan-windows-track','.plan-window-list','.plan-board-scroll','details.calendar-unarranged'])panel.current?.querySelectorAll<HTMLElement>(selector).forEach((el,index)=>positions.push({selector,index,left:el.scrollLeft,top:el.scrollTop,...el instanceof HTMLDetailsElement?{open:el.open}:{}}));searchOrigins.current.set(searchScope,positions);
+   }const restoreScope=`${account}:${layout}:${calendarOrigin.current?.date||calendarDate}`,restore=text?undefined:searchOrigins.current.get(restoreScope);if(!text)searchOrigins.current.delete(restoreScope);setSearchRequest({id:++searchSequence.current,locate,restore});};
+  const changeSearch=(text:string)=>{if(text.trim()){applySearch(text);setSearchText(text);}else{recordSearch.clear();applySearch('');}};
+  useEffect(()=>{if(!active)return;clearTimeout(searchTimer.current);searchTimer.current=setTimeout(()=>applySearch(searchText),200);return()=>clearTimeout(searchTimer.current);},[searchText,account,active,searchScope]);
+  useLayoutEffect(()=>{if(!searchRequest?.restore)return;let inner=0;const outer=requestAnimationFrame(()=>{inner=requestAnimationFrame(()=>{const positions=(searchRequest.restore||[]).map(position=>({position,el:panel.current?.querySelectorAll<HTMLElement>(position.selector)[position.index]}));for(const {position,el} of positions)if(el instanceof HTMLDetailsElement&&position.open!==undefined)el.open=position.open;for(const {position,el} of positions)if(el){el.scrollLeft=position.left;el.scrollTop=position.top;}});});return()=>{cancelAnimationFrame(outer);cancelAnimationFrame(inner);};},[searchRequest]);
+
   const [scheduleRows,setScheduleRows]=useState<ActionRow[]>([]);
   const [nextCursor,setNextCursor]=useState<string>();
   const [scheduleRange,setScheduleRange]=useState({from:today(),to:shiftDate(today(),90)});
@@ -397,6 +431,8 @@ export function TodoPanel({ account='local',date, source, prepare, changed, onOp
   const [error, setError] = useState('');
   const [refreshWarning,setRefreshWarning]=useState('');
   const [editing, setEditing] = useState<ActionRow | null>(null);
+  const [inspectRequest,setInspectRequest]=useState<{id:number;row:ActionRow}>();
+  useEffect(()=>{if(searchTask){setEditing(searchTask.row);setError('');}},[searchTask]);
   const [completing, setCompleting] = useState<ActionRow | null>(null);
 
   const [, tick] = useState(0);
@@ -552,16 +588,21 @@ export function TodoPanel({ account='local',date, source, prepare, changed, onOp
     finally { setBusy(false); }
   };
   const combined=useMemo(()=>Array.from(new Map([...rows.filter(r=>!r.task.recurrenceAnchor),...scheduleRows].map(r=>[(r.windowId||'private')+':'+r.task.id,r])).values()),[rows,scheduleRows]);
-  const navigation:PlanNavigationState={filter,layout,category:categoryFilter,categories,saving:calendarInteraction.saving,createDisabled:loading||busy||calendarInteraction.saving,restricted:sourceFilter!=='all'||!!listFilter||!!viewFilter||!!windowFilter||categoryFilter!=='all'||filter!=='all',counts:Object.fromEntries((['all','today','upcoming','overdue','done','trash'] as const).map(key=>[key,combined.filter(row=>matchesPlan(row.task,key)).length])) as PlanNavigationState['counts']};
+  const navigation:PlanNavigationState={filter,layout,category:categoryFilter,categories,saving:calendarInteraction.saving,createDisabled:loading||busy||calendarInteraction.saving,restricted:!!searchQuery||sourceFilter!=='all'||!!listFilter||!!viewFilter||!!windowFilter||categoryFilter!=='all'||filter!=='all',counts:Object.fromEntries((['all','today','upcoming','overdue','done','trash'] as const).map(key=>[key,combined.filter(row=>matchesPlan(row.task,key,undefined,row.span)).length])) as PlanNavigationState['counts']};
   const navigationSignature=JSON.stringify(navigation);
   useEffect(()=>{onNavigationChange?.(navigation);},[navigationSignature,onNavigationChange]);
-  const visible = combined.filter(r => matchesPlan(r.task, filter))
+  const searchAuthority=useMemo(()=>{const windows=new Map(social.data.windows.map(window=>[window.id,window]));return mergeSearchRows(mergeSearchRows(knownSearch.account===account?knownSearch.rows:[],combined),foundRows).filter(row=>!row.windowId||windows.has(row.windowId)).map(row=>row.windowId?{...row,role:windows.get(row.windowId)!.role,readOnly:windows.get(row.windowId)!.role==='viewer'}:row);},[combined,knownSearch,account,foundRows,social.data.windows]);
+  const baseVisible = useMemo(()=>searchQuery||calendarInteraction.pending?searchAuthority:combined.filter(r => matchesPlan(r.task, filter,undefined,r.span))
     .filter(r=>categoryFilter==='all'||!r.windowId&&r.task.category===categoryFilter)
     .filter(r=>!windowFilter||(windowFilter==='private'?!r.windowId:r.windowId===windowFilter))
     .filter(r=>!viewFilter||views.find(v=>v.id===viewFilter)?.tags.some(tag=>r.task.tags.includes(tag)))
     .filter(r => sourceFilter === 'all' || (sourceFilter === 'diary' ? !!r.task.source : !r.task.source))
     .filter(r => !listFilter || r.task.list === listFilter)
-    .sort((a,b) => ((a.task.dueDate || a.task.plannedDate || '9999') + (planDueTime(a.task))).localeCompare((b.task.dueDate || b.task.plannedDate || '9999') + (planDueTime(b.task))));
+    .sort((a,b) => ((a.task.dueDate || a.task.plannedDate || '9999') + (planDueTime(a.task))).localeCompare((b.task.dueDate || b.task.plannedDate || '9999') + (planDueTime(b.task)))),[combined,searchQuery,calendarInteraction.pending,searchAuthority,filter,categoryFilter,windowFilter,viewFilter,views,sourceFilter,listFilter]);
+  const visible=useMemo(()=>baseVisible.filter(matchesSearch),[baseVisible,matchesSearch]);
+  const calendarLayout=layout==='fortnight'||layout==='week'||layout==='month',searchCount=recordSearch.total,displayFilter=searchQuery?'all':filter;
+  const beforeSearchDate=[...searchDates].reverse().find(date=>date<(searchDate||calendarDate)),afterSearchDate=searchDates.find(date=>date>(searchDate||calendarDate));
+  const searchControl=<PlanSearchBox value={searchText} onChange={changeSearch} onSearch={()=>{const target=nearestSearchDate(searchDates,calendarDate);if(target)goSearchDate(target);else applySearch(searchText,true);}} disabled={calendarInteraction.dragging||calendarInteraction.saving}/>;
 
   const move=async(row:ActionRow,patch:Classification)=>{
     if(busy)return;
@@ -592,7 +633,7 @@ export function TodoPanel({ account='local',date, source, prepare, changed, onOp
   const openCompletion=(r:ActionRow)=>{if(r.windowId){void onCheck(r);return;}if(r.pendingRecord&&!r.completionPending)setCompleting(r);else if(r.task.completion)onOpen(r.task.completion);else setCompleting(r);};
   const renderItem=(row:ActionRow,handle?:ReactNode)=><TodoItem key={`${row.windowId||''}:${row.date}:${row.task.id}`} row={row} busy={busy||!!row.readOnly} handle={handle} onMove={(r,p)=>void move(r,p)} onCheck={r=>r.task.deletedAt?void act(r,'restore'):onCheck(r)} onEdit={onEdit} onDelete={onDelete} onStatus={onStatus} onOpenSource={onOpen} onOpenCompletion={openCompletion}/>;
   return (
-    <section className="panel-section todo-panel" aria-busy={loading} data-fullscreen={fullscreen ? 'true' : undefined} aria-label="我的计划">
+    <section ref={panel} className="panel-section todo-panel" aria-busy={loading} data-fullscreen={fullscreen ? 'true' : undefined} aria-label="我的计划">
       {confirmation.dialog}
       {refreshWarning&&<div className="refresh-warning" role="status">{refreshWarning}<button type="button" className="quiet-button" onClick={()=>void Promise.all([refresh(),changed()]).then(()=>setRefreshWarning('')).catch(()=>{})}>重试刷新</button></div>}
       {addingCategory&&<AddPlanCategory onClose={()=>setAddingCategory(false)}/>}
@@ -614,15 +655,18 @@ export function TodoPanel({ account='local',date, source, prepare, changed, onOp
         </div>
       )}
 
-      <PlanToolbar layout={layout} onLayout={setLayout} anchor={calendarDate} onAnchor={date=>{setCalendarNavigation(n=>n+1);setCalendarDate(date);if(layout==='month'&&date===today())setMonthDates(old=>({...old,[date.slice(0,7)]:date}));}} filter={filter} filterLabel={rangeLabels[filter]} restricted={hasExtraFilters||categoryFilter!=='all'||filter!=='all'} saving={calendarInteraction.saving} onFilters={()=>setShowFilters(true)} theme={theme} onTheme={onTheme} fullscreen={fullscreen} onToggleFullscreen={onToggleFullscreen}/>
-      <nav className="plan-time-tabs" aria-label="时间与状态"><GlassSegments label="筛选时间与状态" value={filter} options={(['all','today','upcoming','overdue','done','trash'] as const).map(value=>({value,label:rangeLabels[value]}))} onChange={setFilter}/></nav>
+      <PlanToolbar search={wideSearch?searchControl:undefined} layout={layout} onLayout={next=>{setLayout(next);if(searchQuery)setSearchRequest({id:++searchSequence.current,locate:true});}} anchor={calendarDate} onAnchor={date=>{setCalendarNavigation(n=>n+1);setCalendarDate(date);if(layout==='month'&&date===today())setMonthDates(old=>({...old,[date.slice(0,7)]:date}));}} filter={displayFilter} filterLabel={rangeLabels[displayFilter]} restricted={!!searchQuery||hasExtraFilters||categoryFilter!=='all'||filter!=='all'} saving={calendarInteraction.saving} onFilters={()=>searchQuery?recordSearch.open():setShowFilters(true)} theme={theme} onTheme={onTheme} fullscreen={fullscreen} onToggleFullscreen={onToggleFullscreen}/>
+      <div className="plan-filter-search-row"><nav className="plan-time-tabs" hidden={!!searchQuery} aria-label="时间与状态"><GlassSegments label="筛选时间与状态" value={filter} options={(['all','today','upcoming','overdue','done','trash'] as const).map(value=>({value,label:rangeLabels[value]}))} onChange={setFilter}/></nav>{!wideSearch&&searchControl}</div>
 
-      {layout!=='fortnight'&&layout!=='week'&&layout!=='month'&&rows.some(r=>r.task.recurrenceAnchor)&&<div className="schedule-pagination"><span>日程显示至 {scheduleRange.to}</span><button className="quiet-button" disabled={busy} onClick={()=>setHorizon(h=>h+90)}>后 90 天</button></div>}
-      {nextCursor&&<div className="schedule-pagination"><span>重复日程分批加载 · {scheduleRange.from} 至 {scheduleRange.to}</span><button disabled={busy} className="quiet-button" onClick={()=>void api.schedule(scheduleRange.from,scheduleRange.to,nextCursor).then(data=>{setScheduleRows(old=>[...old,...data.tasks]);setNextCursor(data.nextCursor);}).catch(()=>setError('读取更多日程失败，请重试。'))}>加载更多日程</button></div>}
-      {showFilters&&<PlanDialog label="筛选计划" busy={false} onClose={()=>setShowFilters(false)}><div className="compact-sheet"><header><div><h2>筛选计划</h2><p>调整筛选后，继续浏览当前视图。</p></div><button className="square-button" aria-label="关闭计划筛选" onClick={()=>setShowFilters(false)}><X size={20}/></button></header><TodoStats rows={combined} filter={filter} onFilter={setFilter}/><section className="plan-filter-section"><h3>事项类别</h3>{categoryControls}</section>{filterControls}<section className="plan-filter-section"><h3>日程显示</h3><label className="plan-hours-option"><input type="checkbox" checked={showAllHours} disabled={calendarInteraction.dragging||calendarInteraction.pending||calendarInteraction.saving} onChange={e=>setShowAllHours(e.target.checked)}/>显示全部时段</label><p className="plan-filter-help">关闭后只显示有日程的小时。拖动及待确认期间固定刻度。</p></section><section className="plan-filter-section"><h3>任务颜色</h3><div className="plan-urgency-legend" aria-label="任务颜色说明">{QUADRANTS.map(q=><span key={q.id} style={urgencyStyle(q)}><i className="plan-urgency-dot" aria-hidden="true"/>{q.label}</span>)}<span>未设置：待分类</span></div></section><footer><button className="quiet-button" onClick={()=>{setFilter('all');setCategoryFilter('all');setSourceFilter('all');setListFilter('');setViewFilter('');setWindowFilter('');}}>重置筛选</button><button className="save-button" onClick={()=>setShowFilters(false)}>显示 {visible.length} 项</button></footer></div></PlanDialog>}
+      {searchQuery&&<div className="plan-search-status" aria-busy={recordSearch.loading}><span role="status">{recordSearch.loading?'正在搜索全部记录…':recordSearch.error?'搜索失败，输入已保留':<>共 <b>{searchCount}</b> 条{calendarLayout&&<> · 当前日期范围 {calendarSearchCount} 条</>}</>}</span>{recordSearch.error?<button type="button" className="quiet-button" onClick={recordSearch.retry}>重试搜索</button>:calendarLayout&&<div className="plan-search-dates" aria-label="匹配日期"><button type="button" className="quiet-button" aria-label="上一个匹配日期" disabled={!beforeSearchDate||calendarInteraction.pending||calendarInteraction.saving} onClick={()=>beforeSearchDate&&goSearchDate(beforeSearchDate)}>‹</button><span>{searchDate||'匹配日期'}</span><button type="button" className="quiet-button" aria-label="下一个匹配日期" disabled={!afterSearchDate||calendarInteraction.pending||calendarInteraction.saving} onClick={()=>afterSearchDate&&goSearchDate(afterSearchDate)}>›</button></div>}<button type="button" className="quiet-button" onClick={()=>changeSearch('')}>清除搜索</button>{!recordSearch.loading&&!recordSearch.error&&!searchCount&&<small>没有匹配内容，可修改关键词或条件。两种展示使用同一批结果。</small>}</div>}
+
+
+      {!searchQuery&&layout!=='fortnight'&&layout!=='week'&&layout!=='month'&&rows.some(r=>r.task.recurrenceAnchor)&&<div className="schedule-pagination"><span>日程显示至 {scheduleRange.to}</span><button className="quiet-button" disabled={busy} onClick={()=>setHorizon(h=>h+90)}>后 90 天</button></div>}
+      {!searchQuery&&nextCursor&&<div className="schedule-pagination"><span>重复日程分批加载 · {scheduleRange.from} 至 {scheduleRange.to}</span><button disabled={busy} className="quiet-button" onClick={()=>void api.schedule(scheduleRange.from,scheduleRange.to,nextCursor).then(data=>{setScheduleRows(old=>[...old,...data.tasks]);setNextCursor(data.nextCursor);}).catch(()=>setError('读取更多日程失败，请重试。'))}>加载更多日程</button></div>}
+      {showFilters&&<PlanDialog label="筛选计划" busy={false} onClose={()=>setShowFilters(false)}><div className="compact-sheet"><header><div><h2>筛选计划</h2><p>调整筛选后，继续浏览当前视图。</p></div><button className="square-button" aria-label="关闭计划筛选" onClick={()=>setShowFilters(false)}><X size={20}/></button></header><TodoStats rows={combined} filter={filter} onFilter={setFilter}/><section className="plan-filter-section"><h3>事项类别</h3>{categoryControls}</section>{filterControls}<section className="plan-filter-section"><h3>日程显示</h3><label className="plan-hours-option"><input type="checkbox" checked={showAllHours} disabled={calendarInteraction.dragging||calendarInteraction.pending||calendarInteraction.saving} onChange={e=>setShowAllHours(e.target.checked)}/>显示全部时段</label><p className="plan-filter-help">关闭后压缩没有时间锚点的时段，用断点标明。拖动及待确认期间固定刻度。</p></section><section className="plan-filter-section"><h3>任务颜色</h3><div className="plan-urgency-legend" aria-label="任务颜色说明">{QUADRANTS.map(q=><span key={q.id} style={urgencyStyle(q)}><i className="plan-urgency-dot" aria-hidden="true"/>{q.label}</span>)}<span>未设置：待分类</span></div></section><footer><button className="quiet-button" onClick={()=>{setFilter('all');setCategoryFilter('all');setSourceFilter('all');setListFilter('');setViewFilter('');setWindowFilter('');changeSearch('');}}>重置筛选</button><button className="save-button" onClick={()=>setShowFilters(false)}>显示 {visible.length} 项</button></footer></div></PlanDialog>}
 
       {/* 计划列表 */}
-      {filter==='trash'||layout==='list'?<ul className="todo-list plan-list-view">
+      {searchQuery&&!calendarLayout&&!visible.length&&!!diaryHits.length?<section className="plan-search-diary-results" data-full aria-label="匹配的日记"><SearchDiaryHits items={diaryHits} onOpen={item=>void recordSearch.select(item)}/></section>:displayFilter==='trash'||layout==='list'?<ul className="todo-list plan-list-view">
         {visible.map(row => (
           <TodoItem
             onMove={(r,p)=>void move(r,p)}
@@ -637,11 +681,13 @@ export function TodoPanel({ account='local',date, source, prepare, changed, onOp
             onOpenCompletion={openCompletion}
           />
         ))}
-      </ul>:layout==='fortnight'||layout==='week'||layout==='month'?<PlanCalendar navigationRevision={calendarNavigation} monthDate={monthDates[calendarDate.slice(0,7)]} onMonthDate={date=>setMonthDates(old=>({...old,[calendarDate.slice(0,7)]:date}))} onOpenHoursSettings={()=>setShowFilters(true)} active={active} view={layout} anchor={calendarDate} showAllHours={showAllHours} onInteractionChange={setCalendarInteraction} rows={visible} busy={busy} onEdit={onEdit} onToggle={r=>r.task.deletedAt?void act(r,'restore'):(r.task.done||r.task.status==='done')?onCheck(r):void act(r,'complete',r.task,{automaticRecord:true})} onMove={(row,target)=>{const latest=combined.find(r=>r.windowId===row.windowId&&r.date===row.date&&r.task.id===row.task.id)||row;return act(latest,'update',{...latest.task,dueDate:target.date,dueTime:target.time});}}/>:layout==='windows'?<PlanWindows scopeLabel={windowFilter==='private'?'私人日程':windowFilter?social.data.windows.find(w=>w.id===windowFilter)?.name||'所选共享窗口':undefined} onShowAll={()=>setWindowFilter('')} sharedWindows={social.data.windows.filter(w=>!windowFilter||w.id===windowFilter)} onAddShared={()=>setNewSharedWindow(true)} onManageShared={setManagingWindow} rows={visible} categories={windowFilter&&windowFilter!=='private'?[]:categories} busy={busy} render={renderItem} onMove={(r,p)=>void move(r,p)} onCreate={categoryId=>createPlan(categoryId)} onAddCategory={()=>setAddingCategory(true)}/>:<PlanBoard rows={visible} busy={busy} render={renderItem} onMove={(r,p)=>void move(r,p)}/>}
+        {!!diaryHits.length&&<li className="plan-search-diary-results"><SearchDiaryHits items={diaryHits} onOpen={item=>void recordSearch.select(item)}/></li>}
+      </ul>:layout==='fortnight'||layout==='week'||layout==='month'?<PlanCalendar diarySearch={{items:diaryHits,onOpen:item=>void recordSearch.select(item)}} search={{query:searchQuery,matches:matchesSearch,navigation:searchRequest,onCount:reportSearchCount}} inspectRequest={inspectRequest} navigationRevision={calendarNavigation} monthDate={monthDates[calendarDate.slice(0,7)]} onMonthDate={date=>{setMonthDates(old=>({...old,[calendarDate.slice(0,7)]:date}));if(searchQuery)setSearchDate(date);}} onOpenHoursSettings={()=>setShowFilters(true)} active={active} view={layout} anchor={calendarDate} showAllHours={showAllHours} onInteractionChange={setCalendarInteraction} rows={baseVisible} busy={busy} onEdit={onEdit} onToggle={r=>r.task.deletedAt?void act(r,'restore'):(r.task.done||r.task.status==='done')?onCheck(r):void act(r,'complete',r.task,{automaticRecord:true})} onMove={(row,target)=>{const latest=combined.find(r=>r.windowId===row.windowId&&r.date===row.date&&r.task.id===row.task.id)||row;if(calendarTimeConflict(row,latest)){setError('这项日程的时间或状态已在其他位置修改，本次预览已取消，请重新核对。');return Promise.resolve(false);}return act(latest,'update',{...latest.task,dueDate:target.date,dueTime:target.time,...target.startDate!==undefined?{startDate:target.startDate,startTime:target.startTime||''}:{}});}}/>:layout==='windows'?<PlanWindows scopeLabel={searchQuery?undefined:windowFilter==='private'?'私人日程':windowFilter?social.data.windows.find(w=>w.id===windowFilter)?.name||'所选共享窗口':undefined} onShowAll={()=>setWindowFilter('')} sharedWindows={social.data.windows.filter(w=>!!searchQuery||!windowFilter||w.id===windowFilter)} onAddShared={()=>setNewSharedWindow(true)} onManageShared={setManagingWindow} rows={visible} categories={!searchQuery&&windowFilter&&windowFilter!=='private'?[]:categories} busy={busy} render={renderItem} onMove={(r,p)=>void move(r,p)} onCreate={categoryId=>createPlan(categoryId)} onAddCategory={()=>setAddingCategory(true)}/>:<PlanBoard rows={visible} busy={busy} render={renderItem} onMove={(r,p)=>void move(r,p)}/>}
+      {searchQuery&&!calendarLayout&&layout!=='list'&&visible.length>0&&!!diaryHits.length&&<section className="plan-search-diary-results" aria-label="匹配的日记"><SearchDiaryHits items={diaryHits} onOpen={item=>void recordSearch.select(item)}/></section>}
       {batch&&<PlanDialog busy={busy} onClose={()=>setBatch(undefined)}><div className="todo-modal"><div className="todo-modal-header"><h3>批量归类</h3><p>仅修改当前筛选范围内的待分类事项。</p></div><div className="todo-modal-body"><ClassificationFields value={batch} start={false} onChange={patch=>setBatch({...batch,...patch})}/></div><div className="todo-modal-footer"><button className="quiet-button" disabled={busy} onClick={()=>setBatch(undefined)}>取消</button><button className="save-button" disabled={busy||!batch.category||typeof batch.important!=='boolean'||typeof batch.urgent!=='boolean'} onClick={()=>void batchSave()}>应用分类</button></div></div></PlanDialog>}
 
       {loading&&!rows.length&&<p className="plan-loading" role="status"><Loader2 className="spin" size={18}/>正在读取日程…</p>}
-      {!loading&&!visible.length && <p className="todo-empty">此范围暂无计划。可以从一条记录创建行动，也可以使用底部新增。</p>}
+      {!loading&&!recordSearch.loading&&!visible.length&&!diaryHits.length && <p className="todo-empty">{searchQuery?'没有匹配内容，可修改搜索关键词或条件。':'此范围暂无计划。可以从一条记录创建行动，也可以使用底部新增。'}</p>}
 
       {/* AI 识别预览模态框 */}
       {parsed && (
@@ -658,11 +704,12 @@ export function TodoPanel({ account='local',date, source, prepare, changed, onOp
       )}
 
       {/* 修改模态框 */}
-      {editing?.readOnly&&<PlanDialog busy={false} label="共享日程详情" onClose={()=>setEditing(null)}><div className="compact-sheet"><header><h2>{editing.task.title}</h2><button className="square-button" aria-label="关闭共享详情" onClick={()=>setEditing(null)}><X size={18}/></button></header><p className="shared-task-label">{editing.windowName} · 仅查看</p><p>截止：{editing.task.dueDate||'未安排'} {editing.task.dueTime||'全天'}</p><p>原定开始：{editing.task.startDate||'未设置'} {editing.task.startTime}</p><p>{editing.task.description}</p><PlanEntitySummary value={editing.task.entities||[]}/><button className="quiet-button" onClick={()=>setEditing(null)}>关闭</button></div></PlanDialog>}
+      {editing?.readOnly&&<PlanDialog busy={false} label="共享日程详情" onClose={()=>setEditing(null)}><div className="compact-sheet"><header><h2>{editing.task.title}</h2><button className="square-button" aria-label="关闭共享详情" onClick={()=>setEditing(null)}><X size={18}/></button></header><p className="shared-task-label">{editing.windowName} · 仅查看</p><p>截止：{editing.task.dueDate||'未安排'} {editing.task.dueTime||'全天'}</p><p>原定开始：{editing.task.startDate||'未设置'} {editing.task.startTime}</p><p>{editing.task.description}</p><PlanEntitySummary value={editing.task.entities||[]}/><button className="quiet-button" onClick={()=>{setInspectRequest({id:Date.now(),row:editing});setEditing(null);if(layout!=='fortnight'&&layout!=='week')setLayout('fortnight');}}>查看时间段</button><button className="quiet-button" onClick={()=>setEditing(null)}>关闭</button></div></PlanDialog>}
       {editing&&!editing.readOnly && (
         <EditModal
           onCopy={(task,windowId,id)=>{void (async()=>{if(!await confirmation.confirm('把此日程复制到共享窗口？窗口成员将看到日程内容，原私人日程保留。'))return;if(await run({windowId,mode:'create',date:planClock().date,version:'0',task:{...task,id},operationId:id}))setEditing(null);})();}}
           onSeries={(task,stop)=>{if(!editing||busy)return;void (async()=>{if(stop&&!await confirmation.confirm('从这一期停止重复？已完成的记录仍保留。'))return;setBusy(true);setError('');try{const version=await prepare(editing.windowId?undefined:editing.date);if(editing.windowId)await api.sharedAction(editing.windowId,{mode:'series',date:editing.date,version:editing.version,seriesVersion:editing.seriesVersion,task,operationId:crypto.randomUUID(),from:editing.task.occurrenceDate||editing.task.recurrenceAnchor!,stop});else await api.updateSeries({date:editing.date,version:version||editing.version,task,from:editing.task.occurrenceDate||editing.task.recurrenceAnchor!,stop});await refresh();await changed();setEditing(null);}catch(e){setError(e instanceof Error?e.message:'系列修改失败');}finally{setBusy(false);}})();}}
+          onInspect={()=>{setInspectRequest({id:Date.now(),row:editing});setEditing(null);if(layout!=='fortnight'&&layout!=='week')setLayout('fortnight');}}
           entityContext={entityContext}
           row={editing}
           error={error}

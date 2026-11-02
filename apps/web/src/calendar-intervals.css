@@ -1,0 +1,43 @@
+.timeline-markers .calendar-continuous{background:transparent;border:0;overflow:visible;box-shadow:none;height:56px;display:flex;align-items:center;isolation:isolate;cursor:default}
+.calendar-continuous .lifecycle-track{position:absolute;inset:0 auto 0 0;width:var(--span-width);border:1px solid color-mix(in srgb,var(--urgency-color) 55%,var(--surface));border-radius:10px;background:color-mix(in srgb,var(--urgency-color) 12%,var(--surface));z-index:-1;pointer-events:none;box-sizing:border-box}
+.calendar-continuous[data-continues-before] .lifecycle-track{border-left-style:dashed;border-top-left-radius:3px;border-bottom-left-radius:3px}
+.calendar-continuous[data-continues-after] .lifecycle-track{border-right-style:dashed;border-top-right-radius:3px;border-bottom-right-radius:3px}
+.calendar-continuous .calendar-chip-copy{flex:0 1 220px;min-width:110px;max-width:260px;z-index:1;padding-right:24px}
+.calendar-continuous .calendar-chip-copy strong{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;white-space:normal;font-size:12px;line-height:1.35;max-height:32px}
+.calendar-continuous .calendar-chip-copy small{display:flex;align-items:center;gap:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px}
+.calendar-continuous .calendar-chip-check{min-width:32px;padding-left:8px;z-index:2}
+.calendar-continuous .calendar-state-badge{right:auto;left:8px;top:-7px}
+.lifecycle-before,.lifecycle-after{position:absolute;top:17px;color:var(--purple-ink);font-size:20px;pointer-events:none}
+.lifecycle-before{left:0}
+.calendar-continuous .lifecycle-deadline,.calendar-continuous .lifecycle-start{position:absolute;top:6px;width:44px;height:44px;background:transparent;border:0;z-index:4;cursor:ew-resize;touch-action:none;color:var(--purple-ink);padding:0;display:grid;place-items:center}
+.lifecycle-deadline span,.lifecycle-start span{display:block;height:24px;width:4px;background:currentColor;border-radius:3px}
+.lifecycle-execution,.lifecycle-completed{position:absolute;top:0;height:56px;border-left:2px solid var(--purple-ink);pointer-events:none;z-index:3}
+.lifecycle-execution:after{content:'开始';position:absolute;top:38px;left:3px;font-size:9px;font-style:normal;background:var(--surface);color:var(--purple-ink);white-space:nowrap}
+.lifecycle-completed{color:var(--green);border-color:var(--green);font-style:normal}
+.lifecycle-break{position:absolute;top:0;bottom:0;width:10px;background:repeating-linear-gradient(120deg,transparent 0 3px,var(--surface) 3px 6px);transform:translateX(-5px);pointer-events:none;opacity:.8;z-index:0}
+.calendar-continuous[data-pending] .lifecycle-track{outline:2px dashed var(--purple);outline-offset:-2px}
+.calendar-continuous.state-done .lifecycle-track{opacity:.65}
+
+
+.timeline-row-spacer{pointer-events:none;width:100%}
+
+.memory-editor>.plan-dialog-content{display:flex;flex-direction:column;min-height:0;gap:16px;max-height:calc(100dvh - 64px)}
+
+.calendar-timeline-row .timeline-timed-cell{overflow:visible}
+
+.timeline-timed-cell .calendar-continuous:before{display:none}
+
+
+.lifecycle-start span{position:absolute;left:0;background:var(--surface);border:2px solid currentColor;box-sizing:border-box;width:6px}
+.calendar-selection-bar{display:flex;align-items:center;gap:8px;flex:none;padding:8px 4px;border-bottom:1px solid var(--line);background:var(--surface)}
+.calendar-selection-bar>div{flex:1;min-width:0}.calendar-selection-bar strong{font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.calendar-selection-bar small{display:block;font-size:11px;color:var(--muted);line-height:1.6}.calendar-selection-bar button{flex:none;min-height:44px;padding:6px 10px;font-size:12px}
+.calendar-endpoint[data-endpoint=start]{border-left-width:3px}.calendar-endpoint[data-endpoint=start] .calendar-chip-copy{padding-left:10px}
+.calendar-continuous .lifecycle-track{outline:1px solid color-mix(in srgb,var(--purple) 45%,transparent);outline-offset:1px}
+@media(max-width:623px){.calendar-selection-bar{gap:4px}.calendar-selection-bar small{font-size:10px}.calendar-selection-bar button{padding:6px}.timeline-date small{max-width:100%;overflow:hidden;text-overflow:ellipsis}}
+
+.plan-duration-badge{display:inline-flex;align-items:center;vertical-align:1px;flex:none;font-size:10px;font-weight:600;line-height:16px;padding:0 4px;margin-right:5px;border:1px solid color-mix(in srgb,var(--purple) 35%,transparent);border-radius:4px;color:var(--purple-ink);background:var(--purple-soft)}.plan-interval-summary{display:flex;align-items:center;flex-wrap:wrap;gap:10px 16px;margin:12px 0;padding:12px;border-radius:12px;background:var(--purple-soft)}.plan-interval-summary>.plan-duration-badge{font-size:12px;line-height:22px}.plan-interval-summary dl{display:flex;align-items:center;gap:12px;flex:1;flex-wrap:wrap;margin:0;font-size:13px}.plan-interval-summary dt{font-size:11px;color:var(--muted);margin-bottom:4px}.plan-interval-summary dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}.plan-interval-summary .quiet-button{min-height:44px;font-size:12px}.social-app .plan-detail-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}.social-app .plan-card:has(.plan-drag-handle) .plan-detail-toggle{right:48px}.social-app .plan-card .plan-card-summary{width:calc(100% - 84px)}.social-app .plan-card:has(.plan-drag-handle) .plan-card-summary{width:calc(100% - 84px)}.plan-detail-toggle[aria-expanded=true] svg{transform:rotate(180deg)}.plan-card[data-expanded=true]>.plan-detail-toggle{top:36px}
+@media(max-width:623px){.plan-interval-summary{gap:8px}.plan-interval-summary dl{flex-basis:100%}.plan-interval-summary>.quiet-button{width:100%}}
+
+/* Operation-only range: endpoint geometry and focus targets stay intact. */
+.calendar-interval-preview{position:absolute;height:56px;box-sizing:border-box;border:1px solid color-mix(in srgb,var(--urgency-color,var(--purple)) 60%,var(--surface));border-radius:10px;background:color-mix(in srgb,var(--urgency-color,var(--purple)) 10%,var(--surface));z-index:0;isolation:isolate;touch-action:pan-x pan-y}
+.calendar-interval-preview[data-continues-before]{border-left-style:dashed;border-top-left-radius:3px;border-bottom-left-radius:3px}.calendar-interval-preview[data-continues-after]{border-right-style:dashed;border-top-right-radius:3px;border-bottom-right-radius:3px}.calendar-interval-preview .lifecycle-after{right:2px}.calendar-endpoint[data-range-open=true]{outline:1px solid var(--purple);outline-offset:1px}.timeline-markers>.calendar-endpoint{z-index:1}

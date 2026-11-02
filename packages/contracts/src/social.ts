@@ -1,6 +1,6 @@
 export type WindowRole='owner'|'editor'|'viewer';
 export type SocialPerson={code:string;name:string};
-export type SocialDomain='social'|'plans'|'diary';
+export type SocialDomain='social'|'plans'|'diary'|'memory';
 export type SocialChange={domains:SocialDomain[];dates?:string[]};
 export type FriendRequest={id:string;person:SocialPerson;direction:'incoming'|'outgoing';createdAt:string};
 export type WindowMember=SocialPerson&{role:WindowRole;status:'invited'|'active';sources?:import('./organization.js').PermissionSource[]};

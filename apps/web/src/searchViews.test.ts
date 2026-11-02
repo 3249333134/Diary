@@ -1,0 +1,9 @@
+import {expect,it} from 'vitest';
+import {todoSchema,type SearchResult} from '@diary/contracts';
+import type {ActionRow} from './api';
+import {matchingDates,mergeSearchRows,nearestSearchDate,searchTaskKey} from './searchViews';
+const row=(id:string,date:string,windowId?:string):ActionRow=>({date,windowId,task:todoSchema.parse({id,title:id,dueDate:date}),version:'v1',sourceExists:false,completionExists:false});
+const hit=(r:ActionRow):SearchResult=>({ref:{kind:'todo',id:r.task.id,date:r.date,windowId:r.windowId,summary:''},title:r.task.title,date:r.task.dueDate||r.date,excerpt:'',tags:[],people:[],row:r});
+it('keeps old dated matches and distinct private and shared tasks in the authority set',()=>{const current=row('same','2026-11-02'),shared=row('same','2026-11-02','window'),old=row('old','2025-12-31'),latest={...current,version:'v2'};const result=mergeSearchRows([current,shared],[old,latest]);expect(result).toHaveLength(3);expect(result.find(r=>searchTaskKey(r)===searchTaskKey(current))?.version).toBe('v2');expect(result).toContain(shared);expect(result).toContain(old);});
+it('browses all result dates, combines diary dates and omits unarranged task ownership dates',()=>{const unarranged=row('later','2026-11-03');unarranged.task.dueDate='';const diary:SearchResult={ref:{kind:'facts',id:'fact',date:'2024-02-29',summary:''},title:'记录',date:'2024-02-29',excerpt:'',tags:[],people:[]};expect(matchingDates([hit(row('old','2025-12-31')),hit(row('same','2026-11-02')),hit(unarranged),diary,diary])).toEqual(['2024-02-29','2025-12-31','2026-11-02']);});
+it('locates nearest matching dates across months and years without mutating order',()=>{const dates=['2025-12-31','2026-11-02','2027-01-01'];expect(nearestSearchDate(dates,'2026-01-01')).toBe('2025-12-31');expect(nearestSearchDate(dates,'2026-12-31')).toBe('2027-01-01');expect(nearestSearchDate([],'2026-11-02')).toBeUndefined();expect(dates[0]).toBe('2025-12-31');});

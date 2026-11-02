@@ -1,0 +1,219 @@
+{
+  "profile": {
+    "code": "E7AFA7E7CB68",
+    "name": "本地演示"
+  },
+  "organizations": [
+    {
+      "id": "5e10549b-73f1-4a34-a896-b8abea8cd583",
+      "name": "双瑞",
+      "version": "630896be-4d12-43e6-9e3f-e8be720f0d39",
+      "departments": 0
+    },
+    {
+      "id": "db9fa623-f39f-4b7a-a550-a0c2c9184fc0",
+      "name": "多部门协作示例",
+      "version": "ae759afb-a956-4b32-9d6d-b27893329c04",
+      "departments": 14
+    }
+  ],
+  "friends": 2,
+  "windows": [
+    {
+      "id": "01b7f749-dec5-4d10-8e51-651d5152f0cb",
+      "version": "06604667-c233-4554-a720-875da4ea98e5"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "cba541fa-cb95-474c-a56a-5109d17ee4b3",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "048306df-88f7-455c-8772-6f0469c0e9b5",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "5e5aea84-014c-4d3a-8966-ff34e9b3f35c",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "e04ca36d-6d79-45a8-97d1-091ed7b63afa",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "68aea0bc-1d10-4608-8d3d-e9afcfd22c5c",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "f59ca6d2-3664-4e61-85c1-c60bc4f0eadc",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "e67fa3cb-91f5-466c-90c8-16e20b3e23a2",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "130c9495-964f-4c14-b1ae-a2b1d34f8e74",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "1a226ad2-3343-40fb-a9d2-1b92614021e8",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "ac26ad9f-6a71-4707-ae94-608a7e98db08",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "2c271bb5-5fcf-48bb-a18e-390ce8aa5ff1",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "3d715462-2bd6-464f-8e6a-882254174cc8",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "bfc32975-5760-4f23-9eec-93d59fc8e9c3",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "c191d159-3271-42ee-ba60-6e04cf1a86cb",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "050b78d2-73fa-4d68-89d5-2c5c21df4f2d",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "1d735a40-f56f-479b-ad02-2e6f7c005f2d",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "3c1002dc-31c8-46cb-87fb-ff65b8b03fac",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "e9739c34-f027-41b6-a2c8-787bcf001285",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "bb62cb54-d58e-4a31-a168-e45637f866e5",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "9b3c048a-746f-4e7f-b40a-649497aa2858",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "c8adb144-4343-43bd-9108-b8a0855bdb9d",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "cf25e606-8a7e-47cf-975e-55cb65e5ae61",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "3e4ef8f4-2442-4338-8698-ad1435489f77",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "1598ef27-2c63-4fd8-a087-acb1498c6da5",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "831d52d9-7c0f-46d0-9982-8d9db1c6e969",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "b63d9884-d36d-4b7f-bca7-808fb8aca3ad",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "a6019619-ffb2-484c-aeb7-760e27cd937c",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "568ef98a-3a08-49ba-9e70-b0091432f9f6",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "cf2d51d1-19e7-433d-91d2-c7c722764404",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "occ-4d03748ded986223b384ce5520b635a6",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "occ-9acec9f05befcc6b6c90de278b77565d",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "occ-0ec48a397ac57f6c3acfdfd6a79d37f0",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "occ-26154a06edfa4b8c86773b67474a0a44",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "occ-b28707c5a37c725793299ee84e36a0ac",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "occ-6f53d0e02420faa5b0f7e1a4db8c593b",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "occ-9539c131a65416b9c189af514c696394",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "occ-6132c0192ab07ac7baf0b3656c2971b4",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    },
+    {
+      "id": "occ-353ac6d4af4a8fd300a56b1b37a2f993",
+      "date": "2026-10-12",
+      "version": "2b334fdf1eb3dab19e69c35d30079c5111a634aa499836f6c46b1a7971214a8f"
+    }
+  ]
+}

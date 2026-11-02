@@ -1,3 +1,4 @@
+import {emptyDiary,diaryEventSchema} from '@diary/contracts';
 import { describe, expect, it } from "vitest";
 import { parseDiaryMarkdown, serializeDiaryMarkdown } from "./markdown.js";
 
@@ -94,4 +95,9 @@ date: 2026-09-08
     expect(parsed.facts.events[0]?.remark).toBe("这件事需要下周继续跟进");
     expect(parseDiaryMarkdown(serializeDiaryMarkdown(parsed), "2026-09-08").facts.events).toHaveLength(1);
   });
+});
+
+it('preserves private profile identity across facts Markdown without migrating name-only history',()=>{
+ const document=emptyDiary('2026-11-01'),personId=crypto.randomUUID();document.facts.events=[diaryEventSchema.parse({id:crypto.randomUUID(),note:'和李明开会',people:[{type:'person',name:'李明',personId,tags:['同事']}]}),diaryEventSchema.parse({id:crypto.randomUUID(),note:'旧记录',people:[{type:'person',name:'李明',tags:['朋友']}]})];
+ const loaded=parseDiaryMarkdown(serializeDiaryMarkdown(document),document.date);expect(loaded.facts.events[0].people[0].personId).toBe(personId);expect(loaded.facts.events[1].people[0].personId).toBeUndefined();
 });

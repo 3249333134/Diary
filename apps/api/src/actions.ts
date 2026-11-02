@@ -1,3 +1,4 @@
+import {taskSpan} from './scheduleSpan.js';
 import { z } from 'zod';
 import { appendCapture, captureDraftSchema, completionRecordSchema, recordRefSchema, resolveRecord, todoSchema, type RecordRef, type Todo } from '@diary/contracts';
 import { listDiaryDates, loadDiary, readJson, saveDiaryUnlocked, withVaultLock, writeJson } from './vault.js';
@@ -40,7 +41,7 @@ export async function listActions(userId: number) {
     const event = owner?.document.facts.events.find(e => e.task?.date === d.document.date && e.task.id === task.id);
     const unfinished = completionEntries.find(e => e.task?.date === d.document.date && e.task.id === task.id);
     const pending = unfinished && 'description' in unfinished ? { ...unfinished, description: unfinished.description.slice(0, 10000) } : unfinished;
-    return { restorePending, completionPending: journal?.phase === 'prepared' && !task.completion, pendingRecord: !task.completion && pending ? captureDraftSchema.parse(pending) : undefined, date: d.document.date, version: d.version, task, sourceExists: exists(task.source), completionExists: exists(task.completion), pendingFact: !task.completion && event && owner ? { date: owner.document.date, id: event.id, time: event.time, note: event.note, remark: event.remark } : undefined };
+    return { span:taskSpan(task,d.document.todos.find(t=>t.id===task.seriesId)),restorePending, completionPending: journal?.phase === 'prepared' && !task.completion, pendingRecord: !task.completion && pending ? captureDraftSchema.parse(pending) : undefined, date: d.document.date, version: d.version, task, sourceExists: exists(task.source), completionExists: exists(task.completion), pendingFact: !task.completion && event && owner ? { date: owner.document.date, id: event.id, time: event.time, note: event.note, remark: event.remark } : undefined };
   })));
   const records = diaries.flatMap(d => [
     ...d.document.facts.events.map(e => ({ date: d.document.date, kind: 'facts' as const, id: e.id, summary: e.note.slice(0, 2000) })),
@@ -83,7 +84,7 @@ export async function changeAction(input: ActionInput, userId: number) {
       return completeAutomatically(current, existing, userId);
     }
     if (input.mode === 'create') {
-      if (input.task.repeat && ['daily','weekly','monthly'].includes(input.task.repeat.type)) {
+      if (input.task.dueDate && input.task.repeat && ['daily','weekly','monthly'].includes(input.task.repeat.type)) {
         if(!input.task.dueDate) throw Object.assign(new Error('重复计划需要截止日期'),{statusCode:400});
         input.task.recurrenceAnchor=input.task.dueDate;
         if(input.task.repeat.until)assertDate(input.task.repeat.until);
@@ -103,7 +104,7 @@ export async function changeAction(input: ActionInput, userId: number) {
         completion: undefined,
         completedAt: undefined,
         operationId: undefined,
-        createdAt: input.task.createdAt || new Date().toISOString(),
+        createdAt: new Date().toISOString(),
         deletedAt: undefined,
       });
     } else if (input.mode === 'delete') {
@@ -118,7 +119,7 @@ export async function changeAction(input: ActionInput, userId: number) {
         if (input.task[field] !== undefined) patch[field] = input.task[field] as never;
       }
       Object.assign(existing!, patch);
-      if(!existing!.seriesId && !existing!.recurrenceAnchor && ['daily','weekly','monthly'].includes(existing!.repeat?.type||'')) {
+      if(existing!.dueDate && !existing!.seriesId && !existing!.recurrenceAnchor && ['daily','weekly','monthly'].includes(existing!.repeat?.type||'')) {
         if(!existing!.dueDate)throw Object.assign(new Error('重复计划需要截止日期'),{statusCode:400});
         if(existing!.repeat?.until)assertDate(existing!.repeat.until);
         existing!.dueDate=firstOccurrence(existing!.dueDate,existing!.repeat!);
@@ -161,7 +162,7 @@ export async function changeAction(input: ActionInput, userId: number) {
     }
     try {
       syncSeriesCheckins(current.document);
-      const diary = await saveDiaryUnlocked(input.date, current.document, current.version, userId);
+      const diary = await saveDiaryUnlocked(input.date, current.document, current.version, userId,{analyze:input.mode==='create'||input.mode==='update'});
       if (input.mode === 'complete' && completion) await writeJson(`${vaultPaths.system}/actions/${input.operationId}.json`, { date: input.date, taskId: input.task.id, target: completion!.date, kind: completion!.kind, phase: 'complete' }, userId);
       return { diary };
     } catch (error) {

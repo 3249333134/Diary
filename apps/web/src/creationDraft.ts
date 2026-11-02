@@ -1,13 +1,14 @@
+import type {AppliedMemory,MemoryCandidate} from '@diary/contracts';
 import {diaryEventSchema,textEntrySchema,todoSchema,projectEntries,validationIssues,type Attachment,type CaptureDraft,type DiaryDocument,type FieldIssue,type RecordRef,type TaggedEntity,type TodoAttachment,type TodoRepeat} from '@diary/contracts';
 
 export type CreationKind='plan'|'facts'|'learn'|'input'|'idea';
 export const creationLabels={plan:'日程',facts:'事实',learn:'新知',input:'输入',idea:'灵感'};
 export type CreationDraft={id:string;kind:CreationKind;ownerDate:string;date:string;time:string;content:string;description:string;entities:TaggedEntity[];tags:string[];attachments:Attachment[];planAttachments:TodoAttachment[];inputKind:string;priority:string;list:string;repeat:TodoRepeat;checkinEnabled?:boolean;category?:string|null;important?:boolean|null;urgent?:boolean|null;startDate?:string;startTime?:string;windowId?:string;source?:RecordRef;needsReview:boolean;reviewReason:string;createdAt?:string;edited?:boolean};
-export type CreationRow={draft:CreationDraft;state:'draft'|'saved'|'error';ref?:RecordRef;error?:string;submitted?:CreationDraft;originalText?:string};
+export type CreationRow={draft:CreationDraft;state:'draft'|'saved'|'error';ref?:RecordRef;error?:string;submitted?:CreationDraft;originalText?:string;appliedMemory?:AppliedMemory[];memoryCandidates?:MemoryCandidate[];memoryQuestions?:string[];memoryVersion?:string};
 export type CreationSession={version:1;manual:Record<string,CreationDraft>;text:string;rows:CreationRow[];submitted:Record<string,CreationDraft>};
 export const creationKey=(kind:CreationKind,date:string)=>`${kind}:${date}`;
 export const emptyCreationSession=():CreationSession=>({version:1,manual:{},text:'',rows:[],submitted:{}});
-export function newCreationDraft(kind:CreationKind,date:string,time:string):CreationDraft{return {id:crypto.randomUUID(),kind,ownerDate:date,date,time,content:'',description:'',entities:[],tags:[],attachments:[],planAttachments:[],inputKind:'书',priority:'medium',list:'',repeat:null,checkinEnabled:false,needsReview:false,reviewReason:'',createdAt:new Date().toISOString()};}
+export function newCreationDraft(kind:CreationKind,date:string,time:string):CreationDraft{return {id:crypto.randomUUID(),kind,ownerDate:date,date:kind==='plan'?'':date,time:kind==='plan'?'':time,content:'',description:'',entities:[],tags:[],attachments:[],planAttachments:[],inputKind:'书',priority:'medium',list:'',repeat:null,checkinEnabled:false,needsReview:false,reviewReason:'',createdAt:new Date().toISOString()};}
 export const creationDirty=(draft:CreationDraft)=>!!(draft.edited||draft.content||draft.description||draft.attachments.length||draft.planAttachments.length);
 export const hasCreationDraft=(session:CreationSession)=>!!session.text||session.rows.some(row=>row.state!=='saved')||Object.values(session.manual).some(creationDirty);
 export const creationStorageKey=(account:number)=>`diary.creation.v1.${account}`;

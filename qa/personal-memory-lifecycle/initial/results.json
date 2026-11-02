@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "识别使用确认记忆，缺截止保持未安排；解析无保存",
+    "截止在查询之外的跨日任务按区间返回",
+    "末端拖动仅预览，取消无写入",
+    "我的可管理人物、别名和标签",
+    "创建页展示来源，关闭保留AI草稿",
+    "月历按区间计数，当天列表展示持续任务"
+  ],
+  "errors": [],
+  "shots": true,
+  "device": "Edge headless; touch emulation where width <900; no WeChat device"
+}

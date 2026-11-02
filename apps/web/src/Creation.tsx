@@ -1,3 +1,5 @@
+import {usePersonalMemory,MemoryCandidates} from './PersonalMemory';
+import {matchPersonalMemory} from '@diary/contracts';
 import {useEffect,useLayoutEffect,useRef,useState,type RefObject} from 'react';
 import {Trash2} from 'lucide-react';
 import {validationMessage,type RecordRef,type FieldIssue} from '@diary/contracts';
@@ -20,6 +22,7 @@ export type CreationRequest={id:number;kind:CreationKind;date:string;preset?:Par
 export type CreationResult={ref:RecordRef;refreshWarning?:string;createdCount?:number};
 export function Creation({account,open,request,onClose,trigger,context,onSave,onCreated,onDraftChange,planDisabled,diaryDisabled}:{account:number;open:boolean;request?:CreationRequest;onClose:()=>void;trigger:RefObject<HTMLButtonElement|null>;context:EntityContext;onSave:(draft:CreationDraft)=>Promise<CreationResult>;onCreated:(result:CreationResult)=>void;onDraftChange:(hasDraft:boolean)=>void;planDisabled:boolean;diaryDisabled:boolean}){
  const {data}=useSocial();
+ const memory=usePersonalMemory();
  const confirmation=useGlassConfirm();
  const [session,setSession]=useState(()=>{try{const restored=restoreCreationSession(localStorage.getItem(creationStorageKey(account)));return {...restored,rows:restored.rows.filter(row=>row.state!=='saved')};}catch{return emptyCreationSession();}});
  const [manualKey,setManualKey]=useState(''),[activeRow,setActiveRow]=useState<string>(),[lastDiaryKind,setLastDiaryKind]=useState<CreationKind>('facts');
@@ -50,6 +53,18 @@ export function Creation({account,open,request,onClose,trigger,context,onSave,on
  },[open,request?.id,draft?.id]);
  const close=()=>{if(guard.current||uploading)return;onClose();requestAnimationFrame(()=>trigger.current?.focus({preventScroll:true}));};
  const patch=(value:Partial<CreationDraft>)=>{if(guard.current||parsing||submitted)return;setError('');setSession(old=>activeRow?{...old,rows:old.rows.map(row=>row.draft.id===activeRow?{...row,draft:{...row.draft,...value},error:undefined}:row)}:{...old,manual:{...old.manual,[manualKey]:{...old.manual[manualKey],...value,edited:true}}});};
+ const patchMemory=(values:Partial<NonNullable<typeof current>>)=>setSession(old=>({...old,rows:old.rows.map(row=>row.draft.id===activeRow?{...row,...values}:row)}));
+ const removeMemory=(index:number)=>{if(!current||!draft)return;const applied=current.appliedMemory?.[index];if(!applied)return;
+  if(applied.field==='start'&&draft.startTime===applied.value)patch({startTime:''});
+  if(applied.field==='person')patch({entities:draft.entities.filter(e=>e.personId!==applied.personId)});
+  if(applied.field==='place')patch({entities:draft.entities.filter(e=>e.type!=='place'||e.name!==applied.value)});
+  patchMemory({appliedMemory:current.appliedMemory?.filter((_,i)=>i!==index)});
+ };
+ const rematch=()=>{if(!current||!draft||!memory.snapshot)return;const result=matchPersonalMemory(current.originalText||draft.content,draft.startDate||draft.date||planClock().date,memory.snapshot.records);
+  const entities=[...draft.entities];for(const person of result.people){const index=entities.findIndex(e=>e.personId===person.personId),existing=entities[index],prior=current.appliedMemory?.find(m=>m.personId===person.personId);if(index<0)entities.push({type:'person',...person});else if(prior&&existing.tags.join(' · ')===prior.value)entities[index]={...existing,tags:person.tags};}
+  patch({entities,...!draft.startTime&&result.startTime?{startTime:result.startTime,startDate:draft.startDate||draft.date||planClock().date}:{}});
+  patchMemory({appliedMemory:result.applied, memoryQuestions:result.questions,memoryVersion:memory.snapshot.version});
+ };
  const switchKind=(kind:CreationKind)=>{
   if(!activeRow)selectManual(kind);else patch({kind,...kind!=='plan'&&!draft?.date?{date:request?.date||planClock().date}:{}});
   if(kind!=='plan')setLastDiaryKind(kind);
@@ -64,7 +79,7 @@ export function Creation({account,open,request,onClose,trigger,context,onSave,on
   parseGuard.current=true;setParsing(true);setError('');setMessage('');
   try{
    const result=await api.parseCapture(text);if(!mounted.current)return;
-   const rows=appendRecognized(session,result.drafts,text,planClock().date);
+   const rows=appendRecognized(session,result.drafts,text,planClock().date).map((row,index)=>({...row,appliedMemory:result.memoryMatches?.[row.draft.id]?.applied||[],memoryQuestions:result.memoryMatches?.[row.draft.id]?.questions||[],memoryCandidates:index===0?result.memoryCandidates||[]:[],memoryVersion:memory.snapshot?.version}));
    setSession(old=>({...old,text:'',rows:[...old.rows,...rows]}));setActiveRow(rows[0]?.draft.id);
    setMessage(result.mode==='ai'?'已加入待创建，可继续输入，核对后一起创建。':'AI 暂不可用，原文已保留，请核对用途和日期。');
   }catch(e){if(mounted.current){const clock=planClock(),draft={...newCreationDraft(request?.kind||'facts',request?.kind==='plan'?clock.date:request?.date||clock.date,clock.time),content:text,needsReview:true,reviewReason:'AI 未能识别，请手动核对用途和日期'};setSession(old=>({...old,text,rows:[...old.rows,{draft,state:'draft',originalText:text}]}));setActiveRow(draft.id);setError(validationMessage(e,'识别失败，原文已保留'));}}
@@ -77,7 +92,7 @@ export function Creation({account,open,request,onClose,trigger,context,onSave,on
   if(disabled||guard.current||!draft)return;
   const batch=activeRow?pending.map(row=>({rowId:row.draft.id,snapshot:structuredClone(row.submitted||row.draft)})):[{rowId:undefined,snapshot:structuredClone(submitted||draft)}];
   for(const item of batch){
-   const issues=creationIssues(item.snapshot);
+   const issues=creationIssues(item.snapshot);const ambiguous=session.rows.find(row=>row.draft.id===item.rowId)?.memoryQuestions?.find(question=>question.includes('匹配多个人'));if(ambiguous)issues.unshift({path:'entities',code:'ambiguous_person',message:ambiguous});
    if(item.snapshot.windowId&&!editableWindows(data.windows).some(window=>window.id===item.snapshot.windowId))issues.unshift({path:'windowId',code:'forbidden',message:'共享权限已变化，请选择可协作窗口或改为私人日程'});
    if(issues.length){if(item.rowId)setActiveRow(item.rowId);setError(issues[0].message);focusIssue(issues[0]);return;}
   }
@@ -129,6 +144,11 @@ export function Creation({account,open,request,onClose,trigger,context,onSave,on
 
     {(storageError||error)&&<p className="creation-error" role="alert">{error||storageError}</p>}
     {message&&<p className="creation-message" role="status">{message}</p>}{current?.originalText&&<details className="creation-original"><summary>识别原文</summary><p>{current.originalText}</p></details>}
+    {current&&(!!current.appliedMemory?.length||!!current.memoryCandidates?.length||!!current.memoryQuestions?.length||current.memoryVersion!==memory.snapshot?.version)&&<aside className="creation-memory" aria-label="个人记忆匹配"><p>个人记忆 · 仅你可见</p><div className="creation-memory-matches">{current.appliedMemory?.map((item,index)=><button key={index} disabled={busy} onClick={()=>removeMemory(index)} title="移除本次使用的记忆">{item.label} · {item.value} ×</button>)}</div>{current.appliedMemory?.length?<small>点击可移除本次匹配；字段仍可手动修改。</small>:null}
+     {current.memoryVersion!==memory.snapshot?.version&&memory.snapshot&&<button className="quiet-button" disabled={busy} onClick={rematch}>记忆已更新，重新匹配</button>}
+     {current.memoryQuestions?.map((question,index)=><div key={question}><p>{question}</p>{question.includes('匹配多个人')&&memory.snapshot?.records.filter(m=>m.kind==='person'&&m.enabled&&[m.label,...m.aliases].some(alias=>question.includes(alias))).map(person=><button className="quiet-button" key={person.id} onClick={()=>{if(draft)patch({entities:[...draft.entities.filter(e=>e.type!=='person'||![person.label,...person.aliases].includes(e.name)),{type:'person',name:person.label,tags:person.tags,personId:person.id}]});patchMemory({memoryQuestions:current.memoryQuestions?.filter((_,i)=>i!==index)});}}>{person.label} · {person.value}</button>)}<button className="quiet-button" onClick={()=>patchMemory({memoryQuestions:current.memoryQuestions?.filter((_,i)=>i!==index)})}>已核对，使用本次填写</button></div>)}
+     <MemoryCandidates items={current.memoryCandidates||[]} busy={busy||memory.busy} onAction={(item,action)=>void(async()=>{try{await memory.run({action:action==='confirm'?'confirm':action==='once'?'once':'ignore',candidate:item});patchMemory({memoryCandidates:current.memoryCandidates?.filter(c=>c.fingerprint!==item.fingerprint)});}catch{setError('记忆未保存，草稿仍保留，请重试');}})()}/>
+    </aside>}
     {!permitted&&<div className="creation-error" role="status">共享窗口权限已变化，草稿保留，当前无法创建。<button type="button" className="quiet-button" disabled={busy} onClick={()=>patch({windowId:undefined})}>改为私人日程</button></div>}
     {draft&&<fieldset className="creation-fields" disabled={busy||parsing||!!submitted||!permitted}><CreationFields draft={draft} ai={!!activeRow} onChange={patch} context={context} onUploading={setUploading}/></fieldset>}
     {submitted&&!saving&&<p role="status">已保留上次提交内容。请重试确认结果，避免重复创建。</p>}

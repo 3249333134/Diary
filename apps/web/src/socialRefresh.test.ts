@@ -5,7 +5,7 @@ import {creationFieldLocation} from './creationFocus';
 const snapshot=():SocialSnapshot=>({profile:{code:'ME',name:'我'},friends:[],requests:[],invitations:[],windows:[],notices:[],cursor:0});
 describe('resource changes and attention',()=>{
  it('keeps legacy empty events conservative and merges diary dates without dropping a full refresh',()=>{
-  expect(normalizeSocialChange({}).domains).toEqual(['social','plans','diary']);expect(normalizeSocialChange({domains:['social']})).toEqual({domains:['social'],dates:undefined});
+  expect(normalizeSocialChange({}).domains).toEqual(['social','plans','diary','memory']);expect(normalizeSocialChange({domains:['social']})).toEqual({domains:['social'],dates:undefined});
   expect(mergeSocialChanges({domains:['diary'],dates:['2026-10-29']},{domains:['social','diary'],dates:['2026-10-30']})).toEqual({domains:['diary','social'],dates:['2026-10-29','2026-10-30']});
   expect(mergeSocialChanges({domains:['diary'],dates:['2026-10-29']},{domains:['diary']} ).dates).toBeUndefined();
  });

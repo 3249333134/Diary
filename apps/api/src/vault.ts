@@ -1,3 +1,4 @@
+import {ensureMemoryTables,enqueueMemoryExtraction} from './personalMemory.js';
 import { ensureSyncTables, recordSyncChange, syncTransaction } from "./sync-db.js";
 import { createHash } from "node:crypto";
 import { diaryDocumentSchema, emptyDiary, type DiaryDocument, type DiaryResponse } from "@diary/contracts";
@@ -32,17 +33,20 @@ export function saveDiary(
   date: string,
   input: unknown,
   expectedVersion: string,
-  userId: number
+  userId: number,
+  options: {analyze?: boolean; stampNewTasks?: boolean} = {}
 ): Promise<DiaryResponse> {
-  return withVaultLock(userId, () => saveDiaryUnlocked(date, input, expectedVersion, userId));
+  return withVaultLock(userId, () => saveDiaryUnlocked(date, input, expectedVersion, userId, options));
 }
 
 export async function saveDiaryUnlocked(
   date: string,
   input: unknown,
   expectedVersion: string,
-  userId: number
+  userId: number,
+  options: {analyze?: boolean; stampNewTasks?: boolean} = {}
 ): Promise<DiaryResponse> {
+  if(options.analyze)await ensureMemoryTables();
   await ensureSyncTables(); return syncTransaction(async () => {
   assertDate(date);
   const document = diaryDocumentSchema.parse(input);
@@ -51,6 +55,7 @@ export async function saveDiaryUnlocked(
   if (current.version !== expectedVersion) {
     throw Object.assign(new Error("日记已在其他位置修改"), { statusCode: 409, code: "VERSION_CONFLICT", current });
   }
+  if(options.stampNewTasks)for(const task of document.todos){const previous=current.document.todos.find(t=>t.id===task.id);task.createdAt=previous?.createdAt||(previous?'':new Date().toISOString());}
   const content = serializeDiaryMarkdown(document);
   const version = versionOf(content);
   await pool.query(
@@ -58,6 +63,7 @@ export async function saveDiaryUnlocked(
     [userId, date, content, version]
   );
   await recordSyncChange(userId,"diary",date,version);
+  if(options.analyze)await enqueueMemoryExtraction(userId,current.document,document);
   const saved = await loadDiary(date, userId);
   return { ...saved, savedAt: new Date().toISOString() };
   });

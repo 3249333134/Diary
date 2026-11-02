@@ -1,0 +1,18 @@
+{
+  "checks": [
+    {
+      "query": "工作",
+      "count": "找到 20 条"
+    },
+    {
+      "action": "点击分类结果直接进入编辑，取消不保存"
+    },
+    {
+      "query": "个人生活",
+      "count": "找到 15 条"
+    }
+  ],
+  "errors": [],
+  "writes": [],
+  "device": "Edge headless; existing local demo; no writes or real device tests"
+}

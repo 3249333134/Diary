@@ -1,3 +1,4 @@
+import {snapTimelineMinutes} from './calendarTimeline';
 import { expect,it } from 'vitest';
 import { timelineMarkers,timelineOffset,timelineTime,HOUR_WIDTH,DEADLINE_WIDTH } from './calendarTimeline';
 import { hiddenHourRanges,offscreenDirection } from './calendarTimeline';
@@ -33,3 +34,5 @@ it('packs dense labels into lanes without shifting deadlines or implying duratio
   const values=[...markers.values()];
   for(let i=0;i<values.length;i++)for(let j=i+1;j<values.length;j++)if(values[i].lane===values[j].lane)expect(Math.abs(values[j].anchor-values[i].anchor)).toBeGreaterThanOrEqual(DEADLINE_WIDTH+8);
 });
+
+it('snaps touch resizing to absolute quarter hours including non-quarter originals and the last hour',()=>{expect(snapTimelineMinutes(18*60+10)).toBe(18*60+15);expect(snapTimelineMinutes(1439)).toBe(1425);expect(snapTimelineMinutes(-10)).toBe(0);});

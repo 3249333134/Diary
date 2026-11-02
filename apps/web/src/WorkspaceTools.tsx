@@ -1,3 +1,4 @@
+import {GlobalSearchBox,useWideSearch} from './GlobalSearch';
 import type { ReactNode } from 'react';
 import { Check, ChevronLeft, ChevronRight, CircleAlert, CloudOff, Info, Loader2, Save, Maximize2, Minimize2 } from 'lucide-react';
 import { GlassDate } from './GlassDate';
@@ -11,6 +12,7 @@ export function DiaryToolbar({date,onDate,label,count,status,onSave,onInformatio
   date:string;onDate:(date:string)=>void;label:string;count:number;status:SaveStatus;onSave:()=>void;
   onInformation:()=>void;informationLabel:string;theme:string;onTheme:()=>void;navigation?:ReactNode;compact?:boolean;fullscreen?:boolean;onToggleFullscreen?:()=>void;
 }) {
+  const wideSearch=useWideSearch();
   const statusLabel={loading:'正在读取',saved:'已保存',dirty:'有未保存修改',saving:'正在保存',offline:'离线草稿',error:'保存失败，点击重试',conflict:'发现版本冲突'}[status];
   const Icon=status==='saved'?Check:status==='saving'||status==='loading'?Loader2:status==='error'||status==='conflict'?CircleAlert:status==='offline'?CloudOff:Save;
   return <WorkspaceToolbar className="diary-main-toolbar" label="日记工具栏">
@@ -22,10 +24,11 @@ export function DiaryToolbar({date,onDate,label,count,status,onSave,onInformatio
     </nav>
     <span className="diary-toolbar-count" title={`${label} ${count} 条`} aria-label={`${label} ${count} 条`}><span>{label}</span><b>{count}</b><small>条</small></span>
     {navigation}
-    <div className="diary-toolbar-actions">
+    <div className="diary-toolbar-actions">{wideSearch&&<GlobalSearchBox compact/>}
       <button type="button" className="diary-desktop-action" aria-label={informationLabel} title={informationLabel} aria-haspopup="dialog" onClick={onInformation}><Info size={18}/></button>
       {onToggleFullscreen&&<button type="button" aria-label={fullscreen?'退出全屏':'全屏显示'} onClick={onToggleFullscreen}>{fullscreen?<Minimize2 size={18}/>:<Maximize2 size={18}/>}</button>}
       <button type="button" className="diary-save-control" data-status={status} aria-label="保存日记" title={statusLabel} disabled={status==='saving'||status==='loading'||status==='conflict'} onClick={onSave}><Icon size={20} className={status==='saving'||status==='loading'?'spin':undefined}/><span className="sr-only" role="status" aria-live="polite">{statusLabel}</span></button>
     </div>
+    {!wideSearch&&<div className="diary-toolbar-search"><GlobalSearchBox/></div>}
   </WorkspaceToolbar>;
 }

@@ -1,0 +1,45 @@
+import {useEffect,useState} from 'react';
+import {Brain,Plus,Pencil,Check,EyeOff,Trash2} from 'lucide-react';
+import {personalMemorySchema,type PersonalMemory,type PersonalMemorySnapshot,type MemoryCandidate} from '@diary/contracts';
+import {api} from './api';
+import {useSocial} from './Social';
+import {GlassDialog} from './GlassUI';
+import {GlassSelect} from './GlassSelect';
+import './personal-memory.css';
+
+type Command={action:'upsert'|'delete'|'confirm'|'ignore'|'once'|'retry';record?:PersonalMemory;candidate?:MemoryCandidate;id?:string};
+let cached:{account:string;revision:number;value:PersonalMemorySnapshot}|undefined,flight:{account:string;revision:number;promise:Promise<PersonalMemorySnapshot>}|undefined;
+let epoch=0;
+const subscribers=new Set<()=>void>();
+function clear(){epoch++;cached=undefined;flight=undefined;for(const notify of subscribers)notify();}
+if(typeof window!=='undefined')window.addEventListener('diary-account-change',clear);
+export function usePersonalMemory(){
+ const {data,memoryRevision}=useSocial(),account=data.profile.code;
+ const [snapshot,setSnapshot]=useState<PersonalMemorySnapshot>(),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+ const refresh=async()=>{if(!account)return;const generation=epoch;try{if(!flight||flight.account!==account||flight.revision!==memoryRevision){const promise=api.personalMemory().finally(()=>{if(flight?.promise===promise)flight=undefined;});flight={account,revision:memoryRevision,promise};}const result=await flight.promise;if(generation!==epoch||cached?.account===account&&cached.revision>memoryRevision)return;cached={account,revision:memoryRevision,value:result};for(const notify of subscribers)notify();setError('');}catch(e){setError(e instanceof Error?e.message:'暂时无法读取记忆');}};
+ useEffect(()=>{const notify=()=>setSnapshot(cached?.account===account?cached.value:undefined);subscribers.add(notify);notify();if(account&&cached?.account!==account)void refresh();return()=>{subscribers.delete(notify);};},[account]);
+ useEffect(()=>{if(account&&memoryRevision&&(cached?.account!==account||cached.revision!==memoryRevision))void refresh();},[account,memoryRevision]);
+ const run=async(command:Command)=>{if(!account)throw new Error('请先登录');setBusy(true);const generation=++epoch;flight=undefined;try{const state=cached?.account===account?cached.value:await api.personalMemory();const result=await api.savePersonalMemory({...command,version:state.version});if(generation===epoch){cached={account,revision:memoryRevision,value:result};for(const notify of subscribers)notify();setError('');}return result;}catch(e){setError(e instanceof Error?e.message:'保存失败，内容已保留');throw e;}finally{setBusy(false);}};
+ return {snapshot,error,busy,run,refresh};
+}
+export function MemoryCandidates({items,busy,onAction}:{items:MemoryCandidate[];busy:boolean;onAction:(item:MemoryCandidate,action:'confirm'|'once'|'ignore')=>void}){
+ return <div className="memory-candidates">{items.map(item=><article key={item.fingerprint}><div><strong>{item.record.label}</strong><span>{item.record.value}</span><small>{item.record.date?`仅 ${item.record.date}`:item.record.weekdays.length?`每周 ${item.record.weekdays.map(d=>'日一二三四五六'[d]).join('、')}`:'通用默认'} · 待确认</small></div><blockquote>{item.evidence}</blockquote><div className="memory-actions"><button disabled={busy} onClick={()=>onAction(item,'confirm')}>记住</button><button disabled={busy} onClick={()=>onAction(item,'once')}>仅本次</button><button disabled={busy} onClick={()=>onAction(item,'ignore')}>忽略</button></div></article>)}</div>;
+}
+const newMemory=():PersonalMemory=>personalMemorySchema.parse({id:crypto.randomUUID(),kind:'time',key:'offWork',label:'下班时间',value:'18:00'});
+export function PersonalMemoryManager(){
+ const {snapshot,error,busy,run,refresh}=usePersonalMemory();
+ const [tab,setTab]=useState('habit'),[editing,setEditing]=useState<PersonalMemory>(),[formError,setFormError]=useState('');
+ const patch=(values:Partial<PersonalMemory>)=>setEditing(old=>old?{...old,...values}:old);
+ const execute=(command:Command)=>void run(command).catch(()=>{});
+ const save=async()=>{if(!editing)return;const parsed=personalMemorySchema.safeParse(editing);if(!parsed.success){setFormError(parsed.error.issues[0].message);return;}try{await run({action:'upsert',record:parsed.data});setEditing(undefined);}catch{}};
+ return <section className="account-section personal-memory"><div className="memory-heading"><h2><Brain size={20}/>个人记忆</h2><button className="quiet-button" onClick={()=>{setEditing(newMemory());setFormError('');}}><Plus size={17}/>新增</button></div><p>只为你的账号匹配时间、人物和标签。新发现的信息经确认后才长期记住。</p>
+  <nav aria-label="个人记忆分类">{[['habit','习惯与地点'],['person','人物'],['pending',`待确认${snapshot?.candidates.length?` · ${snapshot.candidates.length}`:''}`]].map(([value,label])=><button key={value} aria-pressed={tab===value} onClick={()=>setTab(value)}>{label}</button>)}</nav>
+  {error&&<p role="alert">{error}<button className="quiet-button" onClick={()=>void refresh()}>刷新</button></p>}
+  {!!snapshot?.pending&&<small role="status">{snapshot.pending} 条新记录正在后台分析，已保存内容可正常使用。</small>}{!!snapshot?.failed&&<p role="status">{snapshot.failed} 条分析待重试 <button className="quiet-button" disabled={busy} onClick={()=>execute({action:'retry'})}>重新分析</button></p>}
+  {tab==='pending'?snapshot?.candidates.length?<MemoryCandidates items={snapshot.candidates} busy={busy} onAction={(item,action)=>execute({action:action==='confirm'?'confirm':action==='once'?'once':'ignore',id:item.id})}/>:<p className="memory-empty">暂无待确认信息</p>:<div>{snapshot?.records.filter(m=>tab==='person'?m.kind==='person':m.kind!=='person').map(m=><article className="memory-record" data-disabled={!m.enabled||undefined} key={m.id}><div><strong>{m.label} <span>{m.value}</span></strong><small>{m.date?`单日 · ${m.date}`:m.weekdays.length?`每周 ${m.weekdays.map(d=>'日一二三四五六'[d]).join('、')}`:'通用默认'}{m.aliases.length?` · 别名 ${m.aliases.join('、')}`:''}{m.tags.length?` · ${m.tags.map(t=>'#'+t).join(' ')}`:''}</small><small>来源：{m.source.kind==='manual'?'手动添加':m.source.kind==='ai'?'AI 输入确认':`本人记录 ${m.source.date||''}`}{!m.enabled?' · 已停用':''}</small></div><div className="memory-record-actions"><button className="quiet-button" aria-label={`编辑${m.label}`} onClick={()=>{setEditing(m);setFormError('');}}><Pencil size={16}/></button><button className="quiet-button" disabled={busy} aria-label={`${m.enabled?'停用':'启用'}${m.label}`} onClick={()=>execute({action:'upsert',record:{...m,enabled:!m.enabled}})}>{m.enabled?<EyeOff size={16}/>:<Check size={16}/>}</button><button className="quiet-button" disabled={busy} aria-label={`删除${m.label}`} onClick={()=>execute({action:'delete',id:m.id})}><Trash2 size={16}/></button></div></article>)}{!snapshot?.records.some(m=>tab==='person'?m.kind==='person':m.kind!=='person')&&<p className="memory-empty">先添加一条，之后可自动匹配。</p>}</div>}
+  {editing&&<GlassDialog label="编辑个人记忆" onClose={()=>{if(!busy)setEditing(undefined);}} busy={busy} className="memory-editor"><h2>个人记忆</h2><div className="memory-editor-fields"><GlassSelect label="类型" value={editing.kind} options={[{value:'time',label:'时间习惯'},{value:'place',label:'常去地点'},{value:'person',label:'人物'},{value:'fact',label:'个人信息'}]} onChange={kind=>patch({kind:kind as PersonalMemory['kind'],key:kind==='time'?'offWork':editing.label,value:kind==='time'?'18:00':''})}/>{editing.kind==='time'?<GlassSelect label="习惯" value={editing.key} options={[{value:'offWork',label:'下班时间'},{value:'onWork',label:'上班时间'},{value:'wake',label:'起床时间'},{value:'sleep',label:'睡觉时间'},{value:'lunch',label:'午休时间'}]} onChange={key=>patch({key,label:({offWork:'下班时间',onWork:'上班时间',wake:'起床时间',sleep:'睡觉时间',lunch:'午休时间'} as Record<string,string>)[key]})}/>:<label>名称<input value={editing.label} onChange={e=>patch({label:e.target.value,key:e.target.value})}/></label>}
+   <label>{editing.kind==='time'?'时间':editing.kind==='person'?'关系或说明':'内容'}<input type={editing.kind==='time'?'time':'text'} value={editing.value} onChange={e=>patch({value:e.target.value})}/></label>
+   {editing.kind==='time'&&<><label>单日例外（优先于星期规则）<input type="date" value={editing.date||''} onChange={e=>patch({date:e.target.value||undefined})}/></label><fieldset><legend>每周适用（不选为通用默认）</legend><div className="memory-weekdays">{[1,2,3,4,5,6,0].map(d=><label key={d}><input type="checkbox" checked={editing.weekdays.includes(d)} onChange={e=>patch({weekdays:e.target.checked?[...editing.weekdays,d]:editing.weekdays.filter(n=>n!==d)})}/>{'日一二三四五六'[d]}</label>)}</div></fieldset></>}
+   {editing.kind!=='time'&&<label>别名（逗号分隔）<input value={editing.aliases.join('，')} onChange={e=>patch({aliases:e.target.value.split(/[,，]/).filter(Boolean)})}/></label>}<label>标签（逗号分隔）<input value={editing.tags.join('，')} onChange={e=>patch({tags:e.target.value.split(/[,，]/).filter(Boolean)})}/></label><small>仅影响后续匹配，不修改历史记录。同名人物保留独立档案。</small>{formError&&<p role="alert">{formError}</p>}</div><footer><button className="quiet-button" disabled={busy} onClick={()=>setEditing(undefined)}>取消</button><button className="primary-button" disabled={busy} onClick={()=>void save()}>保存记忆</button></footer></GlassDialog>}
+ </section>;
+}

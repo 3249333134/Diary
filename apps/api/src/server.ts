@@ -1,6 +1,8 @@
+import {registerSearch} from './search.js';
+import {registerPersonalMemory,memoryDocument} from './personalMemory.js';
 import { registerObsidianSync } from "./obsidian-sync.js";
 import { ensureSyncTables } from "./sync-db.js";
-import {registerSocial,socialSnapshot} from './social.js';
+import {registerSocial,socialSnapshot,emitSocialChange} from './social.js';
 import Fastify from "fastify";
 import { captureRequestSchema, validationIssues, DIARY_BODY_LIMIT } from '@diary/contracts';
 import { parseCapture } from './capture.js';
@@ -76,6 +78,8 @@ export async function buildServer() {
     return idx;
   };
   await registerSocial(app,userId=>indexes.delete(userId));
+  await registerPersonalMemory(app,id=>emitSocialChange(id,['memory']));
+  registerSearch(app);
 
   /* ── 认证路由 ── */
   app.post<{ Body: { username: string; password: string } }>("/api/auth/register", async (request, reply) => {
@@ -144,7 +148,7 @@ export async function buildServer() {
     if (request.headers['x-diary-record-version'] !== '2') return reply.code(428).send({ error: '日记结构已升级，请刷新页面后再保存，避免丢失关联。' });
     const expected = String(request.headers["if-match"] || "").replace(/^W\//, "").replace(/^"|"$/g, "");
     if (!expected) return reply.code(428).send({ error: "保存前需要日记版本" });
-    const result = await saveDiary(assertDate(request.params.date), request.body, expected, userId);
+    const result = await saveDiary(assertDate(request.params.date), request.body, expected, userId,{analyze:true,stampNewTasks:true});
     try { const idx = await getIndex(userId); await idx.rebuild(); }
     catch (error) {
       app.log.warn({ requestId: request.id, errorType: error instanceof Error ? error.name : 'Error', code: 'CONTEXT_REFRESH_FAILED' }, 'diary saved; index refresh failed');
@@ -269,7 +273,8 @@ export async function buildServer() {
     const userId = request.userId!;
     const idx = await getIndex(userId);
     const windows = (await socialSnapshot(userId)).windows.map(window => ({ id: window.id, name: window.name }));
-    return parseCapture(captureRequestSchema.parse(request.body), { names: idx.list('', undefined, 500).map(entity => entity.name), tags: await tagLibrary(idx.getTags(), userId),categories:await getPlanCategories(userId),windows });
+    const personal=(await memoryDocument(userId)).document;
+    return parseCapture(captureRequestSchema.parse(request.body), { names: idx.list('', undefined, 500).map(entity => entity.name), tags: await tagLibrary(idx.getTags(), userId),categories:await getPlanCategories(userId),windows,memories:personal.records,ignored:personal.ignored });
   });
 
   app.post("/api/split-sentence", async (request) => {

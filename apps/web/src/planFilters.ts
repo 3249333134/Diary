@@ -1,3 +1,4 @@
+import {resolveScheduleSpan,displayScheduleSpan,spanOnDate,type ScheduleSpan} from '@diary/contracts';
 import type { Todo } from '@diary/contracts';
 export type PlanFilter = 'today' | 'upcoming' | 'all' | 'done' | 'overdue' | 'trash';
 export const planDueTime=(task:Todo)=>task.dueDate?task.dueTime:task.time;
@@ -19,7 +20,7 @@ export function planClock(now = new Date()) {
   cachedMinute=minute;
   return cachedClock={ date: `${get('year')}-${get('month')}-${get('day')}`, time: `${get('hour')}:${get('minute')}` };
 }
-export function matchesPlan(task: Todo, filter: PlanFilter, now = planClock()) {
+export function matchesPlan(task: Todo, filter: PlanFilter, now = planClock(), span?:ScheduleSpan) {
   if(task.occurrenceSuppressed)return false;
   if (filter === 'trash') return !!task.deletedAt;
   if (task.deletedAt) return false;
@@ -28,7 +29,7 @@ export function matchesPlan(task: Todo, filter: PlanFilter, now = planClock()) {
   if (task.done || task.status === 'done' || task.status === 'cancelled') return false;
   const date = task.dueDate || task.plannedDate || '';
   const time = task.dueDate ? task.dueTime : task.time;
-  if (filter === 'today') return date === now.date;
+  if (filter === 'today') return spanOnDate(displayScheduleSpan(task,span||resolveScheduleSpan(task)),now.date)||date === now.date;
   if (filter === 'upcoming') return date > now.date;
   return !!date && (date < now.date || (date === now.date && !!time && time < now.time));
 }

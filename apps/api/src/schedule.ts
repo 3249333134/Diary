@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { projectSchedule } from './scheduleSpan.js';
 import { todoSchema, type Todo } from '@diary/contracts';
 import { listActions } from './actions.js';
 import { addDays, assertDate } from './date.js';
@@ -11,17 +12,7 @@ export async function listSchedule(query:z.infer<typeof scheduleQuery>,userId:nu
   const from=assertDate(query.from),to=assertDate(query.to);
   if(from>to || (Date.parse(to)-Date.parse(from))/86400000>36600)throw Object.assign(new Error('请选择有效日期范围（最多100年）'),{statusCode:400});
   const data=await listActions(userId),materialized=new Map(data.tasks.map(r=>[r.task.id,r]));
-  const roots=data.tasks.filter(r=>isSeries(r.task)),items=[] as typeof data.tasks;
-  for(const row of data.tasks) if(!row.task.occurrenceSuppressed&&!isSeries(row.task) && (row.task.dueDate||row.task.plannedDate||'')>=from && (row.task.dueDate||row.task.plannedDate||'')<=to) items.push(row);
-  for(const root of roots) for(let date=from;date<=to;date=addDays(date,1)) {
-    const task=deriveOccurrence(root.task,date);if(!task)continue;
-    // The stored root is also the first occurrence; later overrides always win.
-    if(date===root.task.recurrenceAnchor && !root.task.seriesChanges?.some(c=>c.from<=date)) {
-      if(root.task.dueDate>=from&&root.task.dueDate<=to)items.push(root);
-    } else if(date!==root.task.recurrenceAnchor&&!materialized.has(task.id)&&!(root.task.dueDate===date&&root.task.seriesChanges?.some(c=>c.from===root.task.recurrenceAnchor)))items.push({...root,task,completionExists:false,completionPending:false,pendingRecord:undefined,pendingFact:undefined,restorePending:false});
-  }
-  // Root may have been moved outside its anchor day.
-  for(const root of roots) if(root.task.dueDate>=from&&root.task.dueDate<=to&&!items.some(r=>r.task.id===root.task.id))items.push(root);
+  const items=projectSchedule(data.tasks,from,to).map(row=>materialized.has(row.task.id)?row:{...row,completionExists:false,completionPending:false,pendingRecord:undefined,pendingFact:undefined,restorePending:false});
   items.sort((a,b)=>(a.task.dueDate+':'+a.task.id).localeCompare(b.task.dueDate+':'+b.task.id));
   const after=query.cursor?items.filter(r=>(r.task.dueDate+':'+r.task.id)>query.cursor!):items;
   const tasks=after.slice(0,query.limit),last=tasks.at(-1);
@@ -48,6 +39,7 @@ export async function updateSeries(input:z.infer<typeof seriesRequest>,userId:nu
       if(!template.dueDate||template.dueDate<input.from)throw Object.assign(new Error('系列首次截止日期不能早于所选期次；提前请仅修改这一期'),{statusCode:400});
       template.dueDate=firstOccurrence(template.dueDate,template.repeat);
     }
+    template.createdAt=root.createdAt;
     root.seriesChanges=[...(root.seriesChanges||[]).filter(c=>c.from<input.from),{from:input.from,stop:input.stop,template}];
     if(input.from===root.recurrenceAnchor && !root.done) {
       Object.assign(root,template,{id:root.id,recurrenceAnchor:root.recurrenceAnchor,status:input.stop?'cancelled':'todo'});

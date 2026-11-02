@@ -26,3 +26,5 @@ export function timelineMarkers(items:{key:string;time:string}[],hours:number[])
     return [item.key,{anchor,lane}];
   }));
 }
+
+export const snapTimelineMinutes=(minutes:number)=>Math.min(1425,Math.max(0,Math.round(minutes/15)*15));

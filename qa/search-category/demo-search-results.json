@@ -1,0 +1,78 @@
+[
+  {
+    "query": "工作",
+    "status": 200,
+    "total": 20,
+    "examples": [
+      {
+        "title": "每周项目例会",
+        "category": "工作"
+      },
+      {
+        "title": "每周项目例会",
+        "category": "工作"
+      },
+      {
+        "title": "每周项目例会",
+        "category": "工作"
+      }
+    ]
+  },
+  {
+    "query": "个人生活",
+    "status": 200,
+    "total": 15,
+    "examples": [
+      {
+        "title": "每天阅读",
+        "category": "个人生活"
+      },
+      {
+        "title": "每天阅读",
+        "category": "个人生活"
+      },
+      {
+        "title": "每天阅读",
+        "category": "个人生活"
+      }
+    ]
+  },
+  {
+    "query": "分类:工作",
+    "status": 200,
+    "total": 20,
+    "examples": [
+      {
+        "title": "每周项目例会",
+        "category": "工作"
+      },
+      {
+        "title": "每周项目例会",
+        "category": "工作"
+      },
+      {
+        "title": "每周项目例会",
+        "category": "工作"
+      }
+    ]
+  },
+  {
+    "query": "窗口:工作",
+    "status": 200,
+    "total": 20,
+    "examples": [
+      {
+        "title": "每周项目例会",
+        "category": "工作"
+      },
+      {
+        "title": "每周项目例会",
+        "category": "工作"
+      },
+      {
+        "title": "每周项目例会",
+        "category": "工作"
+      }
+    ]
+  }
+]

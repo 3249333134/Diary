@@ -9,6 +9,7 @@ import {loadDiary,saveDiaryUnlocked,withVaultLock} from './vault.js';
 import {serializeDiaryMarkdown,parseDiaryMarkdown} from './markdown.js';
 import {deriveOccurrence,isSeries,firstOccurrence} from './recurrence.js';
 import {addDays,assertDate,todayInTimezone} from './date.js';
+import {projectSchedule,taskSpan} from './scheduleSpan.js';
 import {config} from './config.js';
 import {databaseContext} from './db-context.js';
 import {getSessionToken,verifySession,createSession,setSessionCookie} from './auth.js';
@@ -163,6 +164,7 @@ const storedState=(row:StoredTask)=>{const raw=row.content.match(/<!-- shared-st
 const parseTask=(row:StoredTask):Todo=>{const state=storedState(row);return state?todoSchema.parse(state.task):parseDiaryMarkdown(row.content,row.date).todos[0];};
 function cleanTask(input:Todo):Todo{
  const clean=todoSchema.parse({...input,category:null,source:undefined,completion:undefined,operationId:undefined});
+ clean.entities=clean.entities?.map(({personId,...entity})=>entity);
  if(clean.seriesTemplate)clean.seriesTemplate=cleanTask(todoSchema.parse(clean.seriesTemplate));
  if(clean.seriesChanges)clean.seriesChanges=clean.seriesChanges.map(c=>({...c,template:cleanTask(todoSchema.parse(c.template))}));
  return clean;
@@ -171,11 +173,11 @@ function taskContent(task:Todo,date:string,completion?:string){const doc=emptyDi
 async function taskRow(win:Awaited<ReturnType<typeof requireWindow>>,stored:StoredTask,userId:number,task=parseTask(stored)){
  const completion=completionOf(stored);
  const actualJobs=completion?await queryRows<{user_id:number;date:string;event_id:string;state:string;desired:string}>('SELECT user_id,date,event_id,state,desired FROM shared_fact_jobs WHERE window_id = ? AND task_id = ? AND completion_id = ?',[win.id,task.id,completion]):[];
- const [root]=task.seriesId?await queryRows<{version:string}>('SELECT version FROM shared_tasks WHERE window_id = ? AND task_id = ?',[win.id,task.seriesId]):[];
+ const [root]=task.seriesId?await queryRows<StoredTask>('SELECT * FROM shared_tasks WHERE window_id = ? AND task_id = ?',[win.id,task.seriesId]):[];
  const own=actualJobs.find(j=>j.user_id===userId&&j.desired==='present'&&j.state!=='frozen');
  const visible=cleanTask(task);if(own?.state==='done')visible.completion={date:own.date,id:own.event_id,kind:'facts',summary:`共享日程已完成：${task.title}`};
  const restoreJobs=!completion?await queryRows('SELECT id FROM shared_fact_jobs WHERE window_id = ? AND task_id = ? AND desired = ? AND state = ?',[win.id,task.id,'absent','pending']):[];
- return {restorePending:restoreJobs.length>0,date:stored.date,version:stored.version,seriesVersion:root?.version||stored.version,task:visible,windowId:win.id,windowName:win.name,readOnly:win.role==='viewer',role:win.role,sourceExists:false,completionExists:own?.state==='done',completionPending:actualJobs.some(j=>j.state==='pending')};
+ return {span:taskSpan(task,root?parseTask(root):undefined),restorePending:restoreJobs.length>0,date:stored.date,version:stored.version,seriesVersion:root?.version||stored.version,task:visible,windowId:win.id,windowName:win.name,readOnly:win.role==='viewer',role:win.role,sourceExists:false,completionExists:own?.state==='done',completionPending:actualJobs.some(j=>j.state==='pending')};
 }
 const completionOf=(row:StoredTask)=>{const state=storedState(row);if(state)return state.completion as string|undefined;const raw=row.content.match(/<!-- shared-operation:([A-Za-z0-9+/=]+) -->\s*$/)?.[1];return raw?JSON.parse(Buffer.from(raw,'base64').toString()).completion as string|undefined:undefined;};
 async function storeTask(windowId:string,date:string,task:Todo,expected?:string,completion?:string){
@@ -190,17 +192,13 @@ export async function listSharedTasks(userId:number,from?:string,to?:string){
  const windows=(await socialSnapshot(userId)).windows,result=[] as Awaited<ReturnType<typeof taskRow>>[];
  for(const window of windows){
   const win=await requireWindow(window.id,userId),stored=await queryRows<StoredTask>('SELECT * FROM shared_tasks WHERE window_id = ?',[win.id]);
-  const tasks=stored.map(row=>({row,task:parseTask(row)})),ids=new Set(tasks.map(t=>t.task.id));
+  const tasks=stored.map(row=>({row,task:parseTask(row)}));
   const checkins=new Map<string,number>();for(const {task}of tasks)if(task.done&&!task.deletedAt&&task.checkinEnabled!==false){const root=task.seriesId||(isSeries(task)?task.id:undefined);if(root)checkins.set(root,(checkins.get(root)||0)+1);}
-  for(const item of tasks){
-   const {task,row}=item;
+  const projected=from&&to?projectSchedule(tasks,from,to):tasks.map(item=>({...item,span:taskSpan(item.task,tasks.find(r=>r.task.id===item.task.seriesId)?.task)}));
+  for(const item of projected){const {task,row,span}=item;
    if(task.checkinEnabled===false)delete task.checkins;
    else if(isSeries(task)||task.seriesId)task.checkins=checkins.get(task.seriesId||task.id)||0;
-   if(!task.occurrenceSuppressed&&(!from||((task.dueDate||task.plannedDate||'')>=from&&(task.dueDate||task.plannedDate||'')<=to!)))result.push(await taskRow(win,row,userId,task));
-   if(from&&to&&isSeries(task))for(let date=from;date<=to;date=addDays(date,1)){
-    if(date===task.recurrenceAnchor)continue;const occurrence=deriveOccurrence(task,date);
-    if(occurrence&&!ids.has(occurrence.id))result.push(await taskRow(win,{...row,task_id:occurrence.id},userId,occurrence));
-   }
+   result.push({...await taskRow(win,{...row,task_id:task.id},userId,task),span});
   }
  }
  return result;
@@ -228,13 +226,13 @@ export async function changeSharedTask(windowId:string,userId:number,body:unknow
    if(input.mode!=='create'&&stored.version!==input.version)throw fail('共享日程已由其他成员修改，输入已保留',409);
    let task=cleanTask(input.task);
    if(input.mode==='create'){
-    task={...task,done:false,status:'todo',deletedAt:undefined,completedAt:undefined,seriesId:undefined,occurrenceDate:undefined,recurrenceAnchor:undefined,seriesTemplate:undefined,seriesChanges:undefined,occurrenceSuppressed:undefined,checkins:undefined};
-    if(['daily','weekly','monthly'].includes(task.repeat?.type||'')){
+    task={...task,createdAt:now(),done:false,status:'todo',deletedAt:undefined,completedAt:undefined,seriesId:undefined,occurrenceDate:undefined,recurrenceAnchor:undefined,seriesTemplate:undefined,seriesChanges:undefined,occurrenceSuppressed:undefined,checkins:undefined};
+    if(task.dueDate&&['daily','weekly','monthly'].includes(task.repeat?.type||'')){
      if(!task.dueDate)throw fail('重复日程需要截止日期');task.dueDate=firstOccurrence(task.dueDate,task.repeat);task.recurrenceAnchor=task.dueDate;task.seriesTemplate=todoSchema.parse(task);
     }
    }else if(input.mode==='update'){
-    task=cleanTask({...task,done:old!.done,status:old!.status,deletedAt:old!.deletedAt,completedAt:old!.completedAt,seriesId:old!.seriesId,occurrenceDate:old!.occurrenceDate,recurrenceAnchor:old!.recurrenceAnchor,seriesChanges:old!.seriesChanges,seriesTemplate:old!.seriesTemplate});
-    if(!task.seriesId&&!task.recurrenceAnchor&&['daily','weekly','monthly'].includes(task.repeat?.type||'')){if(!task.dueDate)throw fail('重复日程需要截止日期');task.dueDate=firstOccurrence(task.dueDate,task.repeat);task.recurrenceAnchor=task.dueDate;task.seriesTemplate=todoSchema.parse(task);}
+    task=cleanTask({...task,createdAt:old!.createdAt,done:old!.done,status:old!.status,deletedAt:old!.deletedAt,completedAt:old!.completedAt,seriesId:old!.seriesId,occurrenceDate:old!.occurrenceDate,recurrenceAnchor:old!.recurrenceAnchor,seriesChanges:old!.seriesChanges,seriesTemplate:old!.seriesTemplate});
+    if(task.dueDate&&!task.seriesId&&!task.recurrenceAnchor&&['daily','weekly','monthly'].includes(task.repeat?.type||'')){if(!task.dueDate)throw fail('重复日程需要截止日期');task.dueDate=firstOccurrence(task.dueDate,task.repeat);task.recurrenceAnchor=task.dueDate;task.seriesTemplate=todoSchema.parse(task);}
    }else if(input.mode==='series'){
     const rootId=old!.seriesId||old!.id,[root]=await queryRows<StoredTask>('SELECT * FROM shared_tasks WHERE window_id = ? AND task_id = ?',[windowId,rootId]);
     const rootTask=root&&parseTask(root),from=assertDate(input.from||old!.occurrenceDate||old!.recurrenceAnchor||'');
@@ -243,6 +241,7 @@ export async function changeSharedTask(windowId:string,userId:number,body:unknow
     if(!input.stop&&!['daily','weekly','monthly'].includes(task.repeat?.type||''))throw fail('请选择每日、每周或每月重复');
     const {seriesId,occurrenceDate,recurrenceAnchor,seriesChanges,seriesTemplate,occurrenceSuppressed,...template}=task;
     if(!input.stop){if(!template.dueDate||template.dueDate<from)throw fail('系列截止不能早于所选期次');template.dueDate=firstOccurrence(template.dueDate,template.repeat);}
+    template.createdAt=rootTask.createdAt;
     rootTask.seriesChanges=[...(rootTask.seriesChanges||[]).filter(c=>c.from<from),{from,stop:!!input.stop,template}];
     if(from===rootTask.recurrenceAnchor&&!rootTask.done)Object.assign(rootTask,template,{status:input.stop?'cancelled':'todo'});
     stored=await storeTask(windowId,root.date,rootTask,root.version,completionOf(root));task=rootTask;
@@ -330,7 +329,7 @@ export async function registerSocial(app:FastifyInstance,onDiaryChanged?:(userId
  app.post('/api/social/read',async request=>{const {through}=z.object({through:z.number().int().nonnegative()}).parse(request.body);await pool.query('UPDATE social_notices SET is_read = 1 WHERE user_id = ? AND id <= ?',[request.userId!,through]);emitSocialChange(request.userId!,['social']);return {ok:true};});
  app.get('/api/social/events',async(request,reply)=>{
   reply.hijack();reply.raw.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache','Connection':'keep-alive','X-Accel-Buffering':'no'});
-  const userId=request.userId!,send=(change:SocialChange={domains:['social','plans','diary']})=>{if(!reply.raw.destroyed)reply.raw.write('event: change\ndata: '+JSON.stringify(change)+'\n\n');};
+  const userId=request.userId!,send=(change:SocialChange={domains:['social','plans','diary','memory']})=>{if(!reply.raw.destroyed)reply.raw.write('event: change\ndata: '+JSON.stringify(change)+'\n\n');};
   events.on(String(userId),send);send();
   const heartbeat=setInterval(()=>{void(async()=>{const token=getSessionToken(request);if(token&&await verifySession(token)!==userId){reply.raw.end();return;}if(!reply.raw.destroyed)reply.raw.write(': heartbeat\n\n');})().catch(()=>reply.raw.end());},20000);
   request.raw.on('close',()=>{clearInterval(heartbeat);events.off(String(userId),send);});

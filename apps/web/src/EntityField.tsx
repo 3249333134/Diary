@@ -1,3 +1,4 @@
+import {usePersonalMemory} from './PersonalMemory';
 import {fieldLimit,diaryDocumentSchema} from '@diary/contracts';
 import {GlassComboBox} from './GlassUI';
 import {FieldHint} from './FieldHint';
@@ -19,6 +20,8 @@ export type EntityFieldProps = {
 
 export function EntityField({ label, type, values, entities, tags, onChange, onCreateTag, forceShow, onRequestShow }: EntityFieldProps) {
   const id = useId();
+  const memory=usePersonalMemory(),profiles=type==='person'?(memory.snapshot?.records||[]).filter(m=>m.kind==='person'&&m.enabled):[];
+  const [ambiguous,setAmbiguous]=useState<string>();
   const [input, setInput] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [tagError, setTagError] = useState('');
@@ -49,8 +52,11 @@ export function EntityField({ label, type, values, entities, tags, onChange, onC
     const name = candidate.trim();
     if(name.length>(fieldLimit(diaryDocumentSchema,'facts.events.0.people.0.name')||80)){setTagError("名称最多 80 字符");return;}
     if (!name || values.some((item) => item.name === name)) return;
+    const matches=profiles.filter(m=>[m.label,...m.aliases].includes(name));
+    if(matches.length>1){setAmbiguous(name);return;}
+    if(matches.length===1){const profile=matches[0];onChange([...values,{type:'person',name:profile.label,tags:profile.tags,personId:profile.id}]);setInput('');setAmbiguous(undefined);return;}
     const known = entities.find((item) => item.type === type && item.name === name);
-    onChange([...values, { type, name, tags: known?.tags || [] }]);
+    onChange([...values, { type, name,personId:known?.personId, tags: known?.tags || [] }]);
     setInput("");
   };
   const toggleTag = (name: string, tag: string) => onChange(values.map((item) => item.name === name ? { ...item, tags: item.tags.includes(tag) ? item.tags.filter((value) => value !== tag) : [...item.tags, tag] } : item));
@@ -76,11 +82,12 @@ export function EntityField({ label, type, values, entities, tags, onChange, onC
     ) : (
       <>
     <div className="entity-entry">
-      <GlassComboBox label={'添加'+TYPE_LABEL[type]} id={id} autoFocus={forceShow&&!hasValues} value={input} onChange={setInput} onCommit={add} options={options.map(item=>item.name)} placeholder={'添加'+TYPE_LABEL[type]}/>
+      <GlassComboBox label={'添加'+TYPE_LABEL[type]} id={id} autoFocus={forceShow&&!hasValues} value={input} onChange={setInput} onCommit={add} options={[...profiles.flatMap(m=>[m.label,...m.aliases]),...options.map(item=>item.name)]} placeholder={'添加'+TYPE_LABEL[type]}/>
       {type === "place" && <button type="button" className="square-button locate-btn" onClick={getLocation} disabled={locating} aria-label="获取定位"><MapPin size={18} className={locating ? "spinning" : ""} /></button>}
       <button type="button" className="square-button" onClick={()=>add()} aria-label={`添加${TYPE_LABEL[type]}`}><Plus size={18} /></button>
       {!hasValues && <button type="button" className="square-button" onClick={() => { setExpanded(false); }} aria-label="收起"><X size={16} /></button>}
     </div>
+    {ambiguous&&<div className="memory-candidates" role="group" aria-label="选择同名人物"><p>“{ambiguous}”对应多个人，请选择</p>{profiles.filter(m=>[m.label,...m.aliases].includes(ambiguous)).map(m=><button className="quiet-button" key={m.id} onClick={()=>{onChange([...values,{type:'person',name:m.label,personId:m.id,tags:m.tags}]);setAmbiguous(undefined);setInput('');}}>{m.label} · {m.value} · {m.tags.join('、')}</button>)}</div>}
     <FieldHint path="facts.events.0.people.0.name" value={input}/>
     {hasValues && <div className="entity-list">
       {values.map((item) => <div className="entity-wrap" key={`${item.type}-${item.name}`}>

@@ -83,7 +83,7 @@ function parseEvent(block: string, legacy = false): DiaryEvent {
     note: parseField(block, ["描述", "一句话"]),
     remark: parseField(block, ["事件备注"]),
     location: locName || locMeta?.lat != null ? { name: locName, lat: locMeta?.lat, lng: locMeta?.lng } : undefined,
-    people: parseTaggedList(parseField(block, legacy ? ["见谁", "和谁"] : ["和谁", "见谁"]), "person"),
+    people: parseTaggedList(parseField(block, legacy ? ["见谁", "和谁"] : ["和谁", "见谁"]), "person").map(entity=>({...entity,...Array.isArray(meta.people)?{personId:(meta.people as TaggedEntity[]).find(p=>p.name===entity.name)?.personId}:{}})),
     places: parseTaggedList(parseField(block, legacy ? ["去哪", "在哪"] : ["在哪", "去哪"]), "place"),
     activities: parseTaggedList(parseField(block, ["做了什么"]), "activity"),
     foods: parseTaggedList(parseField(block, ["吃了什么"]), "food"),
@@ -198,6 +198,7 @@ export function serializeDiaryMarkdown(document: DiaryDocument): string {
     if (event.task) meta.task = event.task;
     if (event.plannedStart) meta.plannedStart = event.plannedStart;
     if (event.planEntities?.length) meta.planEntities = event.planEntities;
+    if(event.people.some(p=>p.personId))meta.people=event.people;
     if (event.tags?.length) meta.tags = event.tags;
     if (event.location?.lat != null && event.location?.lng != null) meta.location = { lat: event.location.lat, lng: event.location.lng };
     if (event.attachments.length) meta.attachments = event.attachments;

@@ -1,3 +1,5 @@
+import {extractExplicitMemories,candidateFor,ignoredMemoryCandidate} from './memoryExtraction.js';
+import {matchPersonalMemory,timeAnchors,type PersonalMemory,type AppliedMemory,type MemoryCandidate} from '@diary/contracts';
 import { randomUUID } from 'node:crypto';
 import { captureDraftSchema, captureRequestSchema, todoRepeatSchema, defaultPlanCategories, type PlanCategory } from '@diary/contracts';
 import type { z } from 'zod';
@@ -8,7 +10,7 @@ import { request, ProxyAgent } from 'undici';
 import { readJsonObject } from './split.js';
 
 type KnownWindow = { id: string; name: string };
-type Known = { names: string[]; tags: string[]; categories?: PlanCategory[]; windows?: KnownWindow[] };
+type Known = { names: string[]; tags: string[]; categories?: PlanCategory[]; windows?: KnownWindow[];memories?:PersonalMemory[];ignored?:string[] };
 
 /** 兼容 AI 返回的实体格式，统一补齐 type 字段并按 people/places/activities/foods 分组 */
 function normalizeEntities(value: unknown) {
@@ -110,12 +112,13 @@ function capturePrompt(today: string, time: string) {
   const tomorrow = addDays(today, 1);
   return [
     '你是「独立日记」的智能录入助手。把用户的一段自然语言拆成若干独立条目，只输出一个 JSON 对象：{"drafts":[...]}。不要任何解释文字或代码块标记。',
+    '根对象可以包含memories数组，仅提取明确自述的习惯、人物姓名/别名/关系/标签、常去地点；每项含kind(time|person|place|fact)、key、label、value、weekdays、aliases、tags、evidence(原文连续原句)。时间key使用offWork/onWork/wake/sleep/lunch。绝不臆测，只是待确认候选。',
     '每条草稿只输出有意义的字段，空值一律省略（不要写 null、""、[]）：',
     '- kind：plan(未来要做)｜facts(已发生)｜learn(学到的知识)｜input(阅读观看的摘录)｜idea(想法灵感)',
     '- content：正文，保留原意，100 字内',
     '- date：YYYY-MM-DD；plan 是截止日，facts 是发生日',
     '- time：HH:mm；plan 是截止时刻',
-    '- startDate/startTime：仅当原文说“从…开始”才填',
+    '- startDate/startTime：原文的执行开始或“下班后”等时间锚点用于开始，不作为截止',
     '- category：只能取“已知类别”里的 id',
     '- windowId：只能取“已知共享窗口”里的 id；仅当原文说“发到/共享给某个窗口”才填',
     '- important / urgent：true｜false；“重要/必须/务必”→important，“紧急/马上/立刻”→urgent',
@@ -129,7 +132,7 @@ function capturePrompt(today: string, time: string) {
     '- needsReview：true（日期或意图含糊，如“改天/最近/有机会”），并写 reviewReason',
     `【日期】今天是 ${today} ${time}（Asia/Shanghai）。今天/明天/后天/昨天；本周X/下周X 算出具体日期；只写“周三”取未来最近的周三；“月底”=本月最后一天，“三天后”=今天+3 天。`,
     '“下午三点”→15:00，“晚上八点”→20:00，“中午”→12:00，“早八点”→08:00；只说早上/上午/下午/傍晚/晚上/睡前又没给点数时省略 time。',
-    `没给日期时 plan 和 facts 都用今天；plan 没给时间用 ${time}，facts 不填 time。`,
+    '没给截止日期时plan省略date和time，允许未安排；没有截止时刻绝不填当前时刻。下班后/上班前等属于startDate/startTime，未知习惯时间不猜测。facts没给日期用今天，不填time。',
     '【示例】输入："明天下午三点交周报；中午和小李在楼下吃麻辣烫；以后每晚八点去健身房打卡"',
     `输出：{"drafts":[{"kind":"plan","content":"交周报","date":"${tomorrow}","time":"15:00","list":"工作","tags":["工作","周报"],"important":true,"priority":"high"},{"kind":"facts","content":"和小李在楼下吃麻辣烫","date":"${today}","entities":{"people":["小李"],"places":["楼下"],"foods":["麻辣烫"]},"tags":["美食","午餐"]},{"kind":"plan","content":"去健身房打卡","date":"${today}","time":"20:00","tags":["健身","习惯"],"repeat":{"type":"daily"},"checkinEnabled":true}]}`,
     '【铁律】不要把字段名（在哪/和谁/做了什么/吃了什么）当实体名；不要臆造原文没有的人物、地点；计划目标不能写成已发生事实；日期必须写真实日期，不要写占位符。',
@@ -146,6 +149,7 @@ export async function parseCapture(input: z.infer<typeof captureRequestSchema>, 
       `已知共享窗口（windowId 只能取这里的 id）：${JSON.stringify(windows)}。`,
       `已知标签（优先复用）：${JSON.stringify(known.tags.slice(0, 20))}。`,
       `已知实体（可复用，不要臆造）：${JSON.stringify(known.names.slice(0, 30))}。`,
+      `已确认个人记忆（仅个人上下文，本次明确输入优先；习惯时间用于原定开始，不猜截止）：${JSON.stringify((known.memories||[]).filter(m=>m.enabled&&(m.kind==='fact'||[m.label,...m.aliases,...timeAnchors.filter(a=>a.key===m.key).map(a=>a.word)].some(word=>input.text.includes(word)))).map(m=>({kind:m.kind,key:m.key,name:m.label,value:m.value,weekdays:m.weekdays,date:m.date,aliases:m.aliases,tags:m.tags})))}。`,
     ].join('\n');
     let repair = '';
     for (let attempt = 1; attempt <= 2; attempt++) {
@@ -172,33 +176,54 @@ export async function parseCapture(input: z.infer<typeof captureRequestSchema>, 
         const payload = await response.body.json() as { choices?: { message?: { content?: string } }[] };
         const text = payload.choices?.[0]?.message?.content || '';
         lastRaw = text;
-        const raw = readJsonObject(text) as { drafts?: unknown[] };
+        const raw = readJsonObject(text) as { drafts?: unknown[];memories?:Record<string,unknown>[] };
         if (!Array.isArray(raw.drafts) || !raw.drafts.length || raw.drafts.length > 30) throw new Error('草稿格式异常');
         const drafts = raw.drafts.map(item => {
           const normalized = item && typeof item === 'object' ? { ...(item as Record<string, unknown>), entities: normalizeEntities((item as Record<string, unknown>).entities) } : item;
           const draft = captureDraftSchema.parse({ ...sanitizeDraft(normalized as Record<string, unknown>), id: randomUUID() });
-          if (!draft.date) draft.date = input.completion?.date || today;
-          if (!draft.time) draft.time = input.completion?.time || (draft.kind === 'facts' ? '' : time);
+          if (!draft.date && draft.kind!=='plan') draft.date = input.completion?.date || today;
+          if (!draft.time) draft.time = input.completion?.time || '';
           if(draft.repeat?.until)assertDate(draft.repeat.until);
           if(draft.category&&!categories.some(c=>c.id===draft.category))draft.category=null;
           if(draft.windowId&&!windows.some(w=>w.id===draft.windowId))draft.windowId=undefined;
           if (draft.date) assertDate(draft.date);
           if (draft.kind === 'plan' && !draft.repeat) draft.repeat = inferRepeatFromSource(input.text, draft.content);
           if (draft.repeat && /打卡|坚持|习惯/.test(draft.content)) draft.checkinEnabled = true;
-          if(draft.kind==='plan')draft.date=firstOccurrence(draft.date,draft.repeat);
+          if(draft.kind==='plan'&&draft.date)draft.date=firstOccurrence(draft.date,draft.repeat);
           if (draft.startDate) assertDate(draft.startDate);
           if (!draft.tags.length) draft.tags = [draft.list || (draft.category ? categories.find(c=>c.id===draft.category)?.name || '' : '') || KIND_LABEL[draft.kind]];
           return draft;
         });
-        return { today, timezone: config.timezone, mode: 'ai', drafts };
+        return decorateMemories({ today, timezone: config.timezone, mode: 'ai' as const, drafts },input.text,known.memories||[],raw.memories,known.ignored);
       } catch (error) {
         if (lastRaw) repair = lastRaw;
         console.error(`[capture] AI 解析第 ${attempt} 次失败(耗时 ${Date.now() - attemptStart}ms):`, error instanceof Error ? error.message : error);
       }
     }
   }
-  return { today, timezone: config.timezone, mode: 'manual', drafts: [captureDraftSchema.parse({
-    id: randomUUID(), kind: 'facts', date: input.completion?.date || today, time: input.completion?.time || time,
+  return decorateMemories({ today, timezone: config.timezone, mode: 'manual' as const, drafts: [captureDraftSchema.parse({
+    id: randomUUID(), kind: /下班后|上班后|起床后|午休后/.test(input.text)&&!input.completion?'plan':'facts', date: /下班后|上班后|起床后|午休后/.test(input.text)&&!input.completion?'':input.completion?.date || today, time: /下班后|上班后|起床后|午休后/.test(input.text)&&!input.completion?'':input.completion?.time || time,
     content: input.text, needsReview: true, reviewReason: '当前为手动草稿，请选择用途并核对日期和内容。',
-  })] };
+  })] },input.text,known.memories||[],[],known.ignored);
+}
+
+function decorateMemories<T extends {today:string;drafts:ReturnType<typeof captureDraftSchema.parse>[] }>(response:T,text:string,memories:PersonalMemory[],suggestions:Record<string,unknown>[]=[],ignored:string[]=[]){
+ const memoryCandidates=extractExplicitMemories(text,{kind:'ai',date:response.today}).filter(c=>!memories.some(m=>m.kind===c.record.kind&&m.key===c.record.key&&m.value===c.record.value&&m.date===c.record.date&&JSON.stringify(m.weekdays)===JSON.stringify(c.record.weekdays)));
+ for(const item of suggestions.slice(0,30))if(typeof item.evidence==='string'&&item.evidence&&text.includes(item.evidence))try{const candidate=candidateFor({...item,id:randomUUID(),date:item.kind==='time'&&/今天|今日|今晚|加班/.test(item.evidence)?response.today:undefined} as Partial<PersonalMemory>,item.evidence,{kind:'ai',date:response.today});if(!memoryCandidates.some(c=>c.fingerprint===candidate.fingerprint))memoryCandidates.push(candidate);}catch{}
+ const memoryMatches:Record<string,{applied:AppliedMemory[];questions:string[]}>={};
+ for(const draft of response.drafts){
+  const source=response.drafts.length===1?text:draft.content;
+  const relative=/后天/.test(source)?addDays(response.today,2):/明天/.test(source)?addDays(response.today,1):/昨天/.test(source)?addDays(response.today,-1):response.today;
+  const targetDate=draft.startDate||draft.date||relative;
+  const match=matchPersonalMemory(source,targetDate,memories);
+  if(draft.kind==='plan'&&/下班后|下班之后|下班以后|起床后|午休后|上班后/.test(source)){
+   if(match.startTime){draft.startDate=targetDate;draft.startTime=match.startTime;}
+   const actionText=source.slice((source.search(/下班后|下班之后|下班以后|起床后|午休后|上班后/))+2);
+   if(!/(?:截止|结束|完成于|(?:到|至).{0,8}(?:[点时]|\d[:：]\d{2}))/.test(actionText)){draft.date='';draft.time='';}else if(!draft.date)draft.date=targetDate;
+  }
+  for(const person of match.people){const profile=memories.find(m=>m.id===person.personId)!;draft.entities.people=draft.entities.people.filter(e=>![profile.label,...profile.aliases].includes(e.name));draft.entities.people.push({type:'person',...person});}
+  for(const place of match.places)if(!draft.entities.places.some(e=>e.name===place.name))draft.entities.places.push({type:'place',...place});
+  memoryMatches[draft.id]={applied:match.applied,questions:match.questions};
+ }
+ return {...response,memoryCandidates:memoryCandidates.filter(c=>!ignoredMemoryCandidate(ignored,c)),memoryMatches};
 }

@@ -35,17 +35,18 @@ const mock = createServer(async (req,res) => {
   try {
     let body='';for await(const chunk of req)body+=chunk;
     const payload=JSON.parse(body), input=JSON.parse(payload.messages.at(-1).content);
+    if(input.memoryExtraction){const {extractExplicitMemories}=await import('../apps/api/dist/memoryExtraction.js');const memories=extractExplicitMemories(input.text,{kind:'ai',date:dateAt()}).map(c=>({...c.record,evidence:c.evidence}));res.setHeader('content-type','application/json');res.end(JSON.stringify({choices:[{message:{content:JSON.stringify({memories})}}]}));return;}
     if(input.text.includes('模拟失败')) {res.writeHead(503).end();return;}
     const today=dateAt();
     const drafts=input.text.split(/[。；\n]+/).map(t=>t.trim()).filter(Boolean).map(content=>{
-      const kind=/明天|后天|计划|安排|待办|需要|每天|每日|每周|每月/.test(content)?'plan':'facts';
+      const kind=/明天|后天|计划|安排|待办|需要|每天|每日|每周|每月|下班后|上班后|起床后|午休后/.test(content)?'plan':'facts';
       const date=content.includes('后天')?shift(today,2):content.includes('明天')?shift(today,1):content.includes('昨天')?shift(today,-1):kind==='plan'?'':today;
       const category=/工作|会议|开会|客户|项目/.test(content)?'work':/个人|生活|买菜|运动|家/.test(content)?'personal':null;
       const time=content.match(/(?:[01]?\d|2[0-3]):[0-5]\d/)?.[0].padStart(5,'0')||(/三点/.test(content)?'15:00':'');
       const weekdayText=content.match(/每周([日一二三四五六天、，和]+)/)?.[1]||'';
       const weekdays=[...new Set([...weekdayText.matchAll(/[日一二三四五六天]/g),...content.matchAll(/(?:周|星期)([日一二三四五六天])/g)].map(m=>'日一二三四五六'.indexOf((m[1]||m[0])==='天'?'日':m[1]||m[0])))];
       const repeat=/每天|每日/.test(content)?{type:'daily',interval:1}:/每周/.test(content)?{type:'weekly',interval:1,weekdays}:/每月/.test(content)?{type:'monthly',interval:1,monthDay:Number(content.match(/每月(\d+)/)?.[1]||today.slice(-2))}:null;
-      return {kind,content,date:date||today,time,repeat,startDate:kind==='plan'&&/开始/.test(content)?date:'',startTime:kind==='plan'&&/开始/.test(content)?time:'',category,important:content.includes('重要')?true:null,urgent:content.includes('紧急')?true:null,tags:[],entities:{people:content.includes('张三')?[{type:'person',name:'张三',tags:['同事']}]:[],places:content.includes('办公室')?[{type:'place',name:'办公室',tags:[]}]:[],activities:[],foods:[]}};
+      return {kind,content,date:date||(kind==='plan'&&!time?'':today),time,repeat,startDate:kind==='plan'&&/开始/.test(content)?date:'',startTime:kind==='plan'&&/开始/.test(content)?time:'',category,important:content.includes('重要')?true:null,urgent:content.includes('紧急')?true:null,tags:[],entities:{people:content.includes('张三')?[{type:'person',name:'张三',tags:['同事']}]:[],places:content.includes('办公室')?[{type:'place',name:'办公室',tags:[]}]:[],activities:[],foods:[]}};
     });
     res.setHeader('Content-Type','application/json');res.end(JSON.stringify({choices:[{message:{content:JSON.stringify({drafts})}}]}));
   } catch {res.writeHead(400).end();}

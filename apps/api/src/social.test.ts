@@ -41,8 +41,8 @@ it('requires invitation acceptance and enforces viewer/editor/owner access on th
 });
 it('strips private sources and completion links from canonical shared data',async()=>{
  const win=await windowWithEditor(),ref={date:'2026-10-24',kind:'facts',id:randomUUID(),summary:'私人内容'};
- await createTask(win.id,{source:ref,completion:ref,done:true,status:'done',category:'personal'});
- const row=(await listSharedTasks(2))[0];expect(row.task.source).toBeUndefined();expect(row.task.completion).toBeUndefined();expect(row.task.done).toBe(false);expect(row.task.category).toBeNull();expect(JSON.stringify(row)).not.toContain('私人内容');
+ await createTask(win.id,{source:ref,completion:ref,done:true,status:'done',category:'personal',entities:[{type:'person',name:'李明',personId:randomUUID(),tags:['同事']}]});
+ const row=(await listSharedTasks(2))[0];expect(row.task.source).toBeUndefined();expect(row.task.completion).toBeUndefined();expect(row.task.done).toBe(false);expect(row.task.category).toBeNull();expect(JSON.stringify(row)).not.toContain('私人内容');expect(JSON.stringify(row)).not.toContain('personId');
 });
 it('shares the check-in choice and counts only opted-in recurring completions',async()=>{
  const win=await windowWithEditor(),tracked=await createTask(win.id,{repeat:{type:'daily'},checkinEnabled:true});
@@ -121,4 +121,10 @@ it('reports committed writes as saved when follow-up reads fail and retries thei
  const spy=vi.spyOn(pool,'query').mockImplementation(async(sql:any,args:any)=>{if(/^SELECT \* FROM shared_notice_jobs/.test(sql))throw new Error('follow-up offline');return original(sql,args) as any;});
  const saved=await act(win.id,1,row,'complete');expect(saved.row.task.done).toBe(true);expect(saved.refreshWarning).toContain('已保存');spy.mockRestore();
  await processSharedFactJobs();expect((await listSharedTasks(2))[0].completionPending).toBe(false);
+});
+
+it('assigns shared creation time on the server and preserves it through editing and early completion',async()=>{
+ vi.useFakeTimers();vi.setSystemTime(new Date('2026-11-01T09:00:00Z'));const win=await windowWithEditor(),row=await createTask(win.id,{createdAt:'1999-01-01T00:00:00Z',dueDate:'2026-11-03'});expect(row.task.createdAt).toBe('2026-11-01T09:00:00.000Z');
+ const updated=(await act(win.id,2,row,'update',{task:{...row.task,createdAt:'2000-01-01T00:00:00Z',dueDate:'2026-11-04'}})).row;expect(updated.task.createdAt).toBe(row.task.createdAt);
+ const done=(await act(win.id,2,updated,'complete')).row;expect(done.task.dueDate).toBe('2026-11-04');expect(done.task.completedAt).toBe('2026-11-01T09:00:00.000Z');expect(done.span?.start).toBe('2026-11-01T17:00');vi.useRealTimers();
 });

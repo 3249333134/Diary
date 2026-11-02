@@ -1,6 +1,9 @@
 import { z } from "zod";
 export type {WindowRole,SocialDomain,SocialChange,SocialPerson,FriendRequest,WindowMember,SharedWindow,SocialNotice,SocialSnapshot} from './social.js';
 export * from './organization.js';
+export * from './personalMemory.js';
+export * from './scheduleSpan.js';
+export * from './search.js';
 
 export const entityTypes = ["person", "place", "activity", "food", "thing"] as const;
 export const entityTypeSchema = z.enum(entityTypes);
@@ -9,6 +12,7 @@ export type EntityType = z.infer<typeof entityTypeSchema>;
 export const taggedEntitySchema = z.object({
   type: entityTypeSchema,
   name: z.string().trim().min(1).max(80),
+  personId: z.string().uuid().optional(),
   tags: z.array(z.string().trim().min(1).max(40)).max(30).default([]),
 });
 export type TaggedEntity = z.infer<typeof taggedEntitySchema>;
@@ -199,6 +203,7 @@ export type DiaryResponse = { document: DiaryDocument; version: string; exists: 
 
 export type EntityRelation = { key: string; type: EntityType; name: string; count: number; dates: string[] };
 export type EntityRecord = {
+  personId?: string;
   parentKey?: string;
   occurrences?: Array<{ key: string; date: string; time: string; note: string; index: number }>;
   key: string;
@@ -283,6 +288,8 @@ export function normalizeEntityName(value: string): string {
 export function entityKey(type: EntityType, name: string): string {
   return `${type}|${normalizeEntityName(name)}`;
 }
+
+export const entityRefKey=(ref:TaggedEntity)=>ref.type==='person'&&ref.personId?`person|profile:${ref.personId}`:entityKey(ref.type,ref.name);
 
 const captureDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$|^$/);
 export const captureDraftSchema = z.object({

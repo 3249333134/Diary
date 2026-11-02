@@ -48,3 +48,8 @@ describe("entity event index", () => {
     expect(index.list()).toEqual([]);
   });
 });
+
+it('keeps private person profiles separate from each other and from legacy name-only records',async()=>{
+ const document=emptyDiary('2026-11-01'),ids=[crypto.randomUUID(),crypto.randomUUID()];document.facts.events=[...ids,undefined].map((personId,i)=>({id:'person-'+i,time:'',note:'见面',remark:'',attachments:[],people:[{type:'person' as const,name:'李明',personId,tags:[String(i)]}],places:[],activities:[],foods:[]}));storage.documents=[document];
+ const index=new EntityIndex(1);await index.rebuild();const people=index.list('', 'person');expect(people).toHaveLength(3);expect(new Set(people.map(p=>p.key)).size).toBe(3);
+});

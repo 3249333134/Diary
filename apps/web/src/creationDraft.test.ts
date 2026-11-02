@@ -19,7 +19,7 @@ describe('creation snapshots and draft protection',()=>{
   const once=appendCreation(emptyDiary(draft.date),draft),again=appendCreation(once,draft);expect(again.facts.events).toHaveLength(1);expect(again.facts.events[0]).toMatchObject({id:draft.id,time:'23:59',note:'散步',remark:'河边',people:draft.entities,attachments:draft.attachments});
  });
  it('keeps owner/start/due snapshots independent and preserves recurring plan fields',()=>{
-  const draft={...newCreationDraft('plan','2026-10-25','20:00'),content:'读书',date:'2026-10-26',startDate:'2026-10-24',startTime:'09:00',repeat:{type:'daily' as const},priority:'high'};
+  const draft={...newCreationDraft('plan','2026-10-25','20:00'),content:'读书',date:'2026-10-26',time:'20:00',startDate:'2026-10-24',startTime:'09:00',repeat:{type:'daily' as const},priority:'high'};
   const task=creationTask(draft);expect(draft.ownerDate).toBe('2026-10-25');expect(task).toMatchObject({dueDate:'2026-10-26',dueTime:'20:00',startDate:'2026-10-24',startTime:'09:00',repeat:{type:'daily'},priority:'high'});
  });
  it('restores manual and mixed AI drafts, submitted snapshots and account isolation',()=>{

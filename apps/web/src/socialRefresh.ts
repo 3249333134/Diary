@@ -1,9 +1,9 @@
 import type {SocialChange,SocialDomain,SocialSnapshot} from '@diary/contracts';
-export const fullSocialChange=():SocialChange=>({domains:['social','plans','diary']});
+export const fullSocialChange=():SocialChange=>({domains:['social','plans','diary','memory']});
 export function normalizeSocialChange(raw:unknown):SocialChange{
  const input=raw as Partial<SocialChange>|undefined;
  if(!Array.isArray(input?.domains)||!input.domains.length)return fullSocialChange();
- const domains=[...new Set(input.domains.filter(d=>['social','plans','diary'].includes(d)))] as SocialDomain[];
+ const domains=[...new Set(input.domains.filter(d=>['social','plans','diary','memory'].includes(d)))] as SocialDomain[];
  return domains.length?{domains,dates:Array.isArray(input.dates)?input.dates.filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)):undefined}:fullSocialChange();
 }
 export function mergeSocialChanges(a:SocialChange,b:SocialChange):SocialChange{

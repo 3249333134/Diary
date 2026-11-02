@@ -13,3 +13,6 @@ qa/paint-videos/
 .trae/
 test.txt
 testatt.txt
+
+# Isolated validation databases
+qa/**/*.sqlite*

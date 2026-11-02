@@ -1,4 +1,4 @@
-import { entityKey, entityTypes, type DiaryDocument, type EntityRecord, type EntityRelation, type EntityType, type TagStore, type TaggedEntity } from "@diary/contracts";
+import { entityRefKey,entityKey, entityTypes, type DiaryDocument, type EntityRecord, type EntityRelation, type EntityType, type TagStore, type TaggedEntity } from "@diary/contracts";
 import { vaultPaths } from "./config.js";
 import { listDiaryDates, loadDiary, readJson, writeJson, withVaultLock } from "./vault.js";
 
@@ -11,13 +11,14 @@ const SEED_TAGS: TagStore = {
 };
 
 type MutableEntity = {
-  key: string; type: EntityType; name: string; tags: Set<string>; mentions: Set<string>;
+  key: string; personId?:string; type: EntityType; name: string; tags: Set<string>; mentions: Set<string>;
   event: Map<string, Set<string>>; day: Map<string, Set<string>>;
 };
 
 function refsForDay(document: DiaryDocument): TaggedEntity[] {
   return [
     ...document.facts.events.flatMap((event) => [...event.people, ...event.places, ...event.activities, ...event.foods]),
+    ...Object.values(document.entries||{}).flatMap(entries=>entries.flatMap(e=>e.sources)),
     ...document.learn.sources,
     ...document.input.names,
     ...document.idea.tags.map((name) => ({ type: "thing" as const, name, tags: [] })),
@@ -46,10 +47,10 @@ export class EntityIndex {
     const dates = await listDiaryDates(this.userId);
     const documents = await Promise.all(dates.map(async (date) => (await loadDiary(date, this.userId)).document));
     const ensure = (ref: TaggedEntity): MutableEntity => {
-      const key = entityKey(ref.type, ref.name);
+      const key = entityRefKey(ref);
       let item = mutable.get(key);
       if (!item) {
-        item = { key, type: ref.type, name: ref.name, tags: new Set(), mentions: new Set(), event: new Map(), day: new Map() };
+        item = { key,personId:ref.personId, type: ref.type, name: ref.name, tags: new Set(), mentions: new Set(), event: new Map(), day: new Map() };
         mutable.set(key, item);
       }
       ref.tags.forEach((tag) => item!.tags.add(tag));
@@ -63,11 +64,11 @@ export class EntityIndex {
 
     for (const document of documents) {
       const allRefs = refsForDay(document);
-      const uniqueDay = new Map(allRefs.map((ref) => [entityKey(ref.type, ref.name), ref]));
+      const uniqueDay = new Map(allRefs.map((ref) => [entityRefKey(ref), ref]));
       for (const ref of uniqueDay.values()) ensure(ref).mentions.add(document.date);
       for (const [eventIndex, event] of document.facts.events.entries()) {
         const refs = [...event.people, ...event.places, ...event.activities, ...event.foods];
-        const unique = new Map(refs.map((ref) => [entityKey(ref.type, ref.name), ref]));
+        const unique = new Map(refs.map((ref) => [entityRefKey(ref), ref]));
         for (const key of unique.keys()) {
           const list = occurrences.get(key) || [];
           list.push({ key: `event|${document.date}|${event.id}`, date: document.date, time: event.time || "", note: event.note || `事件 ${eventIndex + 1}`, index: eventIndex });
@@ -89,7 +90,7 @@ export class EntityIndex {
       this.tags[type] = [...new Set([...(savedTags[type] || []), ...this.tags[type], ...inferred])].sort((a, b) => a.localeCompare(b, "zh-CN"));
     }
     this.records = new Map([...mutable.values()].map((item) => [item.key, {
-      key: item.key, type: item.type, name: item.name,
+      key: item.key,personId:item.personId, type: item.type, name: item.name,
       ...(item.type === "place" && parents[item.key] ? { parentKey: parents[item.key] } : {}),
       occurrences: occurrences.get(item.key) || [],
       tags: [...item.tags].sort((a, b) => a.localeCompare(b, "zh-CN")),

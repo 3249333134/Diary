@@ -1,3 +1,4 @@
+import {PersonalMemoryManager} from './PersonalMemory';
 import {createContext,useContext,useEffect,useRef,useState,useCallback,type RefObject} from 'react';
 import {CalendarDays,Feather,Plus,Users,UserRound,Copy,Check,LockKeyhole} from 'lucide-react';
 import type {SocialSnapshot,SharedWindow,SocialPerson,SocialChange,PlanCategory} from '@diary/contracts';
@@ -11,6 +12,7 @@ import './social.css';
 
 const empty:SocialSnapshot={profile:{code:'',name:''},friends:[],requests:[],invitations:[],windows:[],notices:[],cursor:0};
 export function useSocialState(userId?:number){
+ const [memoryRevision,setMemoryRevision]=useState(0);
  const [data,setData]=useState(empty),[error,setError]=useState(''),[connected,setConnected]=useState(false),[planRevision,setPlanRevision]=useState(0),[diaryChange,setDiaryChange]=useState({revision:0,dates:undefined as string[]|undefined});
  const identity=useRef(userId),generation=useRef(0),loadedAccount=useRef<number|undefined>(undefined),snapshot=useRef(empty),pending=useRef<SocialChange|undefined>(undefined),flight=useRef<Promise<void>|undefined>(undefined);
  if(identity.current!==userId){identity.current=userId;generation.current++;pending.current=undefined;flight.current=undefined;}
@@ -25,6 +27,7 @@ export function useSocialState(userId?:number){
    }}catch(e){if(identity.current===account&&generation.current===epoch)setError(e instanceof Error?e.message:'通讯暂时无法读取');}
    if(identity.current!==account||generation.current!==epoch)return;
    if(plans){invalidatePlanReads();setPlanRevision(r=>r+1);}
+   if(batch.domains.includes('memory'))setMemoryRevision(r=>r+1);
    if(batch.domains.includes('diary'))setDiaryChange(old=>({revision:old.revision+1,dates:batch.dates}));
   }};
   const promise=work().finally(()=>{if(generation.current===epoch)flight.current=undefined;});flight.current=promise;return promise;
@@ -36,14 +39,14 @@ export function useSocialState(userId?:number){
   const connect=()=>{if(!active)return;stream=new EventSource('/api/social/events',{withCredentials:true});stream.onopen=()=>{retry=0;setConnected(true);};stream.addEventListener('change',event=>{try{update(normalizeSocialChange(JSON.parse((event as MessageEvent).data)));}catch{update();}});stream.onerror=()=>{stream?.close();setConnected(false);reconnect=window.setTimeout(connect,Math.min(30000,1000*2**retry++));};};
   void refresh(fullSocialChange());connect();
   const poll=window.setInterval(()=>{if(document.visibilityState==='visible'&&stream?.readyState!==EventSource.OPEN)update();},15000);
-  const visible=()=>{if(document.visibilityState==='visible'&&stream?.readyState!==EventSource.OPEN)update();};document.addEventListener('visibilitychange',visible);window.addEventListener('online',visible);
+  const visible=()=>{if(document.visibilityState==='visible')update(stream?.readyState!==EventSource.OPEN?fullSocialChange():{domains:['memory']});};document.addEventListener('visibilitychange',visible);window.addEventListener('online',visible);
   return()=>{active=false;stream?.close();clearInterval(poll);window.clearTimeout(reconnect);window.clearTimeout(timer);document.removeEventListener('visibilitychange',visible);window.removeEventListener('online',visible);};
  },[userId,refresh]);
- return {data:loadedAccount.current===userId?data:empty,error,connected,planRevision,diaryChange,refresh};
+ return {data:loadedAccount.current===userId?data:empty,error,connected,planRevision,memoryRevision,diaryChange,refresh};
 }
 
 type SocialState=ReturnType<typeof useSocialState>;
-export const SocialContext=createContext<SocialState>({data:empty,error:'',connected:false,planRevision:0,diaryChange:{revision:0,dates:undefined},refresh:async()=>{}});
+export const SocialContext=createContext<SocialState>({data:empty,error:'',connected:false,planRevision:0,memoryRevision:0,diaryChange:{revision:0,dates:undefined},refresh:async()=>{}});
 export const useSocial=()=>useContext(SocialContext);
 export const editableWindows=(windows:SharedWindow[])=>windows.filter(w=>w.role!=='viewer');
 export function SharedScope({value,onChange,disabled=false}:{value?:string;onChange:(id:string)=>void;disabled?:boolean}){
@@ -82,5 +85,5 @@ export function MyAccount({username,theme,onTheme,onLogout,onDemo,onReceipts}:{u
  const {data}=useSocial(),[copied,setCopied]=useState(false),[error,setError]=useState(''),[accounts,setAccounts]=useState<SocialPerson[]>([]),[busy,setBusy]=useState(false);
  useEffect(()=>{void api.demoAccounts().then(r=>{if(Array.isArray(r.accounts))setAccounts(r.accounts);}).catch(()=>{});},[]);
  const copy=async()=>{try{await navigator.clipboard.writeText(data.profile.code);setCopied(true);}catch{setError('复制失败，可选中好友码手动复制');}};
- return <section className="social-workspace" aria-label="我的"><header className="social-heading"><h1>我的</h1></header><div className="social-body"><div className="account-identity"><span className="social-avatar">{username.slice(0,1)}</span><div><h2>{username}</h2><small>云端账号</small></div></div><section className="account-section"><h2>我的好友码</h2><p>发送给朋友，对方申请并经你同意后成为好友。</p><div className="friend-code"><input aria-label="我的好友码" readOnly value={data.profile.code||'正在读取…'} onFocus={e=>e.target.select()}/><button className="quiet-button" disabled={!data.profile.code} onClick={()=>void copy()}>{copied?<Check size={18}/>:<Copy size={18}/>} {copied?'已复制':'复制'}</button></div></section><section className="account-section"><h2>小票夹</h2><p>日记记录和已完成的日程都会打印成小票，收在这里。</p><button className="account-row" onClick={onReceipts}>打开小票夹 <span>按日期倒序 · 可导出图片</span></button></section><section className="account-section"><h2>偏好与连接</h2><button className="account-row" onClick={onTheme}>主题 <span>{theme==='light'?'浅色':'深色'} · 点击切换</span></button><ObsidianDevices/></section>{accounts.length>0&&<section className="account-section"><h2>本地演示身份</h2><p>仅隔离演示可用，用不同身份验证申请、共享与同步。</p><GlassSelect label="演示身份" value={data.profile.code} disabled={busy} options={accounts.map(a=>({value:a.code,label:a.name}))} onChange={code=>{setBusy(true);void onDemo(code).catch(e=>setError(e instanceof Error?e.message:'切换失败')).finally(()=>setBusy(false));}}/></section>}{error&&<p role="alert">{error}</p>}<button className="quiet-button account-logout" onClick={onLogout}><LockKeyhole size={18}/>退出登录</button></div></section>;
+ return <section className="social-workspace" aria-label="我的"><header className="social-heading"><h1>我的</h1></header><div className="social-body"><div className="account-identity"><span className="social-avatar">{username.slice(0,1)}</span><div><h2>{username}</h2><small>云端账号</small></div></div><section className="account-section"><h2>我的好友码</h2><p>发送给朋友，对方申请并经你同意后成为好友。</p><div className="friend-code"><input aria-label="我的好友码" readOnly value={data.profile.code||'正在读取…'} onFocus={e=>e.target.select()}/><button className="quiet-button" disabled={!data.profile.code} onClick={()=>void copy()}>{copied?<Check size={18}/>:<Copy size={18}/>} {copied?'已复制':'复制'}</button></div></section><section className="account-section"><h2>小票夹</h2><p>日记记录和已完成的日程都会打印成小票，收在这里。</p><button className="account-row" onClick={onReceipts}>打开小票夹 <span>按日期倒序 · 可导出图片</span></button></section><PersonalMemoryManager/><section className="account-section"><h2>偏好与连接</h2><button className="account-row" onClick={onTheme}>主题 <span>{theme==='light'?'浅色':'深色'} · 点击切换</span></button><ObsidianDevices/></section>{accounts.length>0&&<section className="account-section"><h2>本地演示身份</h2><p>仅隔离演示可用，用不同身份验证申请、共享与同步。</p><GlassSelect label="演示身份" value={data.profile.code} disabled={busy} options={accounts.map(a=>({value:a.code,label:a.name}))} onChange={code=>{setBusy(true);void onDemo(code).catch(e=>setError(e instanceof Error?e.message:'切换失败')).finally(()=>setBusy(false));}}/></section>}{error&&<p role="alert">{error}</p>}<button className="quiet-button account-logout" onClick={onLogout}><LockKeyhole size={18}/>退出登录</button></div></section>;
 }

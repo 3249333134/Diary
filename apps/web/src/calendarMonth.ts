@@ -1,3 +1,4 @@
+import {rowSpan} from './calendarIntervals';
 import type { ActionRow } from './api';
 import { calendarRange, shiftDate } from './calendarDates';
 import { planDueTime } from './planFilters';
@@ -26,8 +27,8 @@ export function monthDaySummary(rows:readonly ActionRow[]) {
 }
 
 /** Stable grouping preserves server order for tasks with the same deadline. */
-export function monthAgendaGroups(rows:readonly ActionRow[]) {
+export function monthAgendaGroups(rows:readonly ActionRow[],date?:string) {
   const grouped=new Map<string,ActionRow[]>();
-  for(const row of rows){const time=planDueTime(row.task)||'';const group=grouped.get(time);if(group)group.push(row);else grouped.set(time,[row]);}
-  return [...grouped].sort(([a],[b])=>a.localeCompare(b)).map(([time,rows])=>({time,rows}));
+  for(const row of rows){const time=date&&rowSpan(row)&&(row.task.dueDate||row.task.plannedDate)!==date?'持续中':planDueTime(row.task)||'';const group=grouped.get(time);if(group)group.push(row);else grouped.set(time,[row]);}
+  return [...grouped].sort(([a],[b])=>(a===''?-1:b===''?1:a==='持续中'?-1:b==='持续中'?1:a.localeCompare(b))).map(([time,rows])=>({time,rows}));
 }

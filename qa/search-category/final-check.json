@@ -1,0 +1,17 @@
+{
+  "checks": [
+    {
+      "q": "工作",
+      "total": 20
+    },
+    {
+      "q": "个人生活",
+      "total": 15
+    },
+    {
+      "q": "分类:工作",
+      "total": 20
+    }
+  ],
+  "diariesUnchanged": true
+}
