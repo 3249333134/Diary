@@ -176,7 +176,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
     e.preventDefault();
     current.nextX=e.clientX;current.nextY=e.clientY;panFrame.schedule();
   };
-  const releasePan=(e:PointerEvent<HTMLDivElement>)=>{if(pan.current?.pointer===e.pointerId){if(!pan.current.moved&&e.type!=='pointercancel'){pinned.current=false;setSelectedKey(undefined);}if(e.type!=='pointercancel')panFrame.flush();endPan();}};
+  const releasePan=(e:PointerEvent<HTMLDivElement>)=>{if(pan.current?.pointer===e.pointerId){if(!pan.current.moved&&e.type!=='pointercancel'&&!pinned.current){setSelectedKey(undefined);}if(e.type!=='pointercancel')panFrame.flush();endPan();}};
   useEffect(()=>{endPan();},[view,anchor,active]);
   useEffect(()=>()=>{const current=pan.current;pan.current=undefined;if(current?.el.hasPointerCapture(current.pointer))current.el.releasePointerCapture(current.pointer);},[]);
   const hoursRef=useRef<number[]>([]);hoursRef.current=hours;
@@ -346,7 +346,7 @@ export function PlanCalendar({view,anchor,rows,busy,onEdit,onMove,onToggle,activ
       if(saved===batch.length&&saved>1)setBatchMessage(`已保存 ${saved} 项改期`);
     }finally{saving.current=false;setSubmitting(false);clearOperation();if(saved===batch.length||saved===batch.length-1)setFrozen(undefined);}
   };
-  const selectTask=(row:ActionRow,edge:'start'|'end'='start')=>{if(expanded)closeDay();pinned.current=false;clearHover();setFocused(undefined);const key=calendarRowKey(row);const span=rowSpan(row),point=span?(edge==='start'?span.start:span.end):`${row.task.dueDate||row.task.plannedDate}T${planDueTime(row.task)||'00:00'}`;if(point)selectedFocus.current={key,date:point.slice(0,10),time:point.slice(11)};setSelectedKey(key);setSelectionRevision(value=>value+1);};
+  const selectTask=(row:ActionRow,edge:'start'|'end'='start')=>{if(expanded)closeDay();pinned.current=true;clearHover();setFocused(undefined);const key=calendarRowKey(row);const span=rowSpan(row),point=span?(edge==='start'?span.start:span.end):`${row.task.dueDate||row.task.plannedDate}T${planDueTime(row.task)||'00:00'}`;if(point)selectedFocus.current={key,date:point.slice(0,10),time:point.slice(11)};setSelectedKey(key);setSelectionRevision(value=>value+1);};
   useEffect(()=>{if(inspectRequest&&active)selectTask(inspectRequest.row);},[inspectRequest]);
   const chip=(row:ActionRow,timed=false,edge:'start'|'end'='end')=>{
     const key=calendarRowKey(row);
