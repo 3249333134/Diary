@@ -25,3 +25,22 @@
 .glass-date-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;flex:none}.glass-date-fields[data-has-time]{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}.glass-date-field{min-width:0;display:flex;flex-direction:column;justify-content:flex-end;gap:4px}.glass-date-field>.react-aria-Label,.glass-time-caption{min-height:36px;display:flex;align-items:center;font-size:12px;color:var(--muted)}.glass-time-caption{justify-content:space-between;gap:4px}.glass-date-all-day{display:flex;align-items:center;gap:4px;min-height:36px;cursor:pointer}.glass-date-all-day input{accent-color:var(--purple);width:16px;height:16px}.glass-date-field .glass-date-segments{margin:0;min-height:44px;box-sizing:border-box;flex-wrap:nowrap;padding:8px 6px;font-size:16px}.glass-date-field[data-disabled] .glass-date-segments{opacity:.45}.glass-date-popup .glass-date-body{margin-top:8px}.glass-date-popup footer{margin-top:8px}.glass-date-fields:has(>.glass-date-field:only-child){grid-template-columns:minmax(0,1fr)}
 
 @media(max-height:600px){.glass-popup.glass-date-popup{position:fixed!important;top:8px!important;bottom:8px!important;max-height:calc(100dvh - 16px)!important;height:auto!important;transform:none!important}}
+
+/* iOS 风格日期时间滚轮选择器：底部弹层 + 三列滚轮 */
+.ios-picker-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-end;justify-content:center;background:rgba(24,19,40,.28);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);animation:ios-picker-fade .18s ease-out}
+.ios-picker-sheet{box-sizing:border-box;display:flex;flex-direction:column;width:min(560px,100%);max-height:calc(100dvh - 12px);overflow:hidden;padding:8px 0 max(10px,env(safe-area-inset-bottom));border:0;border-radius:18px 18px 0 0;background:var(--surface,#fff);color:var(--text);box-shadow:0 -12px 40px rgba(24,19,40,.18);animation:ios-picker-up .22s cubic-bezier(.2,.8,.24,1)}
+.ios-picker-header{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:10px 28px 6px}
+.ios-picker-mode{min-height:44px;padding:0 2px;border:0;background:none;color:var(--muted);font:inherit;font-size:17px;cursor:pointer}
+.ios-picker-mode[data-active=true]{color:var(--text);font-weight:600;box-shadow:inset 0 -2px 0 var(--purple)}
+.ios-picker-wheels{position:relative;display:flex;height:200px;padding:0 16px;overflow:hidden}
+.ios-picker-band{position:absolute;left:12px;right:12px;top:80px;height:40px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);pointer-events:none}
+.ios-wheel{position:relative;flex:1;min-width:0;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;overscroll-behavior:contain;outline:none}
+.ios-wheel::-webkit-scrollbar{display:none}
+.ios-wheel-pad{height:80px}
+.ios-wheel-item{display:block;width:100%;height:40px;border:0;background:none;color:var(--muted);font:inherit;font-size:17px;text-align:center;scroll-snap-align:center;cursor:pointer}
+.ios-wheel-item.active{color:var(--text);font-weight:600;font-size:20px}
+.ios-picker-footer{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:10px 20px 4px}
+.ios-picker-clear{margin-right:auto;min-height:44px;padding:0 6px;border:0;background:none;color:var(--muted);font:inherit;font-size:15px;cursor:pointer}
+.ios-picker-action{min-height:44px;padding:0 22px}
+@keyframes ios-picker-up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+@keyframes ios-picker-fade{from{opacity:0}to{opacity:1}}
